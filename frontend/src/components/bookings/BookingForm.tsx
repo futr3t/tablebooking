@@ -80,13 +80,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   }, [booking, editMode, open]);
 
   const checkAvailability = async () => {
-    if (!user?.restaurant_id) return;
+    if (!user?.restaurantId) return;
     
     setCheckingAvailability(true);
     try {
       const date = format(formData.booking_time, 'yyyy-MM-dd');
       const slots = await bookingService.getAvailability(
-        user.restaurant_id,
+        user.restaurantId,
         date,
         formData.party_size
       );
@@ -100,7 +100,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.restaurant_id) return;
+    if (!user?.restaurantId) return;
 
     setLoading(true);
     setError('');
@@ -108,7 +108,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     try {
       const data = {
         ...formData,
-        restaurant_id: user.restaurant_id,
+        restaurantId: user.restaurantId,
         booking_time: formData.booking_time.toISOString(),
       };
 

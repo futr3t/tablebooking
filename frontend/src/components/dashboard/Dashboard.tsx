@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    if (user?.restaurant_id) {
+    if (user?.restaurantId) {
       loadTodaysBookings();
     }
   }, [user]);
@@ -74,14 +74,14 @@ const Dashboard: React.FC = () => {
   }, [socket, bookings]);
 
   const loadTodaysBookings = async () => {
-    if (!user?.restaurant_id) return;
+    if (!user?.restaurantId) return;
     
     setLoading(true);
     setError('');
     
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const data = await bookingService.getBookings(user.restaurant_id, today);
+      const data = await bookingService.getBookings(user.restaurantId, today);
       
       const todaysBookings = data.filter(booking => 
         isToday(parseISO(booking.booking_time))

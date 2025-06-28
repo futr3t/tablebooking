@@ -1,12 +1,12 @@
 export interface User {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   role: 'super_admin' | 'owner' | 'manager' | 'host' | 'server' | 'customer';
-  restaurant_id?: string;
-  created_at: string;
-  updated_at: string;
+  restaurantId?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LoginCredentials {
@@ -22,11 +22,11 @@ export interface AuthResponse {
 
 export interface Booking {
   id: string;
-  restaurant_id: string;
+  restaurantId: string;
   guest_name: string;
   guest_email?: string;
   guest_phone?: string;
-  party_size: number;
+  partySize: number;
   booking_time: string;
   table_id?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
@@ -39,7 +39,7 @@ export interface Booking {
 
 export interface Table {
   id: string;
-  restaurant_id: string;
+  restaurantId: string;
   table_number: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';

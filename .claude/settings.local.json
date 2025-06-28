@@ -4,7 +4,10 @@
       "Bash(npm init:*)",
       "Bash(npm install:*)",
       "Bash(mkdir:*)",
-      "Bash(npx create-react-app:*)"
+      "Bash(npx create-react-app:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

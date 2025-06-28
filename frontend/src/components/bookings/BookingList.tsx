@@ -51,19 +51,19 @@ const BookingList: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
-    if (user?.restaurant_id) {
+    if (user?.restaurantId) {
       loadBookings();
     }
   }, [user]);
 
   const loadBookings = async () => {
-    if (!user?.restaurant_id) return;
+    if (!user?.restaurantId) return;
     
     setLoading(true);
     setError('');
     
     try {
-      const data = await bookingService.getBookings(user.restaurant_id);
+      const data = await bookingService.getBookings(user.restaurantId);
       setBookings(data);
     } catch (err: any) {
       setError('Failed to load bookings');

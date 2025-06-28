@@ -11,15 +11,15 @@ export const useSocket = () => {
       if (token) {
         socketService.connect(token);
         
-        if (user.restaurant_id) {
-          socketService.joinRestaurant(user.restaurant_id);
+        if (user.restaurantId) {
+          socketService.joinRestaurant(user.restaurantId);
         }
       }
     }
 
     return () => {
-      if (user?.restaurant_id) {
-        socketService.leaveRestaurant(user.restaurant_id);
+      if (user?.restaurantId) {
+        socketService.leaveRestaurant(user.restaurantId);
       }
       socketService.disconnect();
     };

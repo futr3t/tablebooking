@@ -93,7 +93,7 @@ export const bookingService = {
 
   getAvailability: async (restaurantId: string, date: string, partySize: number) => {
     const response = await api.get('/bookings/availability', {
-      params: { restaurant_id: restaurantId, date, party_size: partySize },
+      params: { restaurantId: restaurantId, date, partySize: partySize },
     });
     return response.data;
   },

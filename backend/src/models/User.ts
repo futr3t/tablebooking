@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import { User, UserRole } from '../types';
 import bcrypt from 'bcryptjs';
+import { mapUserFromDb, mapUserToDb } from '../utils/dbMapping';
 
 export class UserModel {
   static async findById(id: string): Promise<User | null> {
@@ -9,7 +10,7 @@ export class UserModel {
         'SELECT * FROM users WHERE id = $1 AND is_active = true',
         [id]
       );
-      return result.rows[0] || null;
+      return result.rows[0] ? mapUserFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding user by ID:', error);
       throw error;
@@ -22,7 +23,7 @@ export class UserModel {
         'SELECT * FROM users WHERE email = $1 AND is_active = true',
         [email.toLowerCase()]
       );
-      return result.rows[0] || null;
+      return result.rows[0] ? mapUserFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding user by email:', error);
       throw error;
@@ -126,9 +127,15 @@ export class UserModel {
     }
   }
 
-  static async verifyPassword(user: User, password: string): Promise<boolean> {
+  static async verifyPassword(user: any, password: string): Promise<boolean> {
     try {
-      return await bcrypt.compare(password, user.password);
+      // Get the actual password hash from database
+      const result = await db.query(
+        'SELECT password_hash FROM users WHERE id = $1',
+        [user.id]
+      );
+      if (!result.rows[0]) return false;
+      return await bcrypt.compare(password, result.rows[0].password_hash);
     } catch (error) {
       console.error('Error verifying password:', error);
       return false;

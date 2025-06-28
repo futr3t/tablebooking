@@ -137,7 +137,7 @@ const Layout: React.FC = () => {
             >
               <MenuItem disabled>
                 <Avatar sx={{ mr: 1, width: 24, height: 24 }} />
-                {user?.first_name} {user?.last_name}
+                {user?.firstName} {user?.lastName}
               </MenuItem>
               <Divider />
               <MenuItem onClick={handleLogout}>
