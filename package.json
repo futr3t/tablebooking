@@ -1,0 +1,22 @@
+{
+  "name": "restaurant-booking-platform",
+  "version": "1.0.0",
+  "description": "Restaurant table booking platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npx serve -s build -l 3000",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
