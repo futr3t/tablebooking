@@ -13,29 +13,35 @@ export const db = new Pool({
 });
 
 export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: 3,
   lazyConnect: true,
+  retryDelayOnFailover: 100,
+  enableReadyCheck: false,
+  maxRetriesPerRequest: null,
 });
 
 export const connectDatabases = async (): Promise<void> => {
+  console.log('Attempting to connect to databases...');
+  console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length);
+  console.log('DATABASE_URL preview:', process.env.DATABASE_URL?.substring(0, 30) + '...');
+  
+  // PostgreSQL is required
   try {
-    console.log('Attempting to connect to databases...');
-    console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length);
-    console.log('DATABASE_URL preview:', process.env.DATABASE_URL?.substring(0, 30) + '...');
-    
     const client = await db.connect();
     console.log('PostgreSQL connected successfully');
     client.release();
+  } catch (error) {
+    console.error('PostgreSQL connection failed:', error);
+    throw error;
+  }
 
-    console.log('REDIS_URL preview:', process.env.REDIS_URL?.substring(0, 30) + '...');
+  // Redis is optional - app can work without it
+  console.log('REDIS_URL preview:', process.env.REDIS_URL?.substring(0, 30) + '...');
+  try {
     await redis.connect();
     console.log('Redis connected successfully');
-  } catch (error) {
-    console.error('Database connection error:', error);
-    console.log('Environment variables:');
-    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.log('REDIS_URL exists:', !!process.env.REDIS_URL);
-    throw error;
+  } catch (redisError) {
+    console.warn('Redis connection failed, app will continue without caching:', redisError.message);
+    // Don't throw - Redis is optional for basic functionality
   }
 };
 
