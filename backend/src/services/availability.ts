@@ -148,12 +148,17 @@ export class AvailabilityService {
     tableId?: string;
     waitlistAvailable: boolean;
   }> {
-    // Check cache first
+    // Check cache first (if Redis is available)
     const cacheKey = `availability:${restaurantId}:${date}:${startTime}:${partySize}`;
-    const cached = await redis.get(cacheKey);
-    
-    if (cached) {
-      return JSON.parse(cached);
+    if (redis) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (error) {
+        console.warn('Redis cache read failed:', error.message);
+      }
     }
 
     // Calculate time windows with buffer
@@ -176,8 +181,14 @@ export class AvailabilityService {
           waitlistAvailable: false
         };
 
-        // Cache result for 1 minute
-        await redis.setex(cacheKey, 60, JSON.stringify(result));
+        // Cache result for 1 minute (if Redis is available)
+        if (redis) {
+          try {
+            await redis.setex(cacheKey, 60, JSON.stringify(result));
+          } catch (error) {
+            console.warn('Redis cache write failed:', error.message);
+          }
+        }
         return result;
       }
     }
@@ -200,7 +211,13 @@ export class AvailabilityService {
           waitlistAvailable: false
         };
 
-        await redis.setex(cacheKey, 60, JSON.stringify(result));
+        if (redis) {
+          try {
+            await redis.setex(cacheKey, 60, JSON.stringify(result));
+          } catch (error) {
+            console.warn('Redis cache write failed:', error.message);
+          }
+        }
         return result;
       }
     }
@@ -211,7 +228,13 @@ export class AvailabilityService {
       waitlistAvailable: true
     };
 
-    await redis.setex(cacheKey, 60, JSON.stringify(result));
+    if (redis) {
+      try {
+        await redis.setex(cacheKey, 60, JSON.stringify(result));
+      } catch (error) {
+        console.warn('Redis cache write failed:', error.message);
+      }
+    }
     return result;
   }
 
@@ -296,6 +319,11 @@ export class AvailabilityService {
   }
 
   static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
+    // If Redis is not available, skip cache invalidation
+    if (!redis) {
+      return;
+    }
+
     try {
       const pattern = `availability:${restaurantId}:${date}:*`;
       const keys = await redis.keys(pattern);

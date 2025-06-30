@@ -12,12 +12,37 @@ export const db = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  lazyConnect: true,
-  retryDelayOnFailover: 100,
-  enableReadyCheck: false,
-  maxRetriesPerRequest: null,
-});
+// Create Redis client with proper error handling
+let redis: Redis | null = null;
+
+try {
+  redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+    lazyConnect: true,
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: null,
+    connectTimeout: 5000,
+    commandTimeout: 5000,
+  });
+
+  // Handle Redis errors to prevent unhandled error events
+  redis.on('error', (error) => {
+    console.warn('Redis error (continuing without Redis):', error.message);
+  });
+
+  redis.on('connect', () => {
+    console.log('Redis connected successfully');
+  });
+
+  redis.on('close', () => {
+    console.log('Redis connection closed');
+  });
+} catch (error) {
+  console.warn('Failed to create Redis client:', error.message);
+  redis = null;
+}
+
+export { redis };
 
 export const connectDatabases = async (): Promise<void> => {
   console.log('Attempting to connect to databases...');
@@ -35,20 +60,26 @@ export const connectDatabases = async (): Promise<void> => {
   }
 
   // Redis is optional - app can work without it
-  console.log('REDIS_URL preview:', process.env.REDIS_URL?.substring(0, 30) + '...');
-  try {
-    await redis.connect();
-    console.log('Redis connected successfully');
-  } catch (redisError) {
-    console.warn('Redis connection failed, app will continue without caching:', redisError.message);
-    // Don't throw - Redis is optional for basic functionality
+  if (redis) {
+    console.log('REDIS_URL preview:', process.env.REDIS_URL?.substring(0, 30) + '...');
+    try {
+      await redis.connect();
+      console.log('Redis connected successfully');
+    } catch (redisError) {
+      console.warn('Redis connection failed, app will continue without caching:', redisError.message);
+      // Don't throw - Redis is optional for basic functionality
+    }
+  } else {
+    console.log('Redis client not initialized, continuing without Redis');
   }
 };
 
 export const closeDatabases = async (): Promise<void> => {
   try {
     await db.end();
-    redis.disconnect();
+    if (redis) {
+      redis.disconnect();
+    }
     console.log('Database connections closed');
   } catch (error) {
     console.error('Error closing database connections:', error);

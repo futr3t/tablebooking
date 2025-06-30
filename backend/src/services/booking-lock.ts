@@ -10,6 +10,12 @@ export class BookingLockService {
     time: string,
     tableId?: string
   ): Promise<string | null> {
+    // If Redis is not available, return null (no locking)
+    if (!redis) {
+      console.warn('Redis not available, skipping lock acquisition');
+      return null;
+    }
+
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
       const lockValue = this.generateLockValue();
@@ -37,6 +43,11 @@ export class BookingLockService {
     lockValue: string,
     tableId?: string
   ): Promise<boolean> {
+    // If Redis is not available, return true (no locking to release)
+    if (!redis) {
+      return true;
+    }
+
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
 
@@ -64,6 +75,11 @@ export class BookingLockService {
     lockValue: string,
     tableId?: string
   ): Promise<boolean> {
+    // If Redis is not available, return true (no locking to extend)
+    if (!redis) {
+      return true;
+    }
+
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
 
@@ -98,6 +114,13 @@ export class BookingLockService {
     operation: () => Promise<T>,
     tableId?: string
   ): Promise<T> {
+    // If Redis is not available, run operation without locking
+    // This reduces consistency but allows the system to continue functioning
+    if (!redis) {
+      console.warn('Redis not available, running operation without distributed locking');
+      return await operation();
+    }
+
     const lockValue = await this.acquireLock(restaurantId, date, time, tableId);
     
     if (!lockValue) {
@@ -113,6 +136,12 @@ export class BookingLockService {
   }
 
   static async acquireTableLock(tableId: string): Promise<string | null> {
+    // If Redis is not available, return null (no locking)
+    if (!redis) {
+      console.warn('Redis not available, skipping table lock acquisition');
+      return null;
+    }
+
     try {
       const lockKey = `${this.LOCK_PREFIX}table:${tableId}`;
       const lockValue = this.generateLockValue();
@@ -133,6 +162,11 @@ export class BookingLockService {
   }
 
   static async releaseTableLock(tableId: string, lockValue: string): Promise<boolean> {
+    // If Redis is not available, return true (no locking to release)
+    if (!redis) {
+      return true;
+    }
+
     try {
       const lockKey = `${this.LOCK_PREFIX}table:${tableId}`;
 
@@ -156,6 +190,13 @@ export class BookingLockService {
     tableId: string,
     operation: () => Promise<T>
   ): Promise<T> {
+    // If Redis is not available, run operation without locking
+    // This reduces consistency but allows the system to continue functioning
+    if (!redis) {
+      console.warn('Redis not available, running table operation without distributed locking');
+      return await operation();
+    }
+
     const lockValue = await this.acquireTableLock(tableId);
     
     if (!lockValue) {
@@ -185,6 +226,11 @@ export class BookingLockService {
   }
 
   static async cleanupExpiredLocks(): Promise<void> {
+    // If Redis is not available, skip cleanup
+    if (!redis) {
+      return;
+    }
+
     try {
       const pattern = `${this.LOCK_PREFIX}*`;
       const keys = await redis.keys(pattern);
@@ -221,7 +267,9 @@ export class BookingLockService {
   }
 }
 
-// Run lock cleanup every 5 minutes
-setInterval(() => {
-  BookingLockService.cleanupExpiredLocks();
-}, 5 * 60 * 1000);
+// Run lock cleanup every 5 minutes (only if Redis is available)
+if (redis) {
+  setInterval(() => {
+    BookingLockService.cleanupExpiredLocks();
+  }, 5 * 60 * 1000);
+}
