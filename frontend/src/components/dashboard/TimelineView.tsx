@@ -7,9 +7,9 @@ import {
   Tooltip,
   useTheme,
 } from '@mui/material';
-import { format, parseISO, startOfDay, addHours } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Booking } from '../../types';
-import { People, Phone, Email } from '@mui/icons-material';
+import { People, Phone } from '@mui/icons-material';
 
 interface TimelineViewProps {
   bookings: Booking[];
@@ -24,7 +24,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
   const totalHours = endHour - startHour;
 
   const getBookingPosition = (booking: Booking) => {
-    const bookingTime = parseISO(booking.booking_time);
+    const bookingTime = parseISO(booking.bookingTime);
     const hour = bookingTime.getHours();
     const minutes = bookingTime.getMinutes();
     const totalMinutes = (hour - startHour) * 60 + minutes;
@@ -49,7 +49,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
   });
 
   const groupedBookings = bookings.reduce((acc, booking) => {
-    const tableId = booking.table_id || 'unassigned';
+    const tableId = booking.tableId || 'unassigned';
     if (!acc[tableId]) acc[tableId] = [];
     acc[tableId].push(booking);
     return acc;
@@ -110,19 +110,19 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                   title={
                     <Box>
                       <Typography variant="body2">
-                        {booking.guest_name} - {booking.party_size} guests
+                        {booking.guestName} - {booking.partySize} guests
                       </Typography>
                       <Typography variant="caption">
-                        {format(parseISO(booking.booking_time), 'h:mm a')}
+                        {format(parseISO(booking.bookingTime), 'h:mm a')}
                       </Typography>
-                      {booking.guest_phone && (
+                      {booking.guestPhone && (
                         <Typography variant="caption" display="block">
-                          <Phone fontSize="small" /> {booking.guest_phone}
+                          <Phone fontSize="small" /> {booking.guestPhone}
                         </Typography>
                       )}
-                      {booking.special_requests && (
+                      {booking.specialRequests && (
                         <Typography variant="caption" display="block">
-                          Note: {booking.special_requests}
+                          Note: {booking.specialRequests}
                         </Typography>
                       )}
                     </Box>
@@ -154,12 +154,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                     }}
                   >
                     <Typography variant="caption" noWrap fontWeight="bold">
-                      {booking.guest_name}
+                      {booking.guestName}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={0.5}>
                       <People fontSize="small" />
                       <Typography variant="caption">
-                        {booking.party_size}
+                        {booking.partySize}
                       </Typography>
                       <Chip
                         label={booking.status}

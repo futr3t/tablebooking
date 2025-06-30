@@ -5,8 +5,8 @@ export interface User {
   lastName: string;
   role: 'super_admin' | 'owner' | 'manager' | 'host' | 'server' | 'customer';
   restaurantId?: string;
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginCredentials {
@@ -23,24 +23,24 @@ export interface AuthResponse {
 export interface Booking {
   id: string;
   restaurantId: string;
-  guest_name: string;
-  guest_email?: string;
-  guest_phone?: string;
+  guestName: string;
+  guestEmail?: string;
+  guestPhone?: string;
   partySize: number;
-  booking_time: string;
-  table_id?: string;
+  bookingTime: string;
+  tableId?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
-  special_requests?: string;
-  confirmation_code?: string;
-  created_at: string;
-  updated_at: string;
+  specialRequests?: string;
+  confirmationCode?: string;
+  createdAt: string;
+  updatedAt: string;
   tables?: Table[];
 }
 
 export interface Table {
   id: string;
   restaurantId: string;
-  table_number: string;
+  tableNumber: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   position?: {
@@ -55,19 +55,19 @@ export interface Restaurant {
   address: string;
   phone: string;
   email: string;
-  opening_hours: {
+  openingHours: {
     [key: string]: {
       open: string;
       close: string;
     }[];
   };
   settings: {
-    booking_advance_days: number;
-    booking_advance_hours: number;
-    time_slot_duration: number;
-    table_turn_time: number;
-    buffer_time: number;
-    allow_waitlist: boolean;
+    bookingAdvanceDays: number;
+    bookingAdvanceHours: number;
+    timeSlotDuration: number;
+    tableTurnTime: number;
+    bufferTime: number;
+    allowWaitlist: boolean;
   };
 }
 

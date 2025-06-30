@@ -6,11 +6,10 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { format, startOfDay, endOfDay, parseISO, isToday } from 'date-fns';
+import { format, parseISO, isToday } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,18 +34,18 @@ const Dashboard: React.FC = () => {
     if (user?.restaurantId) {
       loadTodaysBookings();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleBookingCreated = (booking: Booking) => {
-      if (isToday(parseISO(booking.booking_time))) {
+      if (isToday(parseISO(booking.bookingTime))) {
         setBookings(prev => [...prev, booking]);
         updateStats([...bookings, booking]);
       }
     };
 
     const handleBookingUpdated = (booking: Booking) => {
-      if (isToday(parseISO(booking.booking_time))) {
+      if (isToday(parseISO(booking.bookingTime))) {
         setBookings(prev => prev.map(b => b.id === booking.id ? booking : b));
         updateStats(bookings.map(b => b.id === booking.id ? booking : b));
       }
@@ -84,7 +83,7 @@ const Dashboard: React.FC = () => {
       const data = await bookingService.getBookings(user.restaurantId, today);
       
       const todaysBookings = data.filter(booking => 
-        isToday(parseISO(booking.booking_time))
+        isToday(parseISO(booking.bookingTime))
       );
       
       setBookings(todaysBookings);
@@ -103,7 +102,7 @@ const Dashboard: React.FC = () => {
       pending: bookingsList.filter(b => b.status === 'pending').length,
       confirmed: bookingsList.filter(b => b.status === 'confirmed').length,
       cancelled: bookingsList.filter(b => b.status === 'cancelled').length,
-      totalGuests: bookingsList.reduce((sum, b) => sum + b.party_size, 0),
+      totalGuests: bookingsList.reduce((sum, b) => sum + b.partySize, 0),
     });
   };
 

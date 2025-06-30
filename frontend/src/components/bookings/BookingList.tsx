@@ -17,10 +17,6 @@ import {
   InputAdornment,
   CircularProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import {
   Search,
@@ -54,7 +50,7 @@ const BookingList: React.FC = () => {
     if (user?.restaurantId) {
       loadBookings();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBookings = async () => {
     if (!user?.restaurantId) return;
@@ -76,10 +72,10 @@ const BookingList: React.FC = () => {
   const filteredBookings = bookings.filter(booking => {
     const search = searchTerm.toLowerCase();
     return (
-      booking.guest_name.toLowerCase().includes(search) ||
-      booking.guest_email?.toLowerCase().includes(search) ||
-      booking.guest_phone?.includes(search) ||
-      booking.confirmation_code?.toLowerCase().includes(search)
+      booking.guestName.toLowerCase().includes(search) ||
+      booking.guestEmail?.toLowerCase().includes(search) ||
+      booking.guestPhone?.includes(search) ||
+      booking.confirmationCode?.toLowerCase().includes(search)
     );
   });
 
@@ -215,22 +211,22 @@ const BookingList: React.FC = () => {
               .map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell>
-                    {format(parseISO(booking.booking_time), 'MMM d, yyyy h:mm a')}
+                    {format(parseISO(booking.bookingTime), 'MMM d, yyyy h:mm a')}
                   </TableCell>
-                  <TableCell>{booking.guest_name}</TableCell>
+                  <TableCell>{booking.guestName}</TableCell>
                   <TableCell>
                     <Box>
-                      {booking.guest_email && (
-                        <Typography variant="body2">{booking.guest_email}</Typography>
+                      {booking.guestEmail && (
+                        <Typography variant="body2">{booking.guestEmail}</Typography>
                       )}
-                      {booking.guest_phone && (
-                        <Typography variant="body2">{booking.guest_phone}</Typography>
+                      {booking.guestPhone && (
+                        <Typography variant="body2">{booking.guestPhone}</Typography>
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{booking.party_size}</TableCell>
+                  <TableCell>{booking.partySize}</TableCell>
                   <TableCell>
-                    {booking.table_id ? `Table ${booking.table_id}` : '-'}
+                    {booking.tableId ? `Table ${booking.tableId}` : '-'}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -241,7 +237,7 @@ const BookingList: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                      {booking.confirmation_code}
+                      {booking.confirmationCode}
                     </Typography>
                   </TableCell>
                   <TableCell align="right">

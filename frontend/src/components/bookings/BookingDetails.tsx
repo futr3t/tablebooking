@@ -62,25 +62,25 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
             <Box display="flex" alignItems="center" mb={1}>
               <Person sx={{ mr: 1, color: 'text.secondary' }} />
               <Typography variant="subtitle1" fontWeight="bold">
-                {booking.guest_name}
+                {booking.guestName}
               </Typography>
             </Box>
           </Grid>
 
-          {booking.guest_email && (
+          {booking.guestEmail && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <Email sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
-                <Typography variant="body2">{booking.guest_email}</Typography>
+                <Typography variant="body2">{booking.guestEmail}</Typography>
               </Box>
             </Grid>
           )}
 
-          {booking.guest_phone && (
+          {booking.guestPhone && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <Phone sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
-                <Typography variant="body2">{booking.guest_phone}</Typography>
+                <Typography variant="body2">{booking.guestPhone}</Typography>
               </Box>
             </Grid>
           )}
@@ -97,10 +97,10 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                   Date & Time
                 </Typography>
                 <Typography variant="body1">
-                  {format(parseISO(booking.booking_time), 'MMMM d, yyyy')}
+                  {format(parseISO(booking.bookingTime), 'MMMM d, yyyy')}
                 </Typography>
                 <Typography variant="body1">
-                  {format(parseISO(booking.booking_time), 'h:mm a')}
+                  {format(parseISO(booking.bookingTime), 'h:mm a')}
                 </Typography>
               </Box>
             </Box>
@@ -113,12 +113,12 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                 <Typography variant="body2" color="text.secondary">
                   Party Size
                 </Typography>
-                <Typography variant="body1">{booking.party_size} guests</Typography>
+                <Typography variant="body1">{booking.partySize} guests</Typography>
               </Box>
             </Box>
           </Grid>
 
-          {booking.table_id && (
+          {booking.tableId && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <TableBar sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
@@ -126,7 +126,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                   <Typography variant="body2" color="text.secondary">
                     Table
                   </Typography>
-                  <Typography variant="body1">Table {booking.table_id}</Typography>
+                  <Typography variant="body1">Table {booking.tableId}</Typography>
                 </Box>
               </Box>
             </Grid>
@@ -140,13 +140,13 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                   Confirmation Code
                 </Typography>
                 <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>
-                  {booking.confirmation_code}
+                  {booking.confirmationCode}
                 </Typography>
               </Box>
             </Box>
           </Grid>
 
-          {booking.special_requests && (
+          {booking.specialRequests && (
             <>
               <Grid item xs={12}>
                 <Divider sx={{ my: 1 }} />
@@ -158,7 +158,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Special Requests
                     </Typography>
-                    <Typography variant="body2">{booking.special_requests}</Typography>
+                    <Typography variant="body2">{booking.specialRequests}</Typography>
                   </Box>
                 </Box>
               </Grid>
@@ -171,11 +171,11 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
 
           <Grid item xs={12}>
             <Typography variant="caption" color="text.secondary">
-              Created: {format(parseISO(booking.created_at), 'MMM d, yyyy h:mm a')}
+              Created: {format(parseISO(booking.createdAt), 'MMM d, yyyy h:mm a')}
             </Typography>
             <br />
             <Typography variant="caption" color="text.secondary">
-              Last Updated: {format(parseISO(booking.updated_at), 'MMM d, yyyy h:mm a')}
+              Last Updated: {format(parseISO(booking.updatedAt), 'MMM d, yyyy h:mm a')}
             </Typography>
           </Grid>
         </Grid>

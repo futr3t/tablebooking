@@ -42,12 +42,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    guest_name: '',
-    guest_email: '',
-    guest_phone: '',
-    party_size: 2,
-    booking_time: new Date(),
-    special_requests: '',
+    guestName: '',
+    guestEmail: '',
+    guestPhone: '',
+    partySize: 2,
+    bookingTime: new Date(),
+    specialRequests: '',
     status: 'pending' as Booking['status'],
   });
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -58,22 +58,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
   useEffect(() => {
     if (booking && editMode) {
       setFormData({
-        guest_name: booking.guest_name,
-        guest_email: booking.guest_email || '',
-        guest_phone: booking.guest_phone || '',
-        party_size: booking.party_size,
-        booking_time: parseISO(booking.booking_time),
-        special_requests: booking.special_requests || '',
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail || '',
+        guestPhone: booking.guestPhone || '',
+        partySize: booking.partySize,
+        bookingTime: parseISO(booking.bookingTime),
+        specialRequests: booking.specialRequests || '',
         status: booking.status,
       });
     } else {
       setFormData({
-        guest_name: '',
-        guest_email: '',
-        guest_phone: '',
-        party_size: 2,
-        booking_time: new Date(),
-        special_requests: '',
+        guestName: '',
+        guestEmail: '',
+        guestPhone: '',
+        partySize: 2,
+        bookingTime: new Date(),
+        specialRequests: '',
         status: 'pending',
       });
     }
@@ -84,11 +84,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
     
     setCheckingAvailability(true);
     try {
-      const date = format(formData.booking_time, 'yyyy-MM-dd');
+      const date = format(formData.bookingTime, 'yyyy-MM-dd');
       const slots = await bookingService.getAvailability(
         user.restaurantId,
         date,
-        formData.party_size
+        formData.partySize
       );
       setAvailableSlots(slots);
     } catch (err) {
@@ -109,7 +109,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const data = {
         ...formData,
         restaurantId: user.restaurantId,
-        booking_time: formData.booking_time.toISOString(),
+        bookingTime: formData.bookingTime.toISOString(),
       };
 
       if (editMode && booking) {
@@ -142,8 +142,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <TextField
                 fullWidth
                 label="Guest Name"
-                value={formData.guest_name}
-                onChange={(e) => handleChange('guest_name', e.target.value)}
+                value={formData.guestName}
+                onChange={(e) => handleChange('guestName', e.target.value)}
                 required
               />
             </Grid>
@@ -153,8 +153,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 fullWidth
                 label="Email"
                 type="email"
-                value={formData.guest_email}
-                onChange={(e) => handleChange('guest_email', e.target.value)}
+                value={formData.guestEmail}
+                onChange={(e) => handleChange('guestEmail', e.target.value)}
               />
             </Grid>
             
@@ -162,8 +162,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <TextField
                 fullWidth
                 label="Phone"
-                value={formData.guest_phone}
-                onChange={(e) => handleChange('guest_phone', e.target.value)}
+                value={formData.guestPhone}
+                onChange={(e) => handleChange('guestPhone', e.target.value)}
               />
             </Grid>
             
@@ -172,8 +172,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 fullWidth
                 label="Party Size"
                 type="number"
-                value={formData.party_size}
-                onChange={(e) => handleChange('party_size', parseInt(e.target.value))}
+                value={formData.partySize}
+                onChange={(e) => handleChange('partySize', parseInt(e.target.value))}
                 inputProps={{ min: 1, max: 20 }}
                 required
               />
@@ -183,8 +183,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DateTimePicker
                   label="Booking Date & Time"
-                  value={formData.booking_time}
-                  onChange={(value) => value && handleChange('booking_time', value)}
+                  value={formData.bookingTime}
+                  onChange={(value) => value && handleChange('bookingTime', value)}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
               </LocalizationProvider>
@@ -215,8 +215,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 label="Special Requests"
                 multiline
                 rows={3}
-                value={formData.special_requests}
-                onChange={(e) => handleChange('special_requests', e.target.value)}
+                value={formData.specialRequests}
+                onChange={(e) => handleChange('specialRequests', e.target.value)}
               />
             </Grid>
             
@@ -249,7 +249,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                           disabled={!slot.available}
                           onClick={() => {
                             if (slot.available) {
-                              handleChange('booking_time', parseISO(slot.time));
+                              handleChange('bookingTime', parseISO(slot.time));
                             }
                           }}
                         />
