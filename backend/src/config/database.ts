@@ -19,15 +19,23 @@ export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379'
 
 export const connectDatabases = async (): Promise<void> => {
   try {
+    console.log('Attempting to connect to databases...');
+    console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length);
+    console.log('DATABASE_URL preview:', process.env.DATABASE_URL?.substring(0, 30) + '...');
+    
     const client = await db.connect();
     console.log('PostgreSQL connected successfully');
     client.release();
 
+    console.log('REDIS_URL preview:', process.env.REDIS_URL?.substring(0, 30) + '...');
     await redis.connect();
     console.log('Redis connected successfully');
   } catch (error) {
     console.error('Database connection error:', error);
-    process.exit(1);
+    console.log('Environment variables:');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('REDIS_URL exists:', !!process.env.REDIS_URL);
+    throw error;
   }
 };
 
