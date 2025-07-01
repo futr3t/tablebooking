@@ -13,7 +13,7 @@ import {
   Grid,
   Alert,
 } from '@mui/material';
-import { CalendarToday, AccessTime, People } from '@mui/icons-material';
+import { AccessTime } from '@mui/icons-material';
 import { WidgetConfig } from '../../types';
 
 interface WidgetPreviewProps {
