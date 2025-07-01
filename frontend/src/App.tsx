@@ -10,6 +10,7 @@ import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
 import Dashboard from './components/dashboard/Dashboard';
 import BookingList from './components/bookings/BookingList';
+import WidgetManager from './components/widget/WidgetManager';
 
 const theme = createTheme({
   palette: {
@@ -43,6 +44,7 @@ function App() {
                 <Route path="bookings" element={<BookingList />} />
                 <Route path="tables" element={<div>Tables Management (Coming Soon)</div>} />
                 <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
+                <Route path="widget" element={<WidgetManager />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

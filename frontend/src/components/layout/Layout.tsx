@@ -24,6 +24,7 @@ import {
   BookOnline,
   TableBar,
   People,
+  Widgets,
   ExitToApp,
   AccountCircle,
 } from '@mui/icons-material';
@@ -60,6 +61,7 @@ const Layout: React.FC = () => {
     { text: 'Bookings', icon: <BookOnline />, path: '/bookings' },
     { text: 'Tables', icon: <TableBar />, path: '/tables' },
     { text: 'Staff', icon: <People />, path: '/staff' },
+    { text: 'Widget', icon: <Widgets />, path: '/widget' },
   ];
 
   const drawer = (

@@ -107,4 +107,31 @@ export const bookingService = {
   },
 };
 
+export const widgetService = {
+  getConfig: async () => {
+    const response = await api.get('/widget/config');
+    return response.data.data || response.data;
+  },
+
+  updateConfig: async (config: any) => {
+    const response = await api.put('/widget/config', config);
+    return response.data.data || response.data;
+  },
+
+  toggleWidget: async (enabled: boolean) => {
+    const response = await api.post('/widget/toggle', { enabled });
+    return response.data.data || response.data;
+  },
+
+  regenerateApiKey: async () => {
+    const response = await api.post('/widget/regenerate-key');
+    return response.data.data || response.data;
+  },
+
+  getInstallationInstructions: async () => {
+    const response = await api.get('/widget/installation');
+    return response.data.data || response.data;
+  },
+};
+
 export default api;

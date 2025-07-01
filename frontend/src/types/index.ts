@@ -76,3 +76,36 @@ export interface TimeSlot {
   available: boolean;
   tables: number[];
 }
+
+export interface WidgetConfig {
+  id: string;
+  restaurantId: string;
+  apiKey: string;
+  isEnabled: boolean;
+  theme: {
+    primaryColor: string;
+    secondaryColor: string;
+    fontFamily: string;
+    borderRadius: string;
+  };
+  settings: {
+    showAvailableSlots: boolean;
+    maxPartySize: number;
+    advanceBookingDays: number;
+    requirePhone: boolean;
+    requireEmail: boolean;
+    showSpecialRequests: boolean;
+    confirmationMessage: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface InstallationInstructions {
+  htmlCode: string;
+  apiKey: string;
+  widgetUrl: string;
+  isEnabled: boolean;
+  steps: string[];
+  notes: string[];
+}
