@@ -10,6 +10,8 @@ import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
 import Dashboard from './components/dashboard/Dashboard';
 import BookingList from './components/bookings/BookingList';
+import TableManagementDashboard from './components/tables/TableManagementDashboard';
+import RestaurantSettingsPanel from './components/settings/RestaurantSettingsPanel';
 import WidgetManager from './components/widget/WidgetManager';
 
 const theme = createTheme({
@@ -42,7 +44,8 @@ function App() {
               >
                 <Route index element={<Dashboard />} />
                 <Route path="bookings" element={<BookingList />} />
-                <Route path="tables" element={<div>Tables Management (Coming Soon)</div>} />
+                <Route path="tables" element={<TableManagementDashboard />} />
+                <Route path="settings" element={<RestaurantSettingsPanel />} />
                 <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
                 <Route path="widget" element={<WidgetManager />} />
               </Route>

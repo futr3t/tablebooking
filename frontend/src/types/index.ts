@@ -40,13 +40,27 @@ export interface Booking {
 export interface Table {
   id: string;
   restaurantId: string;
-  tableNumber: string;
+  number: string;
   capacity: number;
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
-  position?: {
+  minCapacity: number;
+  maxCapacity: number;
+  shape: 'square' | 'round' | 'rectangle';
+  position: {
     x: number;
     y: number;
+    width: number;
+    height: number;
   };
+  tableType: 'standard' | 'booth' | 'bar' | 'high_top' | 'patio' | 'private' | 'banquette' | 'communal';
+  notes?: string;
+  isAccessible: boolean;
+  locationNotes?: string;
+  isCombinable: boolean;
+  priority: number;
+  status?: 'available' | 'occupied' | 'reserved' | 'maintenance'; // Runtime status, not stored
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Restaurant {
@@ -108,4 +122,54 @@ export interface InstallationInstructions {
   isEnabled: boolean;
   steps: string[];
   notes: string[];
+}
+
+export interface TimeSlotRule {
+  id: string;
+  restaurantId: string;
+  name: string;
+  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  maxConcurrentBookings?: number;
+  turnTimeMinutes?: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TableCombination {
+  id: string;
+  restaurantId: string;
+  name: string;
+  tableIds: string[];
+  minCapacity: number;
+  maxCapacity: number;
+  requiresApproval: boolean;
+  notes?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BulkTableOperation {
+  operation: 'create' | 'update' | 'delete';
+  tables: Partial<Table>[];
+}
+
+export interface TableSummary {
+  totalTables: number;
+  totalCapacity: number;
+  averageCapacity: number;
+  tablesByType: Record<string, number>;
+  accessibleTables: number;
+  combinableTables: number;
+}
+
+export interface RestaurantSettings {
+  maxCovers?: number;
+  turnTimeMinutes: number;
+  staggerMinutes: number;
+  defaultSlotDuration: number;
 }

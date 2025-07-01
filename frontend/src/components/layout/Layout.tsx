@@ -24,6 +24,7 @@ import {
   BookOnline,
   TableBar,
   People,
+  Settings,
   Widgets,
   ExitToApp,
   AccountCircle,
@@ -60,6 +61,7 @@ const Layout: React.FC = () => {
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Bookings', icon: <BookOnline />, path: '/bookings' },
     { text: 'Tables', icon: <TableBar />, path: '/tables' },
+    { text: 'Settings', icon: <Settings />, path: '/settings' },
     { text: 'Staff', icon: <People />, path: '/staff' },
     { text: 'Widget', icon: <Widgets />, path: '/widget' },
   ];

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions } from '../types';
+import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions, Table, TableSummary, BulkTableOperation } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -130,6 +130,59 @@ export const widgetService = {
 
   getInstallationInstructions: async (): Promise<InstallationInstructions> => {
     const response = await api.get('/widget/installation');
+    return response.data.data || response.data;
+  },
+};
+
+export const tableService = {
+  getTables: async (restaurantId: string, options?: {
+    includeInactive?: boolean;
+    tableType?: string;
+    isAccessible?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{ tables: Table[]; total: number }> => {
+    const response = await api.get(`/tables/restaurant/${restaurantId}`, { params: options });
+    return response.data.data || response.data;
+  },
+
+  getTable: async (id: string): Promise<Table> => {
+    const response = await api.get(`/tables/${id}`);
+    return response.data.data || response.data;
+  },
+
+  createTable: async (restaurantId: string, table: Partial<Table>): Promise<Table> => {
+    const response = await api.post(`/tables/restaurant/${restaurantId}`, table);
+    return response.data.data || response.data;
+  },
+
+  updateTable: async (id: string, table: Partial<Table>): Promise<Table> => {
+    const response = await api.put(`/tables/${id}`, table);
+    return response.data.data || response.data;
+  },
+
+  deleteTable: async (id: string): Promise<void> => {
+    await api.delete(`/tables/${id}`);
+  },
+
+  bulkOperations: async (restaurantId: string, operation: BulkTableOperation): Promise<Table[]> => {
+    const response = await api.post(`/tables/restaurant/${restaurantId}/bulk`, operation);
+    return response.data.data || response.data;
+  },
+
+  getSummary: async (restaurantId: string): Promise<TableSummary> => {
+    const response = await api.get(`/tables/restaurant/${restaurantId}/summary`);
+    return response.data.data || response.data;
+  },
+
+  searchTables: async (restaurantId: string, searchTerm: string, filters?: {
+    tableType?: string;
+    minCapacity?: number;
+    maxCapacity?: number;
+    isAccessible?: boolean;
+  }): Promise<Table[]> => {
+    const params = { q: searchTerm, ...filters };
+    const response = await api.get(`/tables/restaurant/${restaurantId}/search`, { params });
     return response.data.data || response.data;
   },
 };
