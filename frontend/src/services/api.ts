@@ -124,7 +124,7 @@ export const widgetService = {
   },
 
   regenerateApiKey: async () => {
-    const response = await api.post('/widget/regenerate-key');
+    const response = await api.post('/widget/api-key/regenerate');
     return response.data.data || response.data;
   },
 
