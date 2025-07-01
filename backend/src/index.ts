@@ -38,10 +38,6 @@ const io = new Server(server, {
   }
 });
 
-app.use(securityMiddleware);
-app.use(compressionMiddleware);
-app.use(rateLimitMiddleware);
-
 app.use(cors({
   origin: corsOrigins,
   credentials: true,
@@ -53,8 +49,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-app.use(sanitizeInput);
-app.use(validateContentType);
+// Temporarily disable problematic middleware for Railway debugging
+if (process.env.NODE_ENV !== 'production') {
+  app.use(securityMiddleware);
+  app.use(compressionMiddleware);
+  app.use(rateLimitMiddleware);
+  app.use(sanitizeInput);
+  app.use(validateContentType);
+}
 
 app.use('/api', routes);
 

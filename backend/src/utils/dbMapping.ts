@@ -2,7 +2,7 @@
 export const mapUserFromDb = (dbUser: any) => ({
   id: dbUser.id,
   email: dbUser.email,
-  password: dbUser.password_hash || dbUser.password,
+  password: dbUser.password,
   firstName: dbUser.first_name,
   lastName: dbUser.last_name,
   phone: dbUser.phone,
@@ -15,7 +15,7 @@ export const mapUserFromDb = (dbUser: any) => ({
 
 export const mapUserToDb = (user: any) => ({
   email: user.email,
-  password_hash: user.password,
+  password: user.password,
   first_name: user.firstName,
   last_name: user.lastName,
   phone: user.phone,

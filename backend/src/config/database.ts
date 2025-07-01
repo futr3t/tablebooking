@@ -18,7 +18,6 @@ let redis: Redis | null = null;
 try {
   redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
     lazyConnect: true,
-    retryDelayOnFailover: 100,
     enableReadyCheck: false,
     maxRetriesPerRequest: null,
     connectTimeout: 5000,

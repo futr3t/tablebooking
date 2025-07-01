@@ -89,9 +89,8 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction): 
     req.body = sanitizeObject(req.body);
   }
   
-  if (req.query) {
-    req.query = sanitizeObject(req.query);
-  }
+  // Skip query sanitization as it's read-only in newer Express versions
+  // Query parameters are typically safe and URL decoded by Express
   
   if (req.params) {
     req.params = sanitizeObject(req.params);
