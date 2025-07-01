@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { Table } from '../types';
+import { Table, TableType, TableSummary, BulkTableOperation } from '../types';
 
 export class TableModel {
   static async findById(id: string): Promise<Table | null> {
@@ -8,20 +8,66 @@ export class TableModel {
         'SELECT * FROM tables WHERE id = $1 AND is_active = true',
         [id]
       );
-      return result.rows[0] || null;
+      return result.rows[0] ? this.mapFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding table by ID:', error);
       throw error;
     }
   }
 
-  static async findByRestaurant(restaurantId: string): Promise<Table[]> {
+  static async findByRestaurant(
+    restaurantId: string, 
+    options?: {
+      includeInactive?: boolean;
+      tableType?: string;
+      isAccessible?: boolean;
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<{ tables: Table[]; total: number }> {
     try {
-      const result = await db.query(
-        'SELECT * FROM tables WHERE restaurant_id = $1 AND is_active = true ORDER BY number',
-        [restaurantId]
+      const conditions = ['restaurant_id = $1'];
+      const values: any[] = [restaurantId];
+      let paramCount = 2;
+
+      if (!options?.includeInactive) {
+        conditions.push('is_active = true');
+      }
+
+      if (options?.tableType) {
+        conditions.push(`table_type = $${paramCount}`);
+        values.push(options.tableType);
+        paramCount++;
+      }
+
+      if (options?.isAccessible !== undefined) {
+        conditions.push(`is_accessible = $${paramCount}`);
+        values.push(options.isAccessible);
+        paramCount++;
+      }
+
+      const whereClause = conditions.join(' AND ');
+      const orderBy = 'ORDER BY priority DESC, number ASC';
+      
+      // Get total count
+      const countResult = await db.query(
+        `SELECT COUNT(*) as total FROM tables WHERE ${whereClause}`,
+        values
       );
-      return result.rows;
+      const total = parseInt(countResult.rows[0].total);
+
+      // Get paginated results
+      let query = `SELECT * FROM tables WHERE ${whereClause} ${orderBy}`;
+      if (options?.limit) {
+        const offset = ((options.page || 1) - 1) * options.limit;
+        query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        values.push(options.limit, offset);
+      }
+
+      const result = await db.query(query, values);
+      const tables = result.rows.map(row => this.mapFromDb(row));
+
+      return { tables, total };
     } catch (error) {
       console.error('Error finding tables by restaurant:', error);
       throw error;
@@ -42,7 +88,7 @@ export class TableModel {
         ORDER BY capacity ASC
       `, [restaurantId, partySize]);
       
-      return result.rows;
+      return result.rows.map(row => this.mapFromDb(row));
     } catch (error) {
       console.error('Error finding available tables for party size:', error);
       throw error;
@@ -55,7 +101,7 @@ export class TableModel {
     maxTables: number = 3
   ): Promise<Table[][]> {
     try {
-      const tables = await this.findByRestaurant(restaurantId);
+      const { tables } = await this.findByRestaurant(restaurantId);
       const combinations: Table[][] = [];
 
       // Single table solutions (preferred)
@@ -106,11 +152,21 @@ export class TableModel {
     maxCapacity: number;
     shape?: string;
     position?: any;
+    tableType?: string;
+    notes?: string;
+    isAccessible?: boolean;
+    locationNotes?: string;
+    isCombinable?: boolean;
+    priority?: number;
   }): Promise<Table> {
     try {
       const result = await db.query(`
-        INSERT INTO tables (restaurant_id, number, capacity, min_capacity, max_capacity, shape, position)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO tables (
+          restaurant_id, number, capacity, min_capacity, max_capacity, 
+          shape, position, table_type, notes, is_accessible, 
+          location_notes, is_combinable, priority
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `, [
         tableData.restaurantId,
@@ -119,10 +175,16 @@ export class TableModel {
         tableData.minCapacity,
         tableData.maxCapacity,
         tableData.shape || 'round',
-        JSON.stringify(tableData.position || {})
+        JSON.stringify(tableData.position || {}),
+        tableData.tableType || 'standard',
+        tableData.notes || null,
+        tableData.isAccessible || false,
+        tableData.locationNotes || null,
+        tableData.isCombinable !== false, // Default to true
+        tableData.priority || 0
       ]);
 
-      return result.rows[0];
+      return this.mapFromDb(result.rows[0]);
     } catch (error) {
       console.error('Error creating table:', error);
       throw error;
@@ -155,7 +217,7 @@ export class TableModel {
         RETURNING *
       `, values);
 
-      return result.rows[0] || null;
+      return result.rows[0] ? this.mapFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error updating table:', error);
       throw error;
@@ -173,6 +235,202 @@ export class TableModel {
       console.error('Error deleting table:', error);
       throw error;
     }
+  }
+
+  /**
+   * Bulk create multiple tables
+   */
+  static async bulkCreate(tables: Partial<Table>[]): Promise<Table[]> {
+    try {
+      if (tables.length === 0) return [];
+
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        
+        const createdTables: Table[] = [];
+        for (const tableData of tables) {
+          const result = await client.query(`
+            INSERT INTO tables (
+              restaurant_id, number, capacity, min_capacity, max_capacity, 
+              shape, position, table_type, notes, is_accessible, 
+              location_notes, is_combinable, priority
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING *
+          `, [
+            tableData.restaurantId,
+            tableData.number,
+            tableData.capacity,
+            tableData.minCapacity,
+            tableData.maxCapacity,
+            tableData.shape || 'round',
+            JSON.stringify(tableData.position || {}),
+            tableData.tableType || 'standard',
+            tableData.notes || null,
+            tableData.isAccessible || false,
+            tableData.locationNotes || null,
+            tableData.isCombinable !== false,
+            tableData.priority || 0
+          ]);
+          
+          createdTables.push(this.mapFromDb(result.rows[0]));
+        }
+        
+        await client.query('COMMIT');
+        return createdTables;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error bulk creating tables:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get table summary statistics for a restaurant
+   */
+  static async getSummary(restaurantId: string): Promise<TableSummary> {
+    try {
+      const result = await db.query(`
+        SELECT 
+          COUNT(*) as total_tables,
+          SUM(capacity) as total_capacity,
+          AVG(capacity) as average_capacity,
+          COUNT(CASE WHEN is_accessible = true THEN 1 END) as accessible_tables,
+          COUNT(CASE WHEN is_combinable = true THEN 1 END) as combinable_tables,
+          table_type,
+          COUNT(*) as type_count
+        FROM tables 
+        WHERE restaurant_id = $1 AND is_active = true
+        GROUP BY table_type
+      `, [restaurantId]);
+
+      const totalResult = await db.query(`
+        SELECT 
+          COUNT(*) as total_tables,
+          SUM(capacity) as total_capacity,
+          AVG(capacity) as average_capacity,
+          COUNT(CASE WHEN is_accessible = true THEN 1 END) as accessible_tables,
+          COUNT(CASE WHEN is_combinable = true THEN 1 END) as combinable_tables
+        FROM tables 
+        WHERE restaurant_id = $1 AND is_active = true
+      `, [restaurantId]);
+
+      const totals = totalResult.rows[0];
+      const tablesByType: Record<string, number> = {};
+      
+      result.rows.forEach(row => {
+        tablesByType[row.table_type] = parseInt(row.type_count);
+      });
+
+      return {
+        totalTables: parseInt(totals.total_tables) || 0,
+        totalCapacity: parseInt(totals.total_capacity) || 0,
+        averageCapacity: parseFloat(totals.average_capacity) || 0,
+        tablesByType,
+        accessibleTables: parseInt(totals.accessible_tables) || 0,
+        combinableTables: parseInt(totals.combinable_tables) || 0
+      };
+    } catch (error) {
+      console.error('Error getting table summary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search tables by various criteria
+   */
+  static async search(
+    restaurantId: string,
+    searchTerm: string,
+    filters?: {
+      tableType?: string;
+      minCapacity?: number;
+      maxCapacity?: number;
+      isAccessible?: boolean;
+    }
+  ): Promise<Table[]> {
+    try {
+      const conditions = ['restaurant_id = $1', 'is_active = true'];
+      const values: any[] = [restaurantId];
+      let paramCount = 2;
+
+      // Search in table number, notes, and location notes
+      if (searchTerm) {
+        conditions.push(`(
+          number ILIKE $${paramCount} OR 
+          notes ILIKE $${paramCount} OR 
+          location_notes ILIKE $${paramCount}
+        )`);
+        values.push(`%${searchTerm}%`);
+        paramCount++;
+      }
+
+      if (filters?.tableType) {
+        conditions.push(`table_type = $${paramCount}`);
+        values.push(filters.tableType);
+        paramCount++;
+      }
+
+      if (filters?.minCapacity !== undefined) {
+        conditions.push(`capacity >= $${paramCount}`);
+        values.push(filters.minCapacity);
+        paramCount++;
+      }
+
+      if (filters?.maxCapacity !== undefined) {
+        conditions.push(`capacity <= $${paramCount}`);
+        values.push(filters.maxCapacity);
+        paramCount++;
+      }
+
+      if (filters?.isAccessible !== undefined) {
+        conditions.push(`is_accessible = $${paramCount}`);
+        values.push(filters.isAccessible);
+        paramCount++;
+      }
+
+      const result = await db.query(`
+        SELECT * FROM tables 
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY priority DESC, number ASC
+      `, values);
+
+      return result.rows.map(row => this.mapFromDb(row));
+    } catch (error) {
+      console.error('Error searching tables:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Map database row to Table interface
+   */
+  private static mapFromDb(row: any): Table {
+    return {
+      id: row.id,
+      restaurantId: row.restaurant_id,
+      number: row.number,
+      capacity: row.capacity,
+      minCapacity: row.min_capacity,
+      maxCapacity: row.max_capacity,
+      shape: row.shape,
+      position: row.position,
+      tableType: row.table_type,
+      notes: row.notes,
+      isAccessible: row.is_accessible,
+      locationNotes: row.location_notes,
+      isCombinable: row.is_combinable,
+      priority: row.priority,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
   }
 
   private static camelToSnake(str: string): string {

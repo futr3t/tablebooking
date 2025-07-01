@@ -24,7 +24,9 @@
       "Bash(node:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

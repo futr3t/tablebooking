@@ -31,8 +31,11 @@ export interface Restaurant {
   address: string;
   cuisine: string;
   description?: string;
-  capacity: number;
+  maxCovers?: number; // NULL = unlimited, replaces old capacity limit
   timeZone: string;
+  turnTimeMinutes: number; // Default time each booking lasts
+  staggerMinutes: number; // Minimum time between bookings
+  defaultSlotDuration: number; // Default time slot duration
   openingHours: OpeningHours;
   bookingSettings: BookingSettings;
   isActive: boolean;
@@ -82,6 +85,12 @@ export interface Table {
   maxCapacity: number;
   shape: TableShape;
   position: TablePosition;
+  tableType: TableType;
+  notes?: string;
+  isAccessible: boolean;
+  locationNotes?: string;
+  isCombinable: boolean;
+  priority: number; // Higher priority tables preferred for booking
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -93,11 +102,65 @@ export enum TableShape {
   RECTANGLE = 'rectangle'
 }
 
+export enum TableType {
+  STANDARD = 'standard',
+  BOOTH = 'booth',
+  BAR = 'bar',
+  HIGH_TOP = 'high_top',
+  PATIO = 'patio',
+  PRIVATE = 'private',
+  BANQUETTE = 'banquette',
+  COMMUNAL = 'communal'
+}
+
 export interface TablePosition {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+export interface TimeSlotRule {
+  id: string;
+  restaurantId: string;
+  name: string; // e.g., "Lunch Service", "Dinner Service"
+  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  maxConcurrentBookings?: number; // Max bookings allowed at same time
+  turnTimeMinutes?: number; // Override restaurant default for this time period
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TableCombination {
+  id: string;
+  restaurantId: string;
+  name: string; // e.g., "Tables 5+6", "Private Dining Area"
+  tableIds: string[]; // Array of table IDs that can be combined
+  minCapacity: number;
+  maxCapacity: number;
+  requiresApproval: boolean; // Staff must approve large party bookings
+  notes?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BulkTableOperation {
+  operation: 'create' | 'update' | 'delete';
+  tables: Partial<Table>[];
+}
+
+export interface TableSummary {
+  totalTables: number;
+  totalCapacity: number;
+  averageCapacity: number;
+  tablesByType: Record<TableType, number>;
+  accessibleTables: number;
+  combinableTables: number;
 }
 
 export interface Booking {

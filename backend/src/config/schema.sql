@@ -31,8 +31,11 @@ CREATE TABLE restaurants (
     address TEXT NOT NULL,
     cuisine VARCHAR(100),
     description TEXT,
-    capacity INTEGER DEFAULT 30,
+    max_covers INTEGER DEFAULT NULL, -- NULL = unlimited, replaces old capacity limit
     time_zone VARCHAR(50) DEFAULT 'UTC',
+    turn_time_minutes INTEGER DEFAULT 120, -- Default 2 hours per booking
+    stagger_minutes INTEGER DEFAULT 15, -- Minimum time between bookings
+    default_slot_duration INTEGER DEFAULT 30, -- Default 30 min time slots
     opening_hours JSONB NOT NULL DEFAULT '{}',
     booking_settings JSONB NOT NULL DEFAULT '{}',
     is_active BOOLEAN DEFAULT true,
@@ -44,12 +47,18 @@ CREATE TABLE restaurants (
 CREATE TABLE tables (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
-    number VARCHAR(10) NOT NULL,
+    number VARCHAR(50) NOT NULL, -- Increased size for custom numbering schemes
     capacity INTEGER NOT NULL,
     min_capacity INTEGER NOT NULL,
     max_capacity INTEGER NOT NULL,
     shape table_shape DEFAULT 'round',
     position JSONB NOT NULL DEFAULT '{}',
+    table_type VARCHAR(50) DEFAULT 'standard', -- standard, booth, bar, high_top, patio, private
+    notes TEXT,
+    is_accessible BOOLEAN DEFAULT false,
+    location_notes VARCHAR(255),
+    is_combinable BOOLEAN DEFAULT true, -- Can be combined with other tables
+    priority INTEGER DEFAULT 0, -- Higher priority tables preferred for booking
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -167,6 +176,48 @@ CREATE INDEX idx_widget_configs_restaurant_id ON widget_configs(restaurant_id);
 -- Create trigger for widget configs updated_at
 CREATE TRIGGER update_widget_configs_updated_at BEFORE UPDATE ON widget_configs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Time slot rules table for advanced scheduling
+CREATE TABLE time_slot_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL, -- e.g., "Lunch Service", "Dinner Service"
+    day_of_week INTEGER, -- 0=Sunday, 1=Monday, etc. NULL = applies to all days
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    slot_duration_minutes INTEGER DEFAULT 30,
+    max_concurrent_bookings INTEGER, -- Max bookings allowed at same time across all tables
+    turn_time_minutes INTEGER, -- Override restaurant default for this time period
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table combinations for managing joined tables
+CREATE TABLE table_combinations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL, -- e.g., "Tables 5+6", "Private Dining Area"
+    table_ids UUID[] NOT NULL, -- Array of table IDs that can be combined
+    min_capacity INTEGER NOT NULL,
+    max_capacity INTEGER NOT NULL,
+    requires_approval BOOLEAN DEFAULT false, -- Staff must approve large party bookings
+    notes TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add indexes for new tables
+CREATE INDEX idx_time_slot_rules_restaurant_id ON time_slot_rules(restaurant_id);
+CREATE INDEX idx_time_slot_rules_day_time ON time_slot_rules(day_of_week, start_time, end_time);
+CREATE INDEX idx_time_slot_rules_active ON time_slot_rules(is_active);
+CREATE INDEX idx_table_combinations_restaurant_id ON table_combinations(restaurant_id);
+CREATE INDEX idx_table_combinations_active ON table_combinations(is_active);
+
+-- Add triggers for new tables
+CREATE TRIGGER update_time_slot_rules_updated_at BEFORE UPDATE ON time_slot_rules FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_table_combinations_updated_at BEFORE UPDATE ON table_combinations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Function to generate API keys
 CREATE OR REPLACE FUNCTION generate_api_key()
 RETURNS VARCHAR(64) AS $$
@@ -188,6 +239,10 @@ INSERT INTO restaurants (
     address, 
     cuisine, 
     description,
+    max_covers,
+    turn_time_minutes,
+    stagger_minutes,
+    default_slot_duration,
     opening_hours,
     booking_settings
 ) VALUES (
@@ -196,7 +251,11 @@ INSERT INTO restaurants (
     '+1234567890',
     '123 Main Street, City, State 12345',
     'Italian',
-    'A cozy Italian restaurant with authentic cuisine',
+    'A cozy Italian restaurant with authentic cuisine and unlimited seating capacity',
+    NULL, -- Unlimited covers
+    120,  -- 2 hour default turn time
+    15,   -- 15 minute stagger
+    30,   -- 30 minute time slots
     '{
         "monday": {"isOpen": true, "openTime": "11:00", "closeTime": "22:00"},
         "tuesday": {"isOpen": true, "openTime": "11:00", "closeTime": "22:00"},
@@ -207,9 +266,9 @@ INSERT INTO restaurants (
         "sunday": {"isOpen": true, "openTime": "12:00", "closeTime": "21:00"}
     }',
     '{
-        "maxAdvanceBookingDays": 30,
+        "maxAdvanceBookingDays": 90,
         "minAdvanceBookingHours": 2,
-        "maxPartySize": 8,
+        "maxPartySize": null,
         "slotDuration": 30,
         "bufferTime": 15,
         "enableWaitlist": true,
@@ -224,8 +283,8 @@ INSERT INTO restaurants (
     }'
 );
 
--- Create sample tables for the restaurant
-INSERT INTO tables (restaurant_id, number, capacity, min_capacity, max_capacity, shape, position) 
+-- Create sample tables for the restaurant with enhanced data
+INSERT INTO tables (restaurant_id, number, capacity, min_capacity, max_capacity, shape, position, table_type, notes, is_accessible, location_notes, is_combinable, priority) 
 SELECT 
     r.id,
     t.number,
@@ -233,16 +292,24 @@ SELECT
     t.min_capacity,
     t.max_capacity,
     t.shape::table_shape,
-    t.position::jsonb
+    t.position::jsonb,
+    t.table_type,
+    t.notes,
+    t.is_accessible,
+    t.location_notes,
+    t.is_combinable,
+    t.priority
 FROM restaurants r,
 (VALUES 
-    ('T1', 2, 2, 4, 'round', '{"x": 50, "y": 50, "width": 60, "height": 60}'),
-    ('T2', 4, 2, 6, 'round', '{"x": 150, "y": 50, "width": 80, "height": 80}'),
-    ('T3', 6, 4, 8, 'rectangle', '{"x": 280, "y": 50, "width": 120, "height": 80}'),
-    ('T4', 2, 2, 4, 'round', '{"x": 50, "y": 180, "width": 60, "height": 60}'),
-    ('T5', 4, 2, 6, 'round', '{"x": 150, "y": 180, "width": 80, "height": 80}'),
-    ('T6', 8, 6, 10, 'rectangle', '{"x": 280, "y": 180, "width": 140, "height": 100}')
-) AS t(number, capacity, min_capacity, max_capacity, shape, position)
+    ('T1', 2, 2, 4, 'round', '{"x": 50, "y": 50, "width": 60, "height": 60}', 'bar', 'High-top bar table', true, 'Window view with city skyline', true, 0),
+    ('T2', 4, 2, 6, 'round', '{"x": 150, "y": 50, "width": 80, "height": 80}', 'standard', 'Perfect for couples and small groups', false, 'Main dining area', true, 1),
+    ('T3', 6, 4, 8, 'rectangle', '{"x": 280, "y": 50, "width": 120, "height": 80}', 'booth', 'Comfortable booth seating', false, 'Quiet corner with intimate lighting', true, 2),
+    ('T4', 2, 2, 4, 'round', '{"x": 50, "y": 180, "width": 60, "height": 60}', 'standard', 'Cozy table for two', true, 'Near entrance, wheelchair accessible', true, 0),
+    ('T5', 4, 2, 6, 'round', '{"x": 150, "y": 180, "width": 80, "height": 80}', 'standard', 'Family-friendly table', false, 'Central location in dining room', true, 1),
+    ('T6', 8, 6, 10, 'rectangle', '{"x": 280, "y": 180, "width": 140, "height": 100}', 'private', 'Large table for celebrations', false, 'Private dining area with wine display', true, 3),
+    ('T7', 10, 8, 12, 'rectangle', '{"x": 450, "y": 50, "width": 160, "height": 120}', 'private', 'Executive dining table', false, 'Separate room with presentation screen', false, 3),
+    ('T8', 3, 2, 4, 'round', '{"x": 450, "y": 200, "width": 70, "height": 70}', 'patio', 'Outdoor terrace table', false, 'Garden view with fresh air', true, 1)
+) AS t(number, capacity, min_capacity, max_capacity, shape, position, table_type, notes, is_accessible, location_notes, is_combinable, priority)
 WHERE r.name = 'Sample Restaurant';
 
 -- Create sample widget configuration for the restaurant
@@ -267,4 +334,74 @@ SELECT
         "confirmationMessage": "Thank you for booking with Sample Restaurant! We look forward to serving you."
     }'
 FROM restaurants r
+WHERE r.name = 'Sample Restaurant';
+
+-- Create sample time slot rules
+INSERT INTO time_slot_rules (restaurant_id, name, day_of_week, start_time, end_time, slot_duration_minutes, max_concurrent_bookings, turn_time_minutes)
+SELECT 
+    r.id,
+    'Lunch Service',
+    NULL, -- All days
+    '12:00',
+    '15:00',
+    30, -- 30 minute slots
+    15, -- Max 15 concurrent lunch bookings
+    90  -- 1.5 hour lunch turns
+FROM restaurants r 
+WHERE r.name = 'Sample Restaurant';
+
+INSERT INTO time_slot_rules (restaurant_id, name, day_of_week, start_time, end_time, slot_duration_minutes, max_concurrent_bookings, turn_time_minutes)
+SELECT 
+    r.id,
+    'Dinner Service',
+    NULL, -- All days
+    '17:00',
+    '22:00',
+    30, -- 30 minute slots
+    20, -- Max 20 concurrent dinner bookings
+    120 -- 2 hour dinner turns
+FROM restaurants r 
+WHERE r.name = 'Sample Restaurant';
+
+INSERT INTO time_slot_rules (restaurant_id, name, day_of_week, start_time, end_time, slot_duration_minutes, max_concurrent_bookings, turn_time_minutes)
+SELECT 
+    r.id,
+    'Weekend Brunch',
+    0, -- Sunday only
+    '10:00',
+    '14:00',
+    30, -- 30 minute slots
+    12, -- Max 12 concurrent brunch bookings
+    90  -- 1.5 hour brunch turns
+FROM restaurants r 
+WHERE r.name = 'Sample Restaurant';
+
+-- Create sample table combinations for large parties
+INSERT INTO table_combinations (restaurant_id, name, table_ids, min_capacity, max_capacity, notes)
+SELECT 
+    r.id,
+    'Private Dining Suite',
+    ARRAY[
+        (SELECT id FROM tables WHERE number = 'T6' AND restaurant_id = r.id),
+        (SELECT id FROM tables WHERE number = 'T7' AND restaurant_id = r.id)
+    ],
+    14,
+    22,
+    'Combined private dining area perfect for business meetings and celebrations'
+FROM restaurants r 
+WHERE r.name = 'Sample Restaurant';
+
+INSERT INTO table_combinations (restaurant_id, name, table_ids, min_capacity, max_capacity, requires_approval, notes)
+SELECT 
+    r.id,
+    'Central Dining Area',
+    ARRAY[
+        (SELECT id FROM tables WHERE number = 'T2' AND restaurant_id = r.id),
+        (SELECT id FROM tables WHERE number = 'T5' AND restaurant_id = r.id)
+    ],
+    6,
+    12,
+    false,
+    'Main dining area tables that can be joined for medium parties'
+FROM restaurants r 
 WHERE r.name = 'Sample Restaurant';
