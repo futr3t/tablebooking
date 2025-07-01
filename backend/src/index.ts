@@ -50,13 +50,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Temporarily disable problematic middleware for Railway debugging
-if (process.env.NODE_ENV !== 'production') {
-  app.use(securityMiddleware);
-  app.use(compressionMiddleware);
-  app.use(rateLimitMiddleware);
-  app.use(sanitizeInput);
-  app.use(validateContentType);
-}
+// app.use(securityMiddleware);
+// app.use(compressionMiddleware);  
+// app.use(rateLimitMiddleware);
+// app.use(sanitizeInput);
+// app.use(validateContentType);
 
 app.use('/api', routes);
 
