@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Grid,
   Card,
@@ -120,71 +119,127 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard - {format(new Date(), 'EEEE, MMMM d, yyyy')}
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ 
+          fontWeight: 700, 
+          color: 'text.primary',
+          mb: 0.5
+        }}>
+          Dashboard
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          {format(new Date(), 'EEEE, MMMM d, yyyy')} • Today's bookings and activity
+        </Typography>
+      </Box>
       
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
       
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Bookings Today
-              </Typography>
-              <Typography variant="h4">{stats.totalToday}</Typography>
+          <Card sx={{ 
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            color: 'white',
+            border: 'none'
+          }}>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {stats.totalToday}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Total Bookings Today
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Guests
-              </Typography>
-              <Typography variant="h4">{stats.totalGuests}</Typography>
+          <Card sx={{ 
+            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+            color: 'white',
+            border: 'none'
+          }}>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {stats.totalGuests}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Total Guests
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Confirmed
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {stats.confirmed}
-              </Typography>
+          <Card sx={{ 
+            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            color: 'white',
+            border: 'none'
+          }}>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {stats.confirmed}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Confirmed
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Pending
-              </Typography>
-              <Typography variant="h4" color="warning.main">
-                {stats.pending}
-              </Typography>
+          <Card sx={{ 
+            background: 'linear-gradient(135deg, #d97706 0%, #92400e 100%)',
+            color: 'white',
+            border: 'none'
+          }}>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {stats.pending}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Pending
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
       
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Today's Bookings Timeline
-        </Typography>
-        <TimelineView 
-          bookings={bookings} 
-          onBookingUpdate={handleBookingUpdate}
-        />
-      </Paper>
+      <Card sx={{ p: 0 }}>
+        <Box sx={{ 
+          p: 3, 
+          borderBottom: '1px solid #e2e8f0',
+          background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%)'
+        }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+            Today's Bookings Timeline
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Real-time view of all bookings scheduled for today
+          </Typography>
+        </Box>
+        <Box sx={{ p: 3 }}>
+          <TimelineView 
+            bookings={bookings} 
+            onBookingUpdate={handleBookingUpdate}
+          />
+        </Box>
+      </Card>
     </Box>
   );
 };

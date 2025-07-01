@@ -217,79 +217,130 @@ const TableManagementDashboard: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Table Management
-        </Typography>
+    <Box>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        mb: 4,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 0 }
+      }}>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ 
+            fontWeight: 700,
+            color: 'text.primary',
+            mb: 0.5
+          }}>
+            Table Management
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Configure your restaurant's table layout, capacity, and settings
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleCreateTable}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            fontWeight: 600,
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            '&:hover': {
+              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+              transform: 'translateY(-1px)',
+            },
+          }}
         >
-          Add Table
+          Add New Table
         </Button>
       </Box>
 
       {/* Summary Cards */}
       {summary && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TableIcon sx={{ mr: 2, color: 'primary.main' }} />
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: 'white',
+              border: 'none'
+            }}>
+              <CardContent sx={{ pb: '16px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h6">{summary.totalTables}</Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {summary.totalTables}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       Total Tables
                     </Typography>
                   </Box>
+                  <TableIcon sx={{ fontSize: 40, opacity: 0.8 }} />
                 </Box>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <RestaurantIcon sx={{ mr: 2, color: 'success.main' }} />
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              color: 'white',
+              border: 'none'
+            }}>
+              <CardContent sx={{ pb: '16px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h6">{summary.totalCapacity}</Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {summary.totalCapacity}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       Total Capacity
                     </Typography>
                   </Box>
+                  <RestaurantIcon sx={{ fontSize: 40, opacity: 0.8 }} />
                 </Box>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <AccessibleIcon sx={{ mr: 2, color: 'info.main' }} />
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+              color: 'white',
+              border: 'none'
+            }}>
+              <CardContent sx={{ pb: '16px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h6">{summary.accessibleTables}</Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {summary.accessibleTables}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       Accessible Tables
                     </Typography>
                   </Box>
+                  <AccessibleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
                 </Box>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <StatsIcon sx={{ mr: 2, color: 'warning.main' }} />
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+              color: 'white',
+              border: 'none'
+            }}>
+              <CardContent sx={{ pb: '16px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h6">{summary.averageCapacity.toFixed(1)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {summary.averageCapacity.toFixed(1)}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       Avg Capacity
                     </Typography>
                   </Box>
+                  <StatsIcon sx={{ fontSize: 40, opacity: 0.8 }} />
                 </Box>
               </CardContent>
             </Card>
