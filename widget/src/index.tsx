@@ -49,6 +49,8 @@ class TablebookingWidget {
         })
         .catch(error => {
           console.error('TablebookingWidget: Failed to load restaurant info:', error);
+          console.error('API Key:', apiKey);
+          console.error('Base URL:', baseUrl);
           root.render(
             <div style={{
               padding: '20px',
@@ -58,9 +60,16 @@ class TablebookingWidget {
               borderRadius: '8px',
               fontFamily: 'Arial, sans-serif'
             }}>
-              <h3>Booking Widget Error</h3>
-              <p>Unable to load booking form. Please check your API key and try again.</p>
-              <small>Error: {error.message}</small>
+              <h3>Widget Loading Error</h3>
+              <p>Failed to load widget configuration. Please refresh the page and try again.</p>
+              <details style={{ marginTop: '10px', textAlign: 'left' }}>
+                <summary>Technical Details</summary>
+                <small>
+                  <div>Error: {error.message}</div>
+                  <div>API Key: {apiKey ? apiKey.substring(0, 8) + '...' : 'Missing'}</div>
+                  <div>Base URL: {baseUrl}</div>
+                </small>
+              </details>
             </div>
           );
         });

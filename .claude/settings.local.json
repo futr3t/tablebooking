@@ -22,7 +22,9 @@
       "Bash(npm run build:*)",
       "Bash(npm run query:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": []
   }

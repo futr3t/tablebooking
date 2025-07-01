@@ -78,7 +78,7 @@ router.get('/demo', (req, res) => {
         <h2>🔧 Integration Code</h2>
         <p>Restaurants add this code to their website:</p>
         <pre style="background: #f0f0f0; padding: 15px; border-radius: 4px; overflow-x: auto;"><code>&lt;!-- TableBooking Widget --&gt;
-&lt;script src="${req.protocol}://${req.get('host')}/widget.js"&gt;&lt;/script&gt;
+&lt;script src="https://${req.get('host')}/widget.js"&gt;&lt;/script&gt;
 &lt;div id="tablebooking-widget" data-api-key="YOUR_API_KEY"&gt;&lt;/div&gt;
 &lt;script&gt;
   TablebookingWidget.init({
