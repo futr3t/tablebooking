@@ -28,15 +28,10 @@ export interface WidgetConfig {
 export class WidgetConfigModel {
   static async findByApiKey(apiKey: string): Promise<WidgetConfig | null> {
     try {
-      console.log('Querying widget_configs for API key:', apiKey);
       const result = await db.query(
         'SELECT * FROM widget_configs WHERE api_key = $1 AND is_enabled = true',
         [apiKey]
       );
-      console.log('Query result rows:', result.rowCount);
-      if (result.rows[0]) {
-        console.log('Found widget config:', result.rows[0].id);
-      }
       return result.rows[0] ? mapWidgetConfigFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding widget config by API key:', error);

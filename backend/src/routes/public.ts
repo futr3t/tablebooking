@@ -15,8 +15,6 @@ import { validate } from '../middleware/validation';
 
 const router = Router();
 
-console.log('Public routes loaded');
-
 // Apply widget-specific middleware to all routes
 router.use(widgetCors);
 router.use(widgetSecurity);
