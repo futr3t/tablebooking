@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { validateWidgetConfig, validateToggleWidget } from '../middleware/widgetValidation';
 import { 
   getWidgetConfig, 
   updateWidgetConfig, 
@@ -14,9 +15,9 @@ const router = Router();
 
 // Widget configuration API endpoints (full database-backed implementation)
 router.get('/config', requireAuth, getWidgetConfig);
-router.put('/config', requireAuth, updateWidgetConfig);
+router.put('/config', requireAuth, validateWidgetConfig, updateWidgetConfig);
 router.post('/api-key/regenerate', requireAuth, regenerateApiKey);
-router.put('/toggle', requireAuth, toggleWidget);
+router.put('/toggle', requireAuth, validateToggleWidget, toggleWidget);
 router.get('/installation', requireAuth, getInstallationInstructions);
 
 export default router;

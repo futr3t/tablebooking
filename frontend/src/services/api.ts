@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, User, Booking } from '../types';
+import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -108,27 +108,27 @@ export const bookingService = {
 };
 
 export const widgetService = {
-  getConfig: async () => {
+  getConfig: async (): Promise<WidgetConfig> => {
     const response = await api.get('/widget/config');
     return response.data.data || response.data;
   },
 
-  updateConfig: async (config: any) => {
+  updateConfig: async (config: Partial<WidgetConfig>): Promise<WidgetConfig> => {
     const response = await api.put('/widget/config', config);
     return response.data.data || response.data;
   },
 
-  toggleWidget: async (enabled: boolean) => {
-    const response = await api.post('/widget/toggle', { enabled });
+  toggleWidget: async (enabled: boolean): Promise<WidgetConfig> => {
+    const response = await api.put('/widget/toggle', { enabled });
     return response.data.data || response.data;
   },
 
-  regenerateApiKey: async () => {
+  regenerateApiKey: async (): Promise<WidgetConfig> => {
     const response = await api.post('/widget/api-key/regenerate');
     return response.data.data || response.data;
   },
 
-  getInstallationInstructions: async () => {
+  getInstallationInstructions: async (): Promise<InstallationInstructions> => {
     const response = await api.get('/widget/installation');
     return response.data.data || response.data;
   },

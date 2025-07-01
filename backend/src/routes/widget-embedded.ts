@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { WIDGET_JS_CONTENT, WIDGET_METADATA } from '../widget-content';
+import { widgetFileRateLimit, demoRateLimit } from '../middleware/widgetRateLimit';
 
 const router = Router();
 
 // Serve the widget JavaScript file from memory
-router.get('/widget.js', (req, res) => {
+router.get('/widget.js', widgetFileRateLimit, (req, res) => {
   // Set appropriate headers
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
@@ -15,7 +16,7 @@ router.get('/widget.js', (req, res) => {
 });
 
 // Widget demo page
-router.get('/demo', (req, res) => {
+router.get('/demo', demoRateLimit, (req, res) => {
   const demoHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,7 +98,7 @@ router.get('/demo', (req, res) => {
             if (window.TablebookingWidget) {
                 window.TablebookingWidget.init({
                     containerId: 'tablebooking-widget',
-                    apiKey: 'B946B3EC9EDBB544FD29A3AAD280E78F218E20853D5C341EFC90C0AB1358B392',
+                    apiKey: 'DEMO_API_KEY_REPLACE_WITH_ACTUAL',
                     baseUrl: window.location.origin
                 });
             } else {

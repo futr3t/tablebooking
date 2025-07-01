@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import bookingRoutes from './booking';
 import publicRoutes from './public';
 import widgetRoutes from './widget';
+import publicWidgetRoutes from './publicWidget';
 import widgetEmbeddedRoutes from './widget-embedded';
 import diagnosticRoutes from './diagnostic';
 
@@ -12,6 +13,7 @@ router.use('/auth', authRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/public', publicRoutes);
 router.use('/widget', widgetRoutes);
+router.use('/widget/public', publicWidgetRoutes); // Public widget API routes
 router.use('/', widgetEmbeddedRoutes); // Root level widget routes
 router.use('/diagnostic', diagnosticRoutes);
 

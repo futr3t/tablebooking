@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { WidgetConfigModel } from '../models/WidgetConfig';
-import { ApiResponse } from '../types';
+import { ApiResponse, User } from '../types';
 
 // Extend Request type to include user info from auth middleware
 interface AuthenticatedRequest extends Request {
-  user?: any;
+  user?: User;
 }
 
 /**
@@ -22,36 +22,25 @@ export const getWidgetConfig = async (req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    const widgetConfig = await WidgetConfigModel.findByRestaurantId(user.restaurantId);
-
-    if (!widgetConfig) {
-      // If no widget config exists, create a default one
-      const newConfig = await WidgetConfigModel.create({
-        restaurantId: user.restaurantId,
-        isEnabled: false, // Start disabled by default
-        theme: {
-          primaryColor: '#1976d2',
-          secondaryColor: '#f5f5f5',
-          fontFamily: 'Roboto, sans-serif',
-          borderRadius: '4px'
-        },
-        settings: {
-          showAvailableSlots: true,
-          maxPartySize: 8,
-          advanceBookingDays: 30,
-          requirePhone: true,
-          requireEmail: false,
-          showSpecialRequests: true,
-          confirmationMessage: 'Thank you for your reservation!'
-        }
-      });
-
-      res.json({
-        success: true,
-        data: newConfig
-      } as ApiResponse);
-      return;
-    }
+    // Use findOrCreate to handle race conditions
+    const widgetConfig = await WidgetConfigModel.findOrCreate(user.restaurantId, {
+      isEnabled: false, // Start disabled by default
+      theme: {
+        primaryColor: '#1976d2',
+        secondaryColor: '#f5f5f5',
+        fontFamily: 'Roboto, sans-serif',
+        borderRadius: '4px'
+      },
+      settings: {
+        showAvailableSlots: true,
+        maxPartySize: 8,
+        advanceBookingDays: 30,
+        requirePhone: true,
+        requireEmail: false,
+        showSpecialRequests: true,
+        confirmationMessage: 'Thank you for your reservation!'
+      }
+    });
 
     res.json({
       success: true,

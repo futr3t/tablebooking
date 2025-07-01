@@ -175,4 +175,66 @@ export class WidgetConfigModel {
       throw error;
     }
   }
+
+  /**
+   * Find widget config by restaurant ID, or create a default one if it doesn't exist
+   * This method handles race conditions by using database-level UPSERT
+   */
+  static async findOrCreate(restaurantId: string, defaultData?: Partial<WidgetConfig>): Promise<WidgetConfig> {
+    try {
+      // First try to find existing config
+      const existing = await this.findByRestaurantId(restaurantId);
+      if (existing) {
+        return existing;
+      }
+
+      // If not found, create with database-level conflict resolution
+      const theme = defaultData?.theme || {
+        primaryColor: '#1976d2',
+        secondaryColor: '#f5f5f5',
+        fontFamily: 'Roboto, sans-serif',
+        borderRadius: '4px'
+      };
+
+      const settings = defaultData?.settings || {
+        showAvailableSlots: true,
+        maxPartySize: 8,
+        advanceBookingDays: 30,
+        requirePhone: true,
+        requireEmail: false,
+        showSpecialRequests: true,
+        confirmationMessage: 'Thank you for your reservation!'
+      };
+
+      // Use INSERT ... ON CONFLICT to handle race conditions
+      const result = await db.query(`
+        INSERT INTO widget_configs (
+          restaurant_id, api_key, is_enabled, theme, settings
+        ) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (restaurant_id) DO UPDATE SET
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `, [
+        restaurantId,
+        await this.generateApiKey(),
+        defaultData?.isEnabled || false,
+        JSON.stringify(theme),
+        JSON.stringify(settings)
+      ]);
+
+      return mapWidgetConfigFromDb(result.rows[0]);
+    } catch (error) {
+      // If conflict happened and another process created the record,
+      // try to find it again
+      if (error.code === '23505') { // unique_violation
+        const existing = await this.findByRestaurantId(restaurantId);
+        if (existing) {
+          return existing;
+        }
+      }
+      
+      console.error('Error in findOrCreate widget config:', error);
+      throw error;
+    }
+  }
 }
