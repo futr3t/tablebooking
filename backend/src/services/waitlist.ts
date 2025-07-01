@@ -1,7 +1,19 @@
 import { BookingModel } from '../models/Booking';
 import { RestaurantModel } from '../models/Restaurant';
 import { AvailabilityService } from './availability';
-import { Booking } from '../types';
+import { Booking, BookingStatus } from '../types';
+
+// Helper function to extract date string from Date or timestamp
+const getDateString = (dateValue: any): string => {
+  if (!dateValue) return '';
+  if (dateValue instanceof Date) {
+    return dateValue.toISOString().split('T')[0];
+  }
+  if (typeof dateValue === 'string') {
+    return dateValue.split('T')[0];
+  }
+  return String(dateValue).split('T')[0];
+};
 
 export class WaitlistService {
   static async addToWaitlist(waitlistData: {
@@ -49,7 +61,7 @@ export class WaitlistService {
       for (const booking of waitlistBookings) {
         const availability = await AvailabilityService.checkAvailability(
           restaurantId,
-          booking.bookingDate.toISOString().split('T')[0],
+          getDateString(booking.bookingDate),
           booking.partySize,
           booking.duration
         );
@@ -65,7 +77,7 @@ export class WaitlistService {
             tableId: availableSlot.tableId,
             isWaitlisted: false,
             waitlistPosition: undefined,
-            status: 'confirmed' as any
+            status: BookingStatus.CONFIRMED
           });
 
           // Update waitlist positions for remaining bookings
@@ -123,7 +135,7 @@ export class WaitlistService {
       if (booking.waitlistPosition) {
         await this.updateWaitlistPositions(
           booking.restaurantId,
-          booking.bookingDate.toISOString().split('T')[0],
+          getDateString(booking.bookingDate),
           booking.waitlistPosition
         );
       }

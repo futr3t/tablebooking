@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
 import { JWTPayload, User, UserRole } from '../types';
 
 const JWT_SECRET: string = process.env.JWT_SECRET || 'fallback-secret-key-for-development-only';
@@ -13,12 +13,21 @@ export class AuthService {
       restaurantId: user.restaurantId
     };
 
-    return jwt.sign(payload, JWT_SECRET);
+    return jwt.sign(payload, JWT_SECRET, {
+      expiresIn: '24h',
+      issuer: 'tablebooking-api',
+      audience: 'tablebooking-app'
+    });
   }
 
   static verifyToken(token: string): JWTPayload {
     try {
-      return jwt.verify(token, JWT_SECRET) as JWTPayload;
+      const options: VerifyOptions = {
+        issuer: 'tablebooking-api',
+        audience: 'tablebooking-app'
+      };
+      
+      return jwt.verify(token, JWT_SECRET, options) as JWTPayload;
     } catch (error) {
       throw new Error('Invalid or expired token');
     }

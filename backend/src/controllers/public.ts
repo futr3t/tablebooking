@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { WidgetConfigModel } from '../models/WidgetConfig';
 import { BookingModel } from '../models/Booking';
-import { availabilityService } from '../services/availability';
+import { AvailabilityService } from '../services/availability';
 import { ApiResponse } from '../types';
 
 // Extend Request type to include restaurant info from API key middleware
@@ -13,16 +13,17 @@ interface PublicRequest extends Request {
 /**
  * Get restaurant information for the widget
  */
-export const getRestaurantInfo = async (req: PublicRequest, res: Response) => {
+export const getRestaurantInfo = async (req: PublicRequest, res: Response): Promise<void> => {
   try {
     const restaurant = req.restaurant;
     const widgetConfig = req.widgetConfig;
 
     if (!restaurant || !widgetConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Restaurant not found or widget not configured'
       } as ApiResponse);
+      return;
     }
 
     // Return sanitized restaurant info for public consumption
@@ -59,38 +60,41 @@ export const getRestaurantInfo = async (req: PublicRequest, res: Response) => {
 /**
  * Get available time slots for booking
  */
-export const getAvailability = async (req: PublicRequest, res: Response) => {
+export const getAvailability = async (req: PublicRequest, res: Response): Promise<void> => {
   try {
     const { date, partySize } = req.query;
     const restaurant = req.restaurant;
     const widgetConfig = req.widgetConfig;
 
     if (!restaurant || !widgetConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Restaurant not found or widget not configured'
       } as ApiResponse);
+      return;
     }
 
     // Validate required parameters
     if (!date || !partySize) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Date and party size are required'
       } as ApiResponse);
+      return;
     }
 
     // Validate party size against widget settings
     const partySizeNum = parseInt(partySize as string);
     if (partySizeNum > widgetConfig.settings.maxPartySize) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: `Party size cannot exceed ${widgetConfig.settings.maxPartySize} guests`
       } as ApiResponse);
+      return;
     }
 
     // Get availability using existing service
-    const availability = await availabilityService.getAvailableTimeSlots(
+    const availability = await AvailabilityService.checkAvailability(
       restaurant.id,
       date as string,
       partySizeNum
@@ -112,48 +116,53 @@ export const getAvailability = async (req: PublicRequest, res: Response) => {
 /**
  * Create a new booking through the widget
  */
-export const createBooking = async (req: PublicRequest, res: Response) => {
+export const createBooking = async (req: PublicRequest, res: Response): Promise<void> => {
   try {
     const restaurant = req.restaurant;
     const widgetConfig = req.widgetConfig;
 
     if (!restaurant || !widgetConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Restaurant not found or widget not configured'
       } as ApiResponse);
+      return;
     }
 
     const { customerName, customerEmail, customerPhone, partySize, bookingDate, bookingTime, specialRequests } = req.body;
 
     // Validate required fields based on widget settings
     if (!customerName) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Customer name is required'
       } as ApiResponse);
+      return;
     }
 
     if (widgetConfig.settings.requireEmail && !customerEmail) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Email is required'
       } as ApiResponse);
+      return;
     }
 
     if (widgetConfig.settings.requirePhone && !customerPhone) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Phone number is required'
       } as ApiResponse);
+      return;
     }
 
     // Validate party size
     if (partySize > widgetConfig.settings.maxPartySize) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: `Party size cannot exceed ${widgetConfig.settings.maxPartySize} guests`
       } as ApiResponse);
+      return;
     }
 
     // Create booking data
@@ -190,10 +199,11 @@ export const createBooking = async (req: PublicRequest, res: Response) => {
     
     // Handle specific errors
     if (error.message?.includes('No suitable table found')) {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         error: 'No tables available for the selected time. Please choose a different time.'
       } as ApiResponse);
+      return;
     }
 
     res.status(500).json({
@@ -206,26 +216,28 @@ export const createBooking = async (req: PublicRequest, res: Response) => {
 /**
  * Get booking details by confirmation code
  */
-export const getBookingByConfirmation = async (req: PublicRequest, res: Response) => {
+export const getBookingByConfirmation = async (req: PublicRequest, res: Response): Promise<void> => {
   try {
     const { confirmationCode } = req.params;
     const restaurant = req.restaurant;
 
     if (!restaurant) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Restaurant not found'
       } as ApiResponse);
+      return;
     }
 
     // Find booking by confirmation code and restaurant
     const booking = await BookingModel.findByConfirmationCode(confirmationCode);
 
     if (!booking || booking.restaurantId !== restaurant.id) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Booking not found'
       } as ApiResponse);
+      return;
     }
 
     // Return sanitized booking info

@@ -39,7 +39,7 @@ router.get('/widget-configs', async (req: Request, res: Response) => {
 });
 
 // Fix widget config endpoint
-router.post('/fix-widget-config', async (req: Request, res: Response) => {
+router.post('/fix-widget-config', async (req: Request, res: Response): Promise<void> => {
   try {
     const targetApiKey = 'B946B3EC9EDBB544FD29A3AAD280E78F218E20853D5C341EFC90C0AB1358B392';
     
@@ -49,10 +49,11 @@ router.post('/fix-widget-config', async (req: Request, res: Response) => {
     );
     
     if (restaurantResult.rowCount === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Sample Restaurant not found'
       });
+      return;
     }
     
     const restaurant = restaurantResult.rows[0];

@@ -6,6 +6,18 @@ import { BookingLockService } from '../services/booking-lock';
 import { AuthRequest, ApiResponse, BookingStatus } from '../types';
 import { createError, asyncHandler } from '../middleware/error';
 
+// Helper function to extract date string from Date or timestamp
+const getDateString = (dateValue: any): string => {
+  if (!dateValue) return '';
+  if (dateValue instanceof Date) {
+    return dateValue.toISOString().split('T')[0];
+  }
+  if (typeof dateValue === 'string') {
+    return dateValue.split('T')[0];
+  }
+  return String(dateValue).split('T')[0];
+};
+
 export const checkAvailability = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { restaurantId, date, partySize, duration } = req.query;
 
@@ -226,7 +238,7 @@ export const updateBooking = asyncHandler(async (req: AuthRequest, res: Response
   // Invalidate availability cache
   await AvailabilityService.invalidateAvailabilityCache(
     updatedBooking.restaurantId,
-    updatedBooking.bookingDate.toISOString().split('T')[0]
+    getDateString(updatedBooking.bookingDate)
   );
 
   res.json({
@@ -261,10 +273,10 @@ export const cancelBooking = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   // Process waitlist for the freed slot
-  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
+  await WaitlistService.processWaitlistForDate(booking.restaurantId, getDateString(booking.bookingDate));
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
+  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, getDateString(booking.bookingDate));
 
   res.json({
     success: true,
@@ -300,10 +312,10 @@ export const markNoShow = asyncHandler(async (req: AuthRequest, res: Response): 
   }
 
   // Process waitlist for the freed slot
-  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
+  await WaitlistService.processWaitlistForDate(booking.restaurantId, getDateString(booking.bookingDate));
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
+  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, getDateString(booking.bookingDate));
 
   res.json({
     success: true,
