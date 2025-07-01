@@ -56,6 +56,9 @@ app.use(cookieParser());
 // app.use(sanitizeInput);
 // app.use(validateContentType);
 
+// Serve static files (for widget distribution)
+app.use('/widget', express.static('public/widget'));
+
 app.use('/api', routes);
 
 app.use(notFoundHandler);
