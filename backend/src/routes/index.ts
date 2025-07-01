@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import authRoutes from './auth';
 import bookingRoutes from './booking';
+import publicRoutes from './public';
+import widgetRoutes from './widget';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/bookings', bookingRoutes);
+router.use('/public', publicRoutes);
+router.use('/widget', widgetRoutes);
 
 router.get('/health', (req, res) => {
   res.json({

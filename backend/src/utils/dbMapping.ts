@@ -56,3 +56,23 @@ export const mapBookingToDb = (booking: any) => ({
   notes: booking.notes,
   special_requests: booking.specialRequests
 });
+
+// Widget Config mapping functions
+export const mapWidgetConfigFromDb = (dbWidgetConfig: any) => ({
+  id: dbWidgetConfig.id,
+  restaurantId: dbWidgetConfig.restaurant_id,
+  apiKey: dbWidgetConfig.api_key,
+  isEnabled: dbWidgetConfig.is_enabled,
+  theme: dbWidgetConfig.theme,
+  settings: dbWidgetConfig.settings,
+  createdAt: dbWidgetConfig.created_at,
+  updatedAt: dbWidgetConfig.updated_at,
+});
+
+export const mapWidgetConfigToDb = (widgetConfig: any) => ({
+  restaurant_id: widgetConfig.restaurantId,
+  api_key: widgetConfig.apiKey,
+  is_enabled: widgetConfig.isEnabled,
+  theme: widgetConfig.theme,
+  settings: widgetConfig.settings,
+});

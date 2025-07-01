@@ -134,6 +134,48 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER set_booking_confirmation_code BEFORE INSERT ON bookings FOR EACH ROW EXECUTE FUNCTION set_confirmation_code();
 
+-- Widget configurations table
+CREATE TABLE widget_configs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+    api_key VARCHAR(64) UNIQUE NOT NULL,
+    is_enabled BOOLEAN DEFAULT true,
+    theme JSONB NOT NULL DEFAULT '{
+        "primaryColor": "#1976d2",
+        "secondaryColor": "#f5f5f5",
+        "fontFamily": "Roboto, sans-serif",
+        "borderRadius": "4px"
+    }',
+    settings JSONB NOT NULL DEFAULT '{
+        "showAvailableSlots": true,
+        "maxPartySize": 8,
+        "advanceBookingDays": 30,
+        "requirePhone": true,
+        "requireEmail": false,
+        "showSpecialRequests": true,
+        "confirmationMessage": "Thank you for your reservation!"
+    }',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(restaurant_id)
+);
+
+-- Add index for widget configs
+CREATE INDEX idx_widget_configs_api_key ON widget_configs(api_key);
+CREATE INDEX idx_widget_configs_restaurant_id ON widget_configs(restaurant_id);
+
+-- Create trigger for widget configs updated_at
+CREATE TRIGGER update_widget_configs_updated_at BEFORE UPDATE ON widget_configs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to generate API keys
+CREATE OR REPLACE FUNCTION generate_api_key()
+RETURNS VARCHAR(64) AS $$
+BEGIN
+    RETURN UPPER(SUBSTRING(MD5(RANDOM()::TEXT || EXTRACT(EPOCH FROM NOW())::TEXT) FROM 1 FOR 32)) || 
+           UPPER(SUBSTRING(MD5(RANDOM()::TEXT || EXTRACT(EPOCH FROM NOW())::TEXT) FROM 1 FOR 32));
+END;
+$$ LANGUAGE plpgsql;
+
 -- Insert default super admin user (password: admin123)
 INSERT INTO users (email, password, first_name, last_name, role) VALUES 
 ('admin@tablebooking.com', '$2a$10$K7L/XL.dq1i8p9GhN3yFGOJUJ9.dqDqDqDqDqDqDqDqDqDqDqDqDq', 'Super', 'Admin', 'super_admin');
@@ -201,4 +243,28 @@ FROM restaurants r,
     ('T5', 4, 2, 6, 'round', '{"x": 150, "y": 180, "width": 80, "height": 80}'),
     ('T6', 8, 6, 10, 'rectangle', '{"x": 280, "y": 180, "width": 140, "height": 100}')
 ) AS t(number, capacity, min_capacity, max_capacity, shape, position)
+WHERE r.name = 'Sample Restaurant';
+
+-- Create sample widget configuration for the restaurant
+INSERT INTO widget_configs (restaurant_id, api_key, is_enabled, theme, settings)
+SELECT 
+    r.id,
+    generate_api_key(),
+    true,
+    '{
+        "primaryColor": "#2E8B57",
+        "secondaryColor": "#F5F5DC",
+        "fontFamily": "Georgia, serif",
+        "borderRadius": "8px"
+    }',
+    '{
+        "showAvailableSlots": true,
+        "maxPartySize": 8,
+        "advanceBookingDays": 30,
+        "requirePhone": true,
+        "requireEmail": true,
+        "showSpecialRequests": true,
+        "confirmationMessage": "Thank you for booking with Sample Restaurant! We look forward to serving you."
+    }'
+FROM restaurants r
 WHERE r.name = 'Sample Restaurant';
