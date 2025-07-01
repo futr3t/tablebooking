@@ -12,6 +12,10 @@ interface PublicRequest extends Request {
  * Middleware to validate API key and attach restaurant/widget config to request
  */
 export const validateApiKey = async (req: PublicRequest, res: Response, next: NextFunction) => {
+  console.log('validateApiKey middleware called');
+  console.log('Request URL:', req.url);
+  console.log('Query params:', req.query);
+  
   try {
     // Get API key from query parameter or header
     const apiKey = req.query.apiKey as string || req.headers['x-api-key'] as string;
@@ -32,14 +36,17 @@ export const validateApiKey = async (req: PublicRequest, res: Response, next: Ne
     }
 
     // Find widget config by API key
+    console.log(`Looking for widget config with API key: ${apiKey}`);
     const widgetConfig = await WidgetConfigModel.findByApiKey(apiKey);
     
     if (!widgetConfig) {
+      console.log('Widget config not found for API key:', apiKey);
       return res.status(401).json({
         success: false,
         error: 'Invalid API key'
       } as ApiResponse);
     }
+    console.log('Widget config found:', widgetConfig.id);
 
     // Check if widget is enabled
     if (!widgetConfig.isEnabled) {

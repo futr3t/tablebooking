@@ -1,3 +1,5 @@
+import { Request as ExpressRequest } from 'express';
+
 export interface User {
   id: string;
   email: string;
@@ -129,7 +131,7 @@ export enum BookingStatus {
   NO_SHOW = 'no_show'
 }
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends ExpressRequest {
   user?: User;
 }
 
