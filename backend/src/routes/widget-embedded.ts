@@ -1,39 +1,17 @@
 import { Router } from 'express';
-import fs from 'fs';
-import path from 'path';
+import { WIDGET_JS_CONTENT, WIDGET_METADATA } from '../widget-content';
 
 const router = Router();
 
-// Read the widget content at startup
-let widgetContent = '';
-const widgetPath = path.join(__dirname, '../../public/widget/widget.js');
-
-try {
-  if (fs.existsSync(widgetPath)) {
-    widgetContent = fs.readFileSync(widgetPath, 'utf8');
-    console.log('Widget content loaded successfully');
-  } else {
-    console.error('Widget file not found at:', widgetPath);
-  }
-} catch (error) {
-  console.error('Error loading widget content:', error);
-}
-
 // Serve the widget JavaScript file from memory
 router.get('/widget.js', (req, res) => {
-  if (!widgetContent) {
-    return res.status(404).json({ 
-      success: false, 
-      error: 'Widget file not available' 
-    });
-  }
-
   // Set appropriate headers
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Widget-Version', WIDGET_METADATA.version);
   
-  res.send(widgetContent);
+  res.send(WIDGET_JS_CONTENT);
 });
 
 // Widget demo page
