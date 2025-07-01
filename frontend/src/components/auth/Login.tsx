@@ -27,7 +27,8 @@ const Login: React.FC = () => {
 
     try {
       await login({ email, password });
-      navigate('/');
+      // Small delay to ensure AuthContext state updates before navigation
+      setTimeout(() => navigate('/'), 100);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login. Please try again.');
     } finally {

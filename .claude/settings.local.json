@@ -17,7 +17,8 @@
       "Bash(npm run dev:*)",
       "Bash(PORT=3000 npm start)",
       "Bash(chmod:*)",
-      "WebFetch(domain:tablebooking-production-eb97.up.railway.app)"
+      "WebFetch(domain:tablebooking-production-eb97.up.railway.app)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

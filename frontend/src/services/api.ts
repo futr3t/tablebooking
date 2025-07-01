@@ -46,7 +46,13 @@ api.interceptors.response.use(
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', credentials);
-    return response.data;
+    // Backend returns { success: true, data: { user, token }, message }
+    // Frontend expects { user, token, refreshToken }
+    return {
+      user: response.data.data.user,
+      token: response.data.data.token,
+      refreshToken: response.data.data.token // Use same token as refresh token for now
+    };
   },
 
   logout: () => {
@@ -56,7 +62,8 @@ export const authService = {
 
   getProfile: async (): Promise<User> => {
     const response = await api.get('/auth/profile');
-    return response.data;
+    // Backend returns { success: true, data: user }
+    return response.data.data || response.data;
   },
 };
 
@@ -64,22 +71,23 @@ export const bookingService = {
   getBookings: async (restaurantId: string, date?: string): Promise<Booking[]> => {
     const params = date ? { date } : {};
     const response = await api.get(`/bookings/restaurant/${restaurantId}`, { params });
-    return response.data;
+    // Backend returns { success: true, data: bookings, pagination }
+    return response.data.data || response.data;
   },
 
   getBooking: async (id: string): Promise<Booking> => {
     const response = await api.get(`/bookings/${id}`);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   createBooking: async (booking: Partial<Booking>): Promise<Booking> => {
     const response = await api.post('/bookings', booking);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   updateBooking: async (id: string, booking: Partial<Booking>): Promise<Booking> => {
     const response = await api.put(`/bookings/${id}`, booking);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   cancelBooking: async (id: string): Promise<void> => {
@@ -88,14 +96,14 @@ export const bookingService = {
 
   markNoShow: async (id: string): Promise<Booking> => {
     const response = await api.post(`/bookings/${id}/no-show`);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   getAvailability: async (restaurantId: string, date: string, partySize: number) => {
     const response = await api.get('/bookings/availability', {
       params: { restaurantId, date, partySize },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 };
 
