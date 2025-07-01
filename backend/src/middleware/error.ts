@@ -1,13 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiResponse } from '../types';
 
-export interface AppError extends Error {
-  statusCode?: number;
-  isOperational?: boolean;
-}
-
 export const errorHandler = (
-  error: AppError,
+  error: any,
   req: Request,
   res: Response,
   next: NextFunction

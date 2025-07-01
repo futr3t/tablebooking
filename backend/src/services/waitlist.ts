@@ -49,7 +49,7 @@ export class WaitlistService {
       for (const booking of waitlistBookings) {
         const availability = await AvailabilityService.checkAvailability(
           restaurantId,
-          booking.bookingDate,
+          booking.bookingDate.toISOString().split('T')[0],
           booking.partySize,
           booking.duration
         );
@@ -65,7 +65,7 @@ export class WaitlistService {
             tableId: availableSlot.tableId,
             isWaitlisted: false,
             waitlistPosition: undefined,
-            status: 'confirmed'
+            status: 'confirmed' as any
           });
 
           // Update waitlist positions for remaining bookings
@@ -123,7 +123,7 @@ export class WaitlistService {
       if (booking.waitlistPosition) {
         await this.updateWaitlistPositions(
           booking.restaurantId,
-          booking.bookingDate,
+          booking.bookingDate.toISOString().split('T')[0],
           booking.waitlistPosition
         );
       }

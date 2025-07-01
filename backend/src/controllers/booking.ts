@@ -226,7 +226,7 @@ export const updateBooking = asyncHandler(async (req: AuthRequest, res: Response
   // Invalidate availability cache
   await AvailabilityService.invalidateAvailabilityCache(
     updatedBooking.restaurantId,
-    updatedBooking.bookingDate
+    updatedBooking.bookingDate.toISOString().split('T')[0]
   );
 
   res.json({
@@ -261,10 +261,10 @@ export const cancelBooking = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   // Process waitlist for the freed slot
-  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate);
+  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate);
+  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
 
   res.json({
     success: true,
@@ -300,10 +300,10 @@ export const markNoShow = asyncHandler(async (req: AuthRequest, res: Response): 
   }
 
   // Process waitlist for the freed slot
-  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate);
+  await WaitlistService.processWaitlistForDate(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate);
+  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, booking.bookingDate.toISOString().split('T')[0]);
 
   res.json({
     success: true,
