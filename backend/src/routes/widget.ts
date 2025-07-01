@@ -6,13 +6,13 @@ import {
   toggleWidget,
   getInstallationInstructions 
 } from '../controllers/widget';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 
 const router = Router();
 
 // All widget routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Validation rules for widget config updates
 const validateWidgetConfig = validate([
