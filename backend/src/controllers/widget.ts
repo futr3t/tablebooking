@@ -10,15 +10,16 @@ interface AuthenticatedRequest extends Request {
 /**
  * Get widget configuration for the authenticated user's restaurant
  */
-export const getWidgetConfig = async (req: AuthenticatedRequest, res: Response) => {
+export const getWidgetConfig = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;
     
     if (!user || !user.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Restaurant association required'
       } as ApiResponse);
+      return;
     }
 
     const widgetConfig = await WidgetConfigModel.findByRestaurantId(user.restaurantId);
@@ -45,10 +46,11 @@ export const getWidgetConfig = async (req: AuthenticatedRequest, res: Response) 
         }
       });
 
-      return res.json({
+      res.json({
         success: true,
         data: newConfig
       } as ApiResponse);
+      return;
     }
 
     res.json({
@@ -67,23 +69,25 @@ export const getWidgetConfig = async (req: AuthenticatedRequest, res: Response) 
 /**
  * Update widget configuration
  */
-export const updateWidgetConfig = async (req: AuthenticatedRequest, res: Response) => {
+export const updateWidgetConfig = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;
     
     if (!user || !user.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Restaurant association required'
       } as ApiResponse);
+      return;
     }
 
     // Check if user has permission to modify widget settings
     if (!['super_admin', 'owner', 'manager'].includes(user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Insufficient permissions'
       } as ApiResponse);
+      return;
     }
 
     const { isEnabled, theme, settings } = req.body;
@@ -92,10 +96,11 @@ export const updateWidgetConfig = async (req: AuthenticatedRequest, res: Respons
     const existingConfig = await WidgetConfigModel.findByRestaurantId(user.restaurantId);
 
     if (!existingConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Widget configuration not found'
       } as ApiResponse);
+      return;
     }
 
     // Update the config
@@ -106,10 +111,11 @@ export const updateWidgetConfig = async (req: AuthenticatedRequest, res: Respons
     });
 
     if (!updatedConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Failed to update widget configuration'
       } as ApiResponse);
+      return;
     }
 
     res.json({
@@ -129,23 +135,25 @@ export const updateWidgetConfig = async (req: AuthenticatedRequest, res: Respons
 /**
  * Regenerate API key for the widget
  */
-export const regenerateApiKey = async (req: AuthenticatedRequest, res: Response) => {
+export const regenerateApiKey = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;
     
     if (!user || !user.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Restaurant association required'
       } as ApiResponse);
+      return;
     }
 
     // Check if user has permission to regenerate API key
     if (!['super_admin', 'owner'].includes(user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Only owners can regenerate API keys'
       } as ApiResponse);
+      return;
     }
 
     const newApiKey = await WidgetConfigModel.regenerateApiKey(user.restaurantId);
@@ -167,42 +175,46 @@ export const regenerateApiKey = async (req: AuthenticatedRequest, res: Response)
 /**
  * Toggle widget enabled/disabled status
  */
-export const toggleWidget = async (req: AuthenticatedRequest, res: Response) => {
+export const toggleWidget = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;
     
     if (!user || !user.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Restaurant association required'
       } as ApiResponse);
+      return;
     }
 
     // Check if user has permission to toggle widget
     if (!['super_admin', 'owner', 'manager'].includes(user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Insufficient permissions'
       } as ApiResponse);
+      return;
     }
 
     const { enabled } = req.body;
 
     if (typeof enabled !== 'boolean') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Enabled status must be a boolean value'
       } as ApiResponse);
+      return;
     }
 
     // Find existing config
     const existingConfig = await WidgetConfigModel.findByRestaurantId(user.restaurantId);
 
     if (!existingConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Widget configuration not found'
       } as ApiResponse);
+      return;
     }
 
     // Update the enabled status
@@ -211,10 +223,11 @@ export const toggleWidget = async (req: AuthenticatedRequest, res: Response) => 
     });
 
     if (!updatedConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Failed to update widget status'
       } as ApiResponse);
+      return;
     }
 
     res.json({
@@ -234,24 +247,26 @@ export const toggleWidget = async (req: AuthenticatedRequest, res: Response) => 
 /**
  * Get widget installation instructions and code
  */
-export const getInstallationInstructions = async (req: AuthenticatedRequest, res: Response) => {
+export const getInstallationInstructions = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;
     
     if (!user || !user.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied: Restaurant association required'
       } as ApiResponse);
+      return;
     }
 
     const widgetConfig = await WidgetConfigModel.findByRestaurantId(user.restaurantId);
 
     if (!widgetConfig) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Widget configuration not found'
       } as ApiResponse);
+      return;
     }
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;

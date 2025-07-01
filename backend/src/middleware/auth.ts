@@ -163,3 +163,6 @@ const extractToken = (req: Request): string | null => {
   
   return req.cookies?.token || null;
 };
+
+// Alias for authenticate - commonly used name
+export const requireAuth = authenticate;
