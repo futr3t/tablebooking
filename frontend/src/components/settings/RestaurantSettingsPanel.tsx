@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -104,13 +104,7 @@ const RestaurantSettingsPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (user?.restaurantId) {
-      loadSettings();
-    }
-  }, [user?.restaurantId]);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!user?.restaurantId) return;
     
     try {
@@ -134,22 +128,28 @@ const RestaurantSettingsPanel: React.FC = () => {
         Object.assign(defaultOpeningHours, restaurantSettings.openingHours);
       }
       
-      setSettings({
-        ...settings,
+      setSettings(prevSettings => ({
+        ...prevSettings,
         ...restaurantSettings,
         openingHours: defaultOpeningHours,
         bookingSettings: {
-          ...settings.bookingSettings,
+          ...prevSettings.bookingSettings,
           ...restaurantSettings.bookingSettings
         }
-      });
+      }));
     } catch (err: any) {
       console.error('Error loading settings:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load restaurant settings');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.restaurantId]);
+
+  useEffect(() => {
+    if (user?.restaurantId) {
+      loadSettings();
+    }
+  }, [user?.restaurantId, loadSettings]);
 
   const handleSettingChange = (field: string, value: any, nested?: string) => {
     setSettings(prev => {
