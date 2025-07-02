@@ -1,0 +1,19 @@
+[build]
+cmd = "npm ci"
+
+[start]
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "false"
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm ci --include=dev"]
+
+# Skip build phase since we use ts-node directly
+[phases.build]
+cmds = ["echo 'Backend uses ts-node, skipping TypeScript compilation'"]
