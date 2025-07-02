@@ -84,9 +84,14 @@ const TableManagementDashboard: React.FC = () => {
   const restaurantId = user?.restaurantId;
 
   useEffect(() => {
+    console.log('Current user:', user);
+    console.log('Restaurant ID:', restaurantId);
     if (restaurantId) {
       loadTables();
       loadSummary();
+    } else {
+      setError('No restaurant ID found. Please ensure your user account is associated with a restaurant.');
+      setLoading(false);
     }
   }, [restaurantId, page, rowsPerPage, includeInactive, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -94,6 +99,8 @@ const TableManagementDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+
+      console.log('Loading tables for restaurantId:', restaurantId);
 
       if (searchTerm) {
         // Use search API
@@ -103,6 +110,7 @@ const TableManagementDashboard: React.FC = () => {
           maxCapacity: filters.maxCapacity ? parseInt(filters.maxCapacity) : undefined,
           isAccessible: filters.isAccessible !== null ? filters.isAccessible : undefined
         };
+        console.log('Searching tables with term:', searchTerm, 'filters:', searchFilters);
         const results = await tableService.searchTables(restaurantId!, searchTerm, searchFilters);
         setTables(results);
         setTotalTables(results.length);
@@ -115,13 +123,17 @@ const TableManagementDashboard: React.FC = () => {
           page: page + 1,
           limit: rowsPerPage
         };
+        console.log('Getting tables with options:', options);
         const result = await tableService.getTables(restaurantId!, options);
+        console.log('Tables loaded:', result);
         setTables(result.tables);
         setTotalTables(result.total);
       }
-    } catch (err) {
-      setError('Failed to load tables');
+    } catch (err: any) {
       console.error('Error loading tables:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load tables';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

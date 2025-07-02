@@ -143,7 +143,17 @@ export const tableService = {
     limit?: number;
   }): Promise<{ tables: Table[]; total: number }> => {
     const response = await api.get(`/tables/restaurant/${restaurantId}`, { params: options });
-    return response.data.data || response.data;
+    console.log('Get tables response:', response.data);
+    
+    // Handle the response structure properly
+    const data = response.data.data || response.data;
+    
+    // If data is an array, wrap it in the expected structure
+    if (Array.isArray(data)) {
+      return { tables: data, total: data.length };
+    }
+    
+    return data;
   },
 
   getTable: async (id: string): Promise<Table> => {

@@ -132,16 +132,23 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         position: { x: 0, y: 0, width: 80, height: 80 } // Default position
       };
 
+      console.log('Submitting table data:', tableData);
+      console.log('Restaurant ID:', restaurantId);
+
       if (table) {
+        console.log('Updating table:', table.id);
         await tableService.updateTable(table.id, tableData);
       } else {
+        console.log('Creating new table');
         await tableService.createTable(restaurantId, tableData);
       }
 
       onSave();
     } catch (err: any) {
-      setError(err.message || 'Failed to save table');
       console.error('Error saving table:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to save table';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
