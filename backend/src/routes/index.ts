@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth';
 import bookingRoutes from './booking';
 import tableRoutes from './table';
+import restaurantRoutes from './restaurant';
 import publicRoutes from './public';
 import widgetRoutes from './widget';
 import publicWidgetRoutes from './publicWidget';
@@ -13,6 +14,7 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/tables', tableRoutes);
+router.use('/restaurants', restaurantRoutes);
 router.use('/public', publicRoutes);
 router.use('/widget', widgetRoutes);
 router.use('/widget/public', publicWidgetRoutes); // Public widget API routes

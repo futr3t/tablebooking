@@ -9,7 +9,10 @@ import {
   Button,
   Alert,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Divider,
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -17,14 +20,24 @@ import {
   AccessTime as TimeIcon,
   Restaurant as RestaurantIcon,
   Settings as SettingsIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  GroupWork as ConcurrentIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { restaurantService } from '../../services/api';
 
 interface RestaurantSettings {
+  id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  cuisine?: string;
+  description?: string;
   maxCovers?: number;
+  timeZone?: string;
   turnTimeMinutes: number;
-  staggerMinutes: number;
   defaultSlotDuration: number;
   openingHours: {
     [key: string]: {
@@ -36,9 +49,10 @@ interface RestaurantSettings {
   bookingSettings: {
     maxAdvanceBookingDays: number;
     minAdvanceBookingHours: number;
-    maxPartySize?: number;
+    maxPartySize: number;
     slotDuration: number;
-    bufferTime: number;
+    maxConcurrentTables?: number; // NEW: Max tables starting at same time
+    maxConcurrentCovers?: number; // NEW: Max people starting at same time  
     enableWaitlist: boolean;
     requirePhone: boolean;
     requireEmail: boolean;
@@ -64,57 +78,74 @@ const DAYS_OF_WEEK = [
 const RestaurantSettingsPanel: React.FC = () => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<RestaurantSettings>({
-    maxCovers: undefined,
     turnTimeMinutes: 120,
-    staggerMinutes: 15,
     defaultSlotDuration: 30,
     openingHours: {},
     bookingSettings: {
       maxAdvanceBookingDays: 90,
       minAdvanceBookingHours: 2,
-      maxPartySize: undefined,
+      maxPartySize: 12,
       slotDuration: 30,
-      bufferTime: 15,
+      maxConcurrentTables: undefined,
+      maxConcurrentCovers: undefined,
       enableWaitlist: true,
-      requirePhone: true,
+      requirePhone: false,
       requireEmail: false,
-      autoConfirm: false,
-      sendConfirmationEmail: true,
+      autoConfirm: true,
+      sendConfirmationEmail: false,
       sendConfirmationSMS: false,
-      sendReminderEmail: true,
+      sendReminderEmail: false,
       sendReminderSMS: false,
-      reminderHours: 24
+      reminderHours: 2
     }
   });
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (user?.restaurantId) {
+      loadSettings();
+    }
+  }, [user?.restaurantId]);
 
   const loadSettings = async () => {
+    if (!user?.restaurantId) return;
+    
     try {
       setLoading(true);
-      // For now, we'll use default settings
-      // In a real implementation, this would fetch from the backend
-      const defaultOpeningHours: any = {};
-      DAYS_OF_WEEK.forEach(day => {
-        defaultOpeningHours[day.key] = {
-          isOpen: day.key !== 'monday', // Closed on Monday by default
-          openTime: '11:00',
-          closeTime: day.key === 'friday' || day.key === 'saturday' ? '23:00' : '22:00'
-        };
-      });
+      setError(null);
       
-      setSettings(prev => ({
-        ...prev,
-        openingHours: defaultOpeningHours
-      }));
-    } catch (err) {
-      setError('Failed to load restaurant settings');
+      const restaurantSettings = await restaurantService.getSettings(user.restaurantId);
+      console.log('Loaded restaurant settings:', restaurantSettings);
+      
+      // Initialize default opening hours if not set
+      const defaultOpeningHours: any = {};
+      if (!restaurantSettings.openingHours || Object.keys(restaurantSettings.openingHours).length === 0) {
+        DAYS_OF_WEEK.forEach(day => {
+          defaultOpeningHours[day.key] = {
+            isOpen: day.key !== 'monday', // Closed on Monday by default
+            openTime: '17:00',
+            closeTime: '21:00'
+          };
+        });
+      } else {
+        Object.assign(defaultOpeningHours, restaurantSettings.openingHours);
+      }
+      
+      setSettings({
+        ...settings,
+        ...restaurantSettings,
+        openingHours: defaultOpeningHours,
+        bookingSettings: {
+          ...settings.bookingSettings,
+          ...restaurantSettings.bookingSettings
+        }
+      });
+    } catch (err: any) {
       console.error('Error loading settings:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load restaurant settings');
     } finally {
       setLoading(false);
     }
@@ -153,34 +184,41 @@ const RestaurantSettingsPanel: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!user?.restaurantId) return;
+    
     try {
-      setLoading(true);
+      setSaving(true);
       setError(null);
       setSuccess(false);
 
-      // Validation
+      // Client-side validation
       if (settings.turnTimeMinutes < 30) {
         throw new Error('Turn time must be at least 30 minutes');
-      }
-      if (settings.staggerMinutes < 5) {
-        throw new Error('Stagger time must be at least 5 minutes');
       }
       if (settings.defaultSlotDuration < 15) {
         throw new Error('Slot duration must be at least 15 minutes');
       }
+      if (settings.bookingSettings.maxPartySize < 1) {
+        throw new Error('Max party size must be at least 1');
+      }
+      if (settings.bookingSettings.maxConcurrentTables !== undefined && settings.bookingSettings.maxConcurrentTables < 0) {
+        throw new Error('Max concurrent tables must be non-negative');
+      }
+      if (settings.bookingSettings.maxConcurrentCovers !== undefined && settings.bookingSettings.maxConcurrentCovers < 0) {
+        throw new Error('Max concurrent covers must be non-negative');
+      }
 
-      // Here you would make an API call to save the settings
-      // await restaurantService.updateSettings(user?.restaurantId, settings);
+      console.log('Saving settings:', settings);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await restaurantService.updateSettings(user.restaurantId, settings);
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to save settings');
+      console.error('Error saving settings:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to save settings');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -200,132 +238,133 @@ const RestaurantSettingsPanel: React.FC = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+        <Typography variant="body2" sx={{ ml: 2 }}>Loading restaurant settings...</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Restaurant Settings
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <Box>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        mb: 4,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 0 }
+      }}>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ 
+            fontWeight: 700,
+            color: 'text.primary',
+            mb: 0.5
+          }}>
+            Restaurant Settings
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Configure your restaurant's operational settings and booking preferences
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={loadSettings}
-            disabled={loading}
+            disabled={loading || saving}
           >
-            Reset
+            Refresh
           </Button>
           <Button
             variant="contained"
-            startIcon={<SaveIcon />}
+            startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
             onClick={handleSave}
-            disabled={loading}
+            disabled={saving}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1.5,
+              fontWeight: 600,
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+              '&:hover': {
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                transform: 'translateY(-1px)',
+              },
+            }}
           >
-            {loading ? 'Saving...' : 'Save Settings'}
+            {saving ? 'Saving...' : 'Save Settings'}
           </Button>
         </Box>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 3 }}>
           Settings saved successfully!
         </Alert>
       )}
 
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <RestaurantIcon sx={{ mr: 2, color: 'primary.main' }} />
-                <Box>
-                  <Typography variant="h6">
-                    {settings.maxCovers || 'Unlimited'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Max Covers
-                  </Typography>
-                </Box>
+      {/* Operational Summary */}
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InfoIcon color="primary" />
+            Operational Summary
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">Open Days:</Typography>
+                <Chip label={`${openDays}/7 days`} size="small" color="primary" />
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TimeIcon sx={{ mr: 2, color: 'success.main' }} />
-                <Box>
-                  <Typography variant="h6">{avgTurnTime}h</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Avg Turn Time
-                  </Typography>
-                </Box>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">Average Turn Time:</Typography>
+                <Chip label={`${avgTurnTime} hours`} size="small" color="secondary" />
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <SettingsIcon sx={{ mr: 2, color: 'info.main' }} />
-                <Box>
-                  <Typography variant="h6">{settings.staggerMinutes}min</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Stagger Time
-                  </Typography>
-                </Box>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">Time Slots:</Typography>
+                <Chip label={`${settings.bookingSettings.slotDuration} min intervals`} size="small" color="info" />
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <InfoIcon sx={{ mr: 2, color: 'warning.main' }} />
-                <Box>
-                  <Typography variant="h6">{openDays}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Days Open
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={4}>
         {/* Capacity & Timing Settings */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TimeIcon color="primary" />
                 Capacity & Timing
               </Typography>
-              <Grid container spacing={2}>
+              
+              <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Maximum Covers"
                     type="number"
                     value={settings.maxCovers || ''}
-                    onChange={(e) => handleSettingChange('maxCovers', 
-                      e.target.value ? parseInt(e.target.value) : undefined
-                    )}
+                    onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : undefined)}
                     helperText="Leave empty for unlimited capacity"
-                    inputProps={{ min: 1, max: 1000 }}
+                    inputProps={{ min: 0 }}
                   />
                 </Grid>
+                
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -333,30 +372,22 @@ const RestaurantSettingsPanel: React.FC = () => {
                     type="number"
                     value={settings.turnTimeMinutes}
                     onChange={(e) => handleSettingChange('turnTimeMinutes', parseInt(e.target.value))}
-                    helperText="How long each table booking lasts"
+                    helperText="How long each booking lasts (includes cleanup)"
                     inputProps={{ min: 30, max: 480 }}
+                    required
                   />
                 </Grid>
+                
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Stagger Time (minutes)"
-                    type="number"
-                    value={settings.staggerMinutes}
-                    onChange={(e) => handleSettingChange('staggerMinutes', parseInt(e.target.value))}
-                    helperText="Minimum time between bookings"
-                    inputProps={{ min: 5, max: 60 }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Default Slot Duration (minutes)"
+                    label="Time Slot Duration (minutes)"
                     type="number"
                     value={settings.defaultSlotDuration}
                     onChange={(e) => handleSettingChange('defaultSlotDuration', parseInt(e.target.value))}
-                    helperText="Time slot intervals for bookings"
+                    helperText="How often booking slots are offered"
                     inputProps={{ min: 15, max: 120 }}
+                    required
                   />
                 </Grid>
               </Grid>
@@ -364,78 +395,223 @@ const RestaurantSettingsPanel: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Booking Settings */}
+        {/* NEW: Concurrent Booking Limits */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ConcurrentIcon color="primary" />
+                Concurrent Booking Limits
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Control how many bookings can start at the same time (staff can override)
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Max Concurrent Tables"
+                    type="number"
+                    value={settings.bookingSettings.maxConcurrentTables || ''}
+                    onChange={(e) => handleSettingChange('maxConcurrentTables', e.target.value ? parseInt(e.target.value) : undefined, 'bookingSettings')}
+                    helperText="Max tables starting at same time"
+                    inputProps={{ min: 0 }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Max Concurrent Covers"
+                    type="number"
+                    value={settings.bookingSettings.maxConcurrentCovers || ''}
+                    onChange={(e) => handleSettingChange('maxConcurrentCovers', e.target.value ? parseInt(e.target.value) : undefined, 'bookingSettings')}
+                    helperText="Max people starting at same time"
+                    inputProps={{ min: 0 }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Alert severity="info" sx={{ mt: 1 }}>
+                    <Typography variant="body2">
+                      <strong>How it works:</strong> Guest bookings are limited, but staff can override these limits when making manual bookings.
+                      Leave empty for no limits.
+                    </Typography>
+                  </Alert>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Booking Rules */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SettingsIcon color="primary" />
                 Booking Rules
               </Typography>
-              <Grid container spacing={2}>
+              
+              <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Max Advance Days"
+                    label="Max Advance Booking Days"
                     type="number"
                     value={settings.bookingSettings.maxAdvanceBookingDays}
-                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', 
-                      parseInt(e.target.value), 'bookingSettings'
-                    )}
-                    helperText="How far ahead bookings are allowed"
+                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', parseInt(e.target.value), 'bookingSettings')}
                     inputProps={{ min: 1, max: 365 }}
+                    required
                   />
                 </Grid>
+                
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Min Advance Hours"
+                    label="Min Advance Booking Hours"
                     type="number"
                     value={settings.bookingSettings.minAdvanceBookingHours}
-                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', 
-                      parseInt(e.target.value), 'bookingSettings'
-                    )}
-                    helperText="Minimum notice required"
-                    inputProps={{ min: 0, max: 72 }}
+                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', parseInt(e.target.value), 'bookingSettings')}
+                    inputProps={{ min: 0, max: 168 }}
+                    required
                   />
                 </Grid>
-                <Grid item xs={12}>
+                
+                <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Max Party Size"
                     type="number"
-                    value={settings.bookingSettings.maxPartySize || ''}
-                    onChange={(e) => handleSettingChange('maxPartySize', 
-                      e.target.value ? parseInt(e.target.value) : undefined, 'bookingSettings'
-                    )}
-                    helperText="Leave empty for no limit"
+                    value={settings.bookingSettings.maxPartySize}
+                    onChange={(e) => handleSettingChange('maxPartySize', parseInt(e.target.value), 'bookingSettings')}
                     inputProps={{ min: 1, max: 50 }}
+                    required
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.enableWaitlist}
-                        onChange={(e) => handleSettingChange('enableWaitlist', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Enable Waitlist"
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Reminder Hours"
+                    type="number"
+                    value={settings.bookingSettings.reminderHours}
+                    onChange={(e) => handleSettingChange('reminderHours', parseInt(e.target.value), 'bookingSettings')}
+                    helperText="Hours before booking to send reminders"
+                    inputProps={{ min: 0, max: 72 }}
                   />
                 </Grid>
+                
                 <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.autoConfirm}
-                        onChange={(e) => handleSettingChange('autoConfirm', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Auto-Confirm Bookings"
-                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.enableWaitlist}
+                          onChange={(e) => handleSettingChange('enableWaitlist', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Enable Waitlist"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.autoConfirm}
+                          onChange={(e) => handleSettingChange('autoConfirm', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Auto-Confirm Bookings"
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Customer Requirements */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PeopleIcon color="primary" />
+                Customer Requirements & Communications
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Required Information</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.requirePhone}
+                          onChange={(e) => handleSettingChange('requirePhone', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Require Phone Number"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.requireEmail}
+                          onChange={(e) => handleSettingChange('requireEmail', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Require Email Address"
+                    />
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Email Notifications</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.sendConfirmationEmail}
+                          onChange={(e) => handleSettingChange('sendConfirmationEmail', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Send Confirmation Emails"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.sendReminderEmail}
+                          onChange={(e) => handleSettingChange('sendReminderEmail', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Send Reminder Emails"
+                    />
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>SMS Notifications</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.sendConfirmationSMS}
+                          onChange={(e) => handleSettingChange('sendConfirmationSMS', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Send Confirmation SMS"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.bookingSettings.sendReminderSMS}
+                          onChange={(e) => handleSettingChange('sendReminderSMS', e.target.checked, 'bookingSettings')}
+                        />
+                      }
+                      label="Send Reminder SMS"
+                    />
+                  </Box>
                 </Grid>
               </Grid>
             </CardContent>
@@ -446,133 +622,56 @@ const RestaurantSettingsPanel: React.FC = () => {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <RestaurantIcon color="primary" />
                 Opening Hours
               </Typography>
+              
               <Grid container spacing={2}>
-                {DAYS_OF_WEEK.map(day => (
-                  <Grid item xs={12} sm={6} md={4} key={day.key}>
-                    <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="subtitle2">{day.label}</Typography>
-                        <Switch
-                          checked={settings.openingHours[day.key]?.isOpen || false}
-                          onChange={(e) => handleOpeningHoursChange(day.key, 'isOpen', e.target.checked)}
-                        />
-                      </Box>
-                      {settings.openingHours[day.key]?.isOpen && (
-                        <Grid container spacing={1}>
-                          <Grid item xs={6}>
-                            <TextField
-                              fullWidth
-                              label="Open"
-                              type="time"
-                              size="small"
-                              value={settings.openingHours[day.key]?.openTime || ''}
-                              onChange={(e) => handleOpeningHoursChange(day.key, 'openTime', e.target.value)}
-                              InputLabelProps={{ shrink: true }}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <TextField
-                              fullWidth
-                              label="Close"
-                              type="time"
-                              size="small"
-                              value={settings.openingHours[day.key]?.closeTime || ''}
-                              onChange={(e) => handleOpeningHoursChange(day.key, 'closeTime', e.target.value)}
-                              InputLabelProps={{ shrink: true }}
-                            />
-                          </Grid>
-                        </Grid>
-                      )}
-                      {!settings.openingHours[day.key]?.isOpen && (
-                        <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center' }}>
-                          Closed
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Notification Settings */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Customer Communications
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Required Information
-                  </Typography>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.requirePhone}
-                        onChange={(e) => handleSettingChange('requirePhone', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Require Phone Number"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.requireEmail}
-                        onChange={(e) => handleSettingChange('requireEmail', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Require Email Address"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Automatic Notifications
-                  </Typography>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.sendConfirmationEmail}
-                        onChange={(e) => handleSettingChange('sendConfirmationEmail', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Confirmation Emails"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.bookingSettings.sendReminderEmail}
-                        onChange={(e) => handleSettingChange('sendReminderEmail', 
-                          e.target.checked, 'bookingSettings'
-                        )}
-                      />
-                    }
-                    label="Reminder Emails"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Reminder Hours Before"
-                    type="number"
-                    size="small"
-                    value={settings.bookingSettings.reminderHours}
-                    onChange={(e) => handleSettingChange('reminderHours', 
-                      parseInt(e.target.value), 'bookingSettings'
-                    )}
-                    inputProps={{ min: 1, max: 72 }}
-                    sx={{ mt: 1 }}
-                  />
-                </Grid>
+                {DAYS_OF_WEEK.map((day) => {
+                  const daySchedule = settings.openingHours[day.key] || { isOpen: false };
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={day.key}>
+                      <Card variant="outlined">
+                        <CardContent sx={{ pb: '16px !important' }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={daySchedule.isOpen}
+                                onChange={(e) => handleOpeningHoursChange(day.key, 'isOpen', e.target.checked)}
+                              />
+                            }
+                            label={day.label}
+                            sx={{ mb: 1 }}
+                          />
+                          
+                          {daySchedule.isOpen && (
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                              <TextField
+                                size="small"
+                                label="Open"
+                                type="time"
+                                value={daySchedule.openTime || '09:00'}
+                                onChange={(e) => handleOpeningHoursChange(day.key, 'openTime', e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ flex: 1 }}
+                              />
+                              <TextField
+                                size="small"
+                                label="Close"
+                                type="time"
+                                value={daySchedule.closeTime || '21:00'}
+                                onChange={(e) => handleOpeningHoursChange(day.key, 'closeTime', e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ flex: 1 }}
+                              />
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
               </Grid>
             </CardContent>
           </Card>

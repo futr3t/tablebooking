@@ -85,7 +85,7 @@ export class AvailabilityService {
   ): Promise<TimeSlot[]> {
     const slots: TimeSlot[] = [];
     const slotDuration = bookingSettings.slotDuration || 30; // minutes
-    const bufferTime = bookingSettings.bufferTime || 15; // minutes
+    // Removed bufferTime - no longer using stagger/buffer system
 
     // Get all tables that can accommodate the party size
     const availableTables = await TableModel.findAvailableTablesForPartySize(restaurantId, partySize);
@@ -115,10 +115,10 @@ export class AvailabilityService {
         endTime,
         partySize,
         duration,
-        bufferTime,
         availableTables,
         tableCombinations,
-        existingBookings
+        existingBookings,
+        false // isStaffBooking = false for availability check
       );
 
       slots.push({
@@ -139,18 +139,18 @@ export class AvailabilityService {
     endTime: string,
     partySize: number,
     duration: number,
-    bufferTime: number,
     availableTables: Table[],
     tableCombinations: Table[][],
-    existingBookings: Booking[]
+    existingBookings: Booking[],
+    isStaffBooking: boolean = false
   ): Promise<{
     available: boolean;
     tableId?: string;
     waitlistAvailable: boolean;
   }> {
-    // Check cache first (if Redis is available)
-    const cacheKey = `availability:${restaurantId}:${date}:${startTime}:${partySize}`;
-    if (redis) {
+    // Check cache first (if Redis is available) - only for guest bookings
+    const cacheKey = `availability:${restaurantId}:${date}:${startTime}:${partySize}:${isStaffBooking}`;
+    if (redis && !isStaffBooking) {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) {
@@ -161,18 +161,43 @@ export class AvailabilityService {
       }
     }
 
-    // Calculate time windows with buffer
+    // Calculate time windows (no buffer time anymore)
     const startMinutes = this.timeToMinutes(startTime);
     const endMinutes = this.timeToMinutes(endTime);
-    const bufferedStartMinutes = startMinutes - bufferTime;
-    const bufferedEndMinutes = endMinutes + bufferTime;
+
+    // Check concurrent booking limits for guest bookings only
+    if (!isStaffBooking) {
+      const concurrentLimitExceeded = await this.checkConcurrentBookingLimits(
+        restaurantId,
+        date,
+        startTime,
+        partySize,
+        existingBookings
+      );
+      
+      if (concurrentLimitExceeded) {
+        const result = {
+          available: false,
+          waitlistAvailable: true
+        };
+        
+        if (redis) {
+          try {
+            await redis.setex(cacheKey, 60, JSON.stringify(result));
+          } catch (error) {
+            console.warn('Redis cache write failed:', error.message);
+          }
+        }
+        return result;
+      }
+    }
 
     // Check single table availability first (preferred)
     for (const table of availableTables) {
       if (this.isTableAvailable(
         table.id,
-        bufferedStartMinutes,
-        bufferedEndMinutes,
+        startMinutes,
+        endMinutes,
         existingBookings
       )) {
         const result = {
@@ -182,7 +207,7 @@ export class AvailabilityService {
         };
 
         // Cache result for 1 minute (if Redis is available)
-        if (redis) {
+        if (redis && !isStaffBooking) {
           try {
             await redis.setex(cacheKey, 60, JSON.stringify(result));
           } catch (error) {
@@ -198,8 +223,8 @@ export class AvailabilityService {
       const allTablesAvailable = combination.every(table =>
         this.isTableAvailable(
           table.id,
-          bufferedStartMinutes,
-          bufferedEndMinutes,
+          startMinutes,
+          endMinutes,
           existingBookings
         )
       );
@@ -211,7 +236,7 @@ export class AvailabilityService {
           waitlistAvailable: false
         };
 
-        if (redis) {
+        if (redis && !isStaffBooking) {
           try {
             await redis.setex(cacheKey, 60, JSON.stringify(result));
           } catch (error) {
@@ -228,7 +253,7 @@ export class AvailabilityService {
       waitlistAvailable: true
     };
 
-    if (redis) {
+    if (redis && !isStaffBooking) {
       try {
         await redis.setex(cacheKey, 60, JSON.stringify(result));
       } catch (error) {
@@ -268,16 +293,14 @@ export class AvailabilityService {
     date: string,
     startTime: string,
     partySize: number,
-    duration: number = 120
+    duration: number = 120,
+    isStaffBooking: boolean = false
   ): Promise<Table | null> {
     try {
       const restaurant = await RestaurantModel.findById(restaurantId);
       if (!restaurant) {
         return null;
       }
-
-      const bookingSettings = restaurant.bookingSettings;
-      const bufferTime = bookingSettings.bufferTime || 15;
 
       // Get available tables for party size
       const availableTables = await TableModel.findAvailableTablesForPartySize(restaurantId, partySize);
@@ -289,17 +312,31 @@ export class AvailabilityService {
       // Get existing bookings
       const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
 
+      // Check concurrent booking limits for guest bookings only
+      if (!isStaffBooking) {
+        const concurrentLimitExceeded = await this.checkConcurrentBookingLimits(
+          restaurantId,
+          date,
+          startTime,
+          partySize,
+          existingBookings
+        );
+        
+        if (concurrentLimitExceeded) {
+          return null;
+        }
+      }
+
       const startMinutes = this.timeToMinutes(startTime);
       const endMinutes = startMinutes + duration;
-      const bufferedStartMinutes = startMinutes - bufferTime;
-      const bufferedEndMinutes = endMinutes + bufferTime;
+      // Removed buffer time calculations
 
       // Find the best available table (smallest that fits the party)
       const availableTablesForSlot = availableTables.filter(table =>
         this.isTableAvailable(
           table.id,
-          bufferedStartMinutes,
-          bufferedEndMinutes,
+          startMinutes,
+          endMinutes,
           existingBookings
         )
       );
@@ -315,6 +352,66 @@ export class AvailabilityService {
     } catch (error) {
       console.error('Error finding best table:', error);
       return null;
+    }
+  }
+
+  /**
+   * Check if concurrent booking limits would be exceeded for guest bookings
+   * Staff bookings can override these limits
+   */
+  private static async checkConcurrentBookingLimits(
+    restaurantId: string,
+    date: string,
+    startTime: string,
+    partySize: number,
+    existingBookings: Booking[]
+  ): Promise<boolean> {
+    try {
+      // Get restaurant settings
+      const restaurant = await RestaurantModel.findById(restaurantId);
+      if (!restaurant) {
+        return false; // If can't find restaurant, don't block
+      }
+
+      const bookingSettings = restaurant.bookingSettings;
+      const maxConcurrentTables = bookingSettings.maxConcurrentTables;
+      const maxConcurrentCovers = bookingSettings.maxConcurrentCovers;
+
+      // If no limits are set, don't restrict
+      if (!maxConcurrentTables && !maxConcurrentCovers) {
+        return false;
+      }
+
+      // Find bookings that start at the same time as the requested slot
+      const startTimeMinutes = this.timeToMinutes(startTime);
+      const concurrentBookings = existingBookings.filter(booking => {
+        if (booking.status === 'cancelled' || booking.status === 'no_show') {
+          return false;
+        }
+        
+        const bookingStartMinutes = this.timeToMinutes(booking.bookingTime);
+        return bookingStartMinutes === startTimeMinutes;
+      });
+
+      // Check table limit
+      if (maxConcurrentTables && concurrentBookings.length >= maxConcurrentTables) {
+        console.log(`Concurrent table limit exceeded: ${concurrentBookings.length} >= ${maxConcurrentTables}`);
+        return true;
+      }
+
+      // Check covers (people) limit
+      if (maxConcurrentCovers) {
+        const currentCovers = concurrentBookings.reduce((sum, booking) => sum + booking.partySize, 0);
+        if (currentCovers + partySize > maxConcurrentCovers) {
+          console.log(`Concurrent covers limit exceeded: ${currentCovers + partySize} > ${maxConcurrentCovers}`);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking concurrent booking limits:', error);
+      return false; // Don't block on error
     }
   }
 

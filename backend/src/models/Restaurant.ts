@@ -8,7 +8,7 @@ export class RestaurantModel {
         'SELECT * FROM restaurants WHERE id = $1 AND is_active = true',
         [id]
       );
-      return result.rows[0] || null;
+      return result.rows[0] ? this.mapFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding restaurant by ID:', error);
       throw error;
@@ -169,5 +169,26 @@ export class RestaurantModel {
 
   private static camelToSnake(str: string): string {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  }
+
+  static mapFromDb(dbRestaurant: any): Restaurant {
+    return {
+      id: dbRestaurant.id,
+      name: dbRestaurant.name,
+      email: dbRestaurant.email,
+      phone: dbRestaurant.phone,
+      address: dbRestaurant.address,
+      cuisine: dbRestaurant.cuisine,
+      description: dbRestaurant.description,
+      maxCovers: dbRestaurant.capacity, // Map capacity field to maxCovers
+      timeZone: dbRestaurant.time_zone,
+      turnTimeMinutes: dbRestaurant.turn_time_minutes || 120,
+      defaultSlotDuration: dbRestaurant.default_slot_duration || 30,
+      openingHours: dbRestaurant.opening_hours || {},
+      bookingSettings: dbRestaurant.booking_settings || {},
+      isActive: dbRestaurant.is_active,
+      createdAt: dbRestaurant.created_at,
+      updatedAt: dbRestaurant.updated_at
+    };
   }
 }

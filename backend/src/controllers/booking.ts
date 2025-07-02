@@ -64,13 +64,17 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     bookingDate,
     bookingTime,
     async () => {
+      // Determine if this is a staff booking (authenticated user) or guest booking
+      const isStaffBooking = !!req.user;
+      
       // Re-check availability within the lock
       const bestTable = await AvailabilityService.findBestTable(
         restaurantId,
         bookingDate,
         bookingTime,
         partySize,
-        duration
+        duration,
+        isStaffBooking
       );
 
       if (bestTable) {
@@ -111,7 +115,10 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
           specialRequests
         });
       } else {
-        throw createError('No tables available for the requested time slot', 409);
+        const errorMessage = isStaffBooking 
+          ? 'No tables available for the requested time slot'
+          : 'No tables available for the requested time slot. This may be due to concurrent booking limits.';
+        throw createError(errorMessage, 409);
       }
     }
   );

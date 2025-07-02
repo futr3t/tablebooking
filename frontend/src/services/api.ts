@@ -134,6 +134,23 @@ export const widgetService = {
   },
 };
 
+export const restaurantService = {
+  getSettings: async (restaurantId: string): Promise<any> => {
+    const response = await api.get(`/restaurants/${restaurantId}/settings`);
+    return response.data.data || response.data;
+  },
+
+  updateSettings: async (restaurantId: string, settings: any): Promise<any> => {
+    const response = await api.put(`/restaurants/${restaurantId}/settings`, settings);
+    return response.data.data || response.data;
+  },
+
+  getRestaurant: async (restaurantId: string): Promise<any> => {
+    const response = await api.get(`/restaurants/${restaurantId}`);
+    return response.data.data || response.data;
+  },
+};
+
 export const tableService = {
   getTables: async (restaurantId: string, options?: {
     includeInactive?: boolean;

@@ -33,8 +33,8 @@ export interface Restaurant {
   description?: string;
   maxCovers?: number; // NULL = unlimited, replaces old capacity limit
   timeZone: string;
-  turnTimeMinutes: number; // Default time each booking lasts
-  staggerMinutes: number; // Minimum time between bookings
+  turnTimeMinutes: number; // Default time each booking lasts (includes cleanup time)
+  // Removed staggerMinutes - no longer using buffer/stagger system
   defaultSlotDuration: number; // Default time slot duration
   openingHours: OpeningHours;
   bookingSettings: BookingSettings;
@@ -64,7 +64,9 @@ export interface BookingSettings {
   minAdvanceBookingHours: number;
   maxPartySize: number;
   slotDuration: number; // in minutes
-  bufferTime: number; // in minutes
+  // Removed bufferTime - now included in booking duration
+  maxConcurrentTables?: number; // Max tables that can start at same time (guest bookings only)
+  maxConcurrentCovers?: number; // Max people that can start at same time (guest bookings only)
   enableWaitlist: boolean;
   requirePhone: boolean;
   requireEmail: boolean;
