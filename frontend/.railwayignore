@@ -10,3 +10,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 build-test.log
+build/
+dist/
+coverage/
+.nyc_output/
+.cache/
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db

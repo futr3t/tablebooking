@@ -1,0 +1,35 @@
+# Simple single-stage Dockerfile for Railway
+FROM node:18-slim
+
+WORKDIR /app
+
+# Set build environment variables upfront
+ENV NODE_OPTIONS="--max-old-space-size=6144"
+ENV GENERATE_SOURCEMAP="false" 
+ENV CI="false"
+ENV NPM_CONFIG_TIMEOUT="300000"
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies quickly
+RUN echo "Installing dependencies..." && \
+    npm install --legacy-peer-deps --no-audit --no-fund && \
+    echo "Dependencies installed successfully"
+
+# Copy source and build
+COPY . .
+RUN echo "Building React app..." && \
+    npm run build && \
+    echo "Build completed successfully"
+
+# Install serve and cleanup
+RUN npm install -g serve && \
+    npm cache clean --force && \
+    rm -rf node_modules
+
+# Expose port
+EXPOSE 3000
+
+# Start app
+CMD ["serve", "-s", "build", "-p", "3000"]

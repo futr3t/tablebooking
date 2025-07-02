@@ -1,18 +1,28 @@
-[build]
-cmd = "npm ci && npm run build"
-
-[start]
-cmd = "npm start"
-
 [variables]
 NODE_ENV = "production"
 NPM_CONFIG_PRODUCTION = "false"
+NODE_OPTIONS = "--max-old-space-size=6144"
+GENERATE_SOURCEMAP = "false"
+CI = "false"
+NPM_CONFIG_TIMEOUT = "300000"
 
 [phases.setup]
-nixPkgs = ["nodejs-18_x", "npm-9_x"]
+nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
-cmds = ["npm ci --include=dev"]
+cmds = [
+  "echo 'Installing dependencies...'",
+  "npm install --legacy-peer-deps --no-audit --no-fund",
+  "echo 'Dependencies installed successfully'"
+]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "echo 'Starting React build process...'",
+  "npm run build",
+  "echo 'React build completed successfully'",
+  "npm install -g serve"
+]
+
+[start]
+cmd = "serve -s build -p $PORT"
