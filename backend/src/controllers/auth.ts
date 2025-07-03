@@ -6,17 +6,43 @@ import { createError, asyncHandler } from '../middleware/error';
 
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
+  
+  console.log('LOGIN ATTEMPT:', { 
+    email, 
+    hasPassword: !!password,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent']?.substring(0, 100)
+  });
 
   const user = await UserModel.findByEmail(email);
   if (!user) {
+    console.log('LOGIN FAILED: User not found for email:', email);
     throw createError('Invalid email or password', 401);
   }
+
+  console.log('USER FOUND:', { 
+    id: user.id, 
+    email: user.email, 
+    role: user.role,
+    hasPassword: !!user.password 
+  });
 
   const isPasswordValid = await UserModel.verifyPassword(user, password);
   if (!isPasswordValid) {
+    console.log('LOGIN FAILED: Invalid password for user:', email);
     throw createError('Invalid email or password', 401);
   }
 
+  console.log('PASSWORD VALID: Generating token...');
+  
+  try {
+    const token = AuthService.generateToken(user);
+    console.log('TOKEN GENERATED: Success, length:', token?.length || 0);
+  } catch (tokenError) {
+    console.error('TOKEN GENERATION FAILED:', tokenError);
+    throw createError('Authentication service error', 500);
+  }
+  
   const token = AuthService.generateToken(user);
 
   const userResponse = {
@@ -35,6 +61,8 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   });
 
+  console.log('LOGIN SUCCESS: Sending response for user:', email);
+  
   res.json({
     success: true,
     data: {

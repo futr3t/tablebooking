@@ -56,6 +56,82 @@ app.use(cookieParser());
 // app.use(sanitizeInput);
 // app.use(validateContentType);
 
+// Add public diagnostic endpoints BEFORE authentication
+app.get('/api/debug-login', async (req, res) => {
+  const diagnostics: any = {
+    server: {
+      status: 'running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'not set',
+      port: process.env.PORT || 'not set'
+    },
+    criticalEnvironment: {
+      JWT_SECRET_SET: !!process.env.JWT_SECRET,
+      JWT_SECRET_LENGTH: process.env.JWT_SECRET?.length || 0,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL,
+      CORS_ORIGIN: process.env.CORS_ORIGIN || 'not set (defaults to http://localhost:3000)',
+      CORS_ORIGINS_ARRAY: process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || ['http://localhost:3000']
+    },
+    request: {
+      origin: req.headers.origin || 'no origin header',
+      referer: req.headers.referer || 'no referer header',
+      host: req.headers.host || 'no host header',
+      method: req.method,
+      url: req.url
+    },
+    issues: []
+  };
+
+  // Check critical environment variables
+  if (!process.env.JWT_SECRET) {
+    diagnostics.issues.push({
+      severity: 'CRITICAL',
+      issue: 'JWT_SECRET is not set',
+      solution: 'Set JWT_SECRET environment variable in Railway backend service',
+      railwayInstructions: 'Railway → Backend Service → Variables → Add: JWT_SECRET=your-secret-key'
+    });
+  }
+
+  if (!process.env.DATABASE_URL) {
+    diagnostics.issues.push({
+      severity: 'CRITICAL', 
+      issue: 'DATABASE_URL is not set',
+      solution: 'Ensure PostgreSQL database is linked to backend service in Railway'
+    });
+  }
+
+  // Check CORS configuration
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin) {
+    const allowedOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+      : ['http://localhost:3000'];
+    
+    if (!allowedOrigins.includes(requestOrigin)) {
+      diagnostics.issues.push({
+        severity: 'CRITICAL',
+        issue: `CORS mismatch: Frontend origin '${requestOrigin}' not in allowed origins`,
+        solution: `Set CORS_ORIGIN=${requestOrigin} in Railway backend environment variables`,
+        currentAllowedOrigins: allowedOrigins,
+        railwayInstructions: `Railway → Backend Service → Variables → Add: CORS_ORIGIN=${requestOrigin}`
+      });
+    }
+  }
+
+  diagnostics.recommendedFix = {
+    step1: 'Go to Railway → Backend Service → Variables',
+    step2: 'Add: JWT_SECRET=8f7d6a5s4d3f2g1h0j9k8l7m6n5p4q3r2s1t0u9v8w7x6y5z4',
+    step3: `Add: CORS_ORIGIN=${requestOrigin || 'https://your-frontend-url.railway.app'}`,
+    step4: 'Wait 2-3 minutes for redeploy, then try login again'
+  };
+
+  res.json({
+    success: diagnostics.issues.filter(i => i.severity === 'CRITICAL').length === 0,
+    data: diagnostics,
+    summary: `${diagnostics.issues.length} issues found (${diagnostics.issues.filter(i => i.severity === 'CRITICAL').length} critical)`
+  });
+});
+
 app.use('/api', routes);
 
 // Also serve widget at root level for easier access
