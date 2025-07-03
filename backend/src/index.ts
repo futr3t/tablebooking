@@ -132,6 +132,64 @@ app.get('/api/debug-login', async (req, res) => {
   });
 });
 
+// Add table diagnostic endpoint
+app.get('/api/debug-tables', async (req, res) => {
+  try {
+    const { db } = require('./config/database');
+    
+    // Check if tables table exists
+    const tableExists = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'tables'
+      );
+    `);
+    
+    // Get table structure if it exists
+    let columns = [];
+    if (tableExists.rows[0].exists) {
+      const columnResult = await db.query(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns 
+        WHERE table_name = 'tables' 
+        ORDER BY ordinal_position;
+      `);
+      columns = columnResult.rows;
+    }
+    
+    // Get sample tables if any exist
+    let sampleTables = [];
+    let tableCount = 0;
+    if (tableExists.rows[0].exists) {
+      const countResult = await db.query('SELECT COUNT(*) as count FROM tables');
+      tableCount = parseInt(countResult.rows[0].count);
+      
+      if (tableCount > 0) {
+        const sampleResult = await db.query('SELECT * FROM tables LIMIT 3');
+        sampleTables = sampleResult.rows;
+      }
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        tableExists: tableExists.rows[0].exists,
+        tableCount,
+        columns,
+        sampleTables,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 app.use('/api', routes);
 
 // Also serve widget at root level for easier access
