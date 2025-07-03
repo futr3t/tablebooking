@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions, Table, TableSummary, BulkTableOperation, TimeSlotRule, CreateTimeSlotRuleData, UpdateTimeSlotRuleData } from '../types';
+import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions, Table, TableSummary, BulkTableOperation } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -214,53 +214,5 @@ export const tableService = {
   },
 };
 
-export const timeSlotRuleService = {
-  /**
-   * Get all time slot rules for a restaurant
-   */
-  getTimeSlotRules: async (restaurantId: string): Promise<TimeSlotRule[]> => {
-    const response = await api.get(`/restaurants/${restaurantId}/time-slot-rules`);
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Get time slot rules for a specific day
-   */
-  getTimeSlotRulesForDay: async (restaurantId: string, dayOfWeek: number): Promise<TimeSlotRule[]> => {
-    const response = await api.get(`/restaurants/${restaurantId}/time-slot-rules/day/${dayOfWeek}`);
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Get a single time slot rule by ID
-   */
-  getTimeSlotRule: async (id: string): Promise<TimeSlotRule> => {
-    const response = await api.get(`/time-slot-rules/${id}`);
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Create a new time slot rule
-   */
-  createTimeSlotRule: async (restaurantId: string, data: CreateTimeSlotRuleData): Promise<TimeSlotRule> => {
-    const response = await api.post(`/restaurants/${restaurantId}/time-slot-rules`, data);
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Update an existing time slot rule
-   */
-  updateTimeSlotRule: async (id: string, data: UpdateTimeSlotRuleData): Promise<TimeSlotRule> => {
-    const response = await api.put(`/time-slot-rules/${id}`, data);
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Delete a time slot rule
-   */
-  deleteTimeSlotRule: async (id: string): Promise<void> => {
-    await api.delete(`/time-slot-rules/${id}`);
-  },
-};
 
 export default api;

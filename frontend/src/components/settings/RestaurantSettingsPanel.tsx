@@ -12,13 +12,13 @@ import {
   FormControlLabel,
   Divider,
   Chip,
-  CircularProgress
+  CircularProgress,
+  IconButton
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Refresh as RefreshIcon,
   AccessTime as TimeIcon,
-  Restaurant as RestaurantIcon,
   Settings as SettingsIcon,
   Info as InfoIcon,
   GroupWork as ConcurrentIcon,
