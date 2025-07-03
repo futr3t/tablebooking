@@ -186,8 +186,8 @@ export interface TimeSlotRule {
   maxConcurrentBookings?: number;
   turnTimeMinutes?: number;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateTimeSlotRuleData {

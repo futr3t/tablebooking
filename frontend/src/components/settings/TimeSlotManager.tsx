@@ -98,7 +98,7 @@ export default function TimeSlotManager({ restaurantId, onUpdate }: TimeSlotMana
     if (restaurantId) {
       loadTimeSlotRules();
     }
-  }, [restaurantId]);
+  }, [restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Form handlers
   const handleOpenDialog = (rule?: TimeSlotRule) => {
