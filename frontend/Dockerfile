@@ -18,7 +18,16 @@ COPY . .
 ENV NODE_OPTIONS="--max-old-space-size=6144"
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
+
+# Accept build arguments for API URLs
+ARG REACT_APP_API_URL
+ARG REACT_APP_SOCKET_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
+
 RUN echo "Starting React build..." && \
+    echo "API URL: $REACT_APP_API_URL" && \
+    echo "Socket URL: $REACT_APP_SOCKET_URL" && \
     npm run build && \
     echo "React build completed successfully"
 
