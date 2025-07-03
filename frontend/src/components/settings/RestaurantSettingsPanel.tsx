@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
+import TimeSlotManager from './TimeSlotManager';
 
 interface RestaurantSettings {
   id?: string;
@@ -675,6 +676,14 @@ const RestaurantSettingsPanel: React.FC = () => {
               </Grid>
             </CardContent>
           </Card>
+        </Grid>
+
+        {/* Multiple Service Periods */}
+        <Grid item xs={12}>
+          <TimeSlotManager 
+            restaurantId={settings.id || user?.restaurantId || ''}
+            onUpdate={loadSettings}
+          />
         </Grid>
       </Grid>
     </Box>
