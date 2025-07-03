@@ -30,10 +30,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "start:shell": "./start.sh",
-    "serve": "serve -s build -p ${PORT:-3000} --single",
     "dev": "react-scripts start",
-    "build": "NODE_OPTIONS='--max-old-space-size=6144' GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

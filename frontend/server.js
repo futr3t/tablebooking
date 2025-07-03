@@ -5,28 +5,65 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Check if build directory exists
+console.log('=== FRONTEND SERVER STARTING ===');
+console.log('PORT:', PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Current directory:', __dirname);
+console.log('Directory contents:', fs.readdirSync(__dirname));
+
 const buildPath = path.join(__dirname, 'build');
-if (!fs.existsSync(buildPath)) {
-  console.error('ERROR: Build directory not found!');
-  console.error('Please ensure the build phase completed successfully.');
-  process.exit(1);
+const buildExists = fs.existsSync(buildPath);
+console.log('Build path:', buildPath);
+console.log('Build exists:', buildExists);
+
+if (buildExists) {
+  console.log('Build directory contents:', fs.readdirSync(buildPath).slice(0, 10));
+  
+  // Serve static files
+  app.use(express.static(buildPath));
+  
+  // CRITICAL: Handle Railway's healthcheck at root path
+  app.get('/', (req, res) => {
+    console.log('Healthcheck request received at /');
+    const indexPath = path.join(buildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(200).send('OK - Server running but index.html not found');
+    }
+  });
+  
+  // Catch all handler for React Router
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+} else {
+  // If no build directory, still respond to healthchecks
+  app.get('*', (req, res) => {
+    console.log('Request to:', req.path);
+    res.status(503).send(`Build directory not found. Server running on port ${PORT}`);
+  });
 }
 
-// Serve static files from the React app
-app.use(express.static(buildPath));
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server started successfully on port ${PORT}`);
+  console.log(`Server is ready to accept connections`);
 });
 
-// Handles any requests that don't match the ones above
-app.get('*', (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
+// Handle shutdown gracefully
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check available at http://localhost:${PORT}/health`);
+// Log any uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
