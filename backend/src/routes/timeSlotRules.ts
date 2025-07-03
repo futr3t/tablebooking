@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { TimeSlotRuleModel } from '../models/TimeSlotRule';
-import { authenticateJWT, requireRole } from '../middleware/auth';
-import { UserRole, CreateTimeSlotRuleData, UpdateTimeSlotRuleData } from '../types';
+import { authenticate } from '../middleware/auth';
+import { UserRole, CreateTimeSlotRuleData, UpdateTimeSlotRuleData, AuthRequest } from '../types';
 
 const router = Router();
 
@@ -9,16 +9,17 @@ const router = Router();
  * Get all time slot rules for a restaurant
  * GET /api/restaurants/:restaurantId/time-slot-rules
  */
-router.get('/:restaurantId/time-slot-rules', authenticateJWT, async (req, res) => {
+router.get('/:restaurantId/time-slot-rules', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { restaurantId } = req.params;
     
     // Check if user has access to this restaurant
     if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied'
       });
+      return;
     }
 
     const timeSlotRules = await TimeSlotRuleModel.findByRestaurantId(restaurantId);
@@ -40,24 +41,26 @@ router.get('/:restaurantId/time-slot-rules', authenticateJWT, async (req, res) =
  * Get time slot rules for a specific day
  * GET /api/restaurants/:restaurantId/time-slot-rules/day/:dayOfWeek
  */
-router.get('/:restaurantId/time-slot-rules/day/:dayOfWeek', authenticateJWT, async (req, res) => {
+router.get('/:restaurantId/time-slot-rules/day/:dayOfWeek', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { restaurantId, dayOfWeek } = req.params;
     const day = parseInt(dayOfWeek);
     
     if (isNaN(day) || day < 0 || day > 6) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Day of week must be between 0 (Sunday) and 6 (Saturday)'
       });
+      return;
     }
     
     // Check if user has access to this restaurant
     if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied'
       });
+      return;
     }
 
     const timeSlotRules = await TimeSlotRuleModel.findByRestaurantAndDay(restaurantId, day);
@@ -79,24 +82,26 @@ router.get('/:restaurantId/time-slot-rules/day/:dayOfWeek', authenticateJWT, asy
  * Get a single time slot rule
  * GET /api/time-slot-rules/:id
  */
-router.get('/time-slot-rules/:id', authenticateJWT, async (req, res) => {
+router.get('/time-slot-rules/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const timeSlotRule = await TimeSlotRuleModel.findById(id);
     
     if (!timeSlotRule) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Time slot rule not found'
       });
+      return;
     }
     
     // Check if user has access to this restaurant
     if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== timeSlotRule.restaurantId) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Access denied'
       });
+      return;
     }
 
     res.json({
@@ -117,36 +122,47 @@ router.get('/time-slot-rules/:id', authenticateJWT, async (req, res) => {
  * POST /api/restaurants/:restaurantId/time-slot-rules
  */
 router.post('/:restaurantId/time-slot-rules', 
-  authenticateJWT, 
-  requireRole([UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER]), 
-  async (req, res) => {
+  authenticate, 
+  async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { restaurantId } = req.params;
       const data: CreateTimeSlotRuleData = req.body;
       
       // Check if user has access to this restaurant
       if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== restaurantId) {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Access denied'
         });
+        return;
+      }
+
+      // Only allow owners, managers and super admins to create rules
+      if (![UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER].includes(req.user?.role!)) {
+        res.status(403).json({
+          success: false,
+          error: 'Insufficient permissions'
+        });
+        return;
       }
 
       // Validate required fields
       if (!data.name || !data.startTime || !data.endTime) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Name, start time, and end time are required'
         });
+        return;
       }
 
       // Validate time format (HH:MM)
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(data.startTime) || !timeRegex.test(data.endTime)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Time must be in HH:MM format'
         });
+        return;
       }
 
       // Validate that start time is before end time
@@ -156,10 +172,11 @@ router.post('/:restaurantId/time-slot-rules',
       const endMinutes = endHour * 60 + endMin;
       
       if (startMinutes >= endMinutes) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Start time must be before end time'
         });
+        return;
       }
 
       // Check for time conflicts
@@ -172,11 +189,12 @@ router.post('/:restaurantId/time-slot-rules',
         );
         
         if (conflicts.length > 0) {
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             error: `Time slot conflicts with existing rule: ${conflicts[0].name}`,
             conflicts: conflicts.map(c => ({ id: c.id, name: c.name, startTime: c.startTime, endTime: c.endTime }))
           });
+          return;
         }
       }
 
@@ -202,9 +220,8 @@ router.post('/:restaurantId/time-slot-rules',
  * PUT /api/time-slot-rules/:id
  */
 router.put('/time-slot-rules/:id', 
-  authenticateJWT, 
-  requireRole([UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER]), 
-  async (req, res) => {
+  authenticate, 
+  async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       const data: UpdateTimeSlotRuleData = req.body;
@@ -212,32 +229,45 @@ router.put('/time-slot-rules/:id',
       // First check if the rule exists and user has access
       const existingRule = await TimeSlotRuleModel.findById(id);
       if (!existingRule) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Time slot rule not found'
         });
+        return;
       }
       
       if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== existingRule.restaurantId) {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Access denied'
         });
+        return;
+      }
+
+      // Only allow owners, managers and super admins to update rules
+      if (![UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER].includes(req.user?.role!)) {
+        res.status(403).json({
+          success: false,
+          error: 'Insufficient permissions'
+        });
+        return;
       }
 
       // Validate time format if provided
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (data.startTime && !timeRegex.test(data.startTime)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Start time must be in HH:MM format'
         });
+        return;
       }
       if (data.endTime && !timeRegex.test(data.endTime)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'End time must be in HH:MM format'
         });
+        return;
       }
 
       // Validate that start time is before end time
@@ -249,10 +279,11 @@ router.put('/time-slot-rules/:id',
       const endMinutes = endHour * 60 + endMin;
       
       if (startMinutes >= endMinutes) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Start time must be before end time'
         });
+        return;
       }
 
       // Check for time conflicts if time or day is being changed
@@ -267,21 +298,23 @@ router.put('/time-slot-rules/:id',
         );
         
         if (conflicts.length > 0) {
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             error: `Time slot conflicts with existing rule: ${conflicts[0].name}`,
             conflicts: conflicts.map(c => ({ id: c.id, name: c.name, startTime: c.startTime, endTime: c.endTime }))
           });
+          return;
         }
       }
 
       const timeSlotRule = await TimeSlotRuleModel.update(id, data);
       
       if (!timeSlotRule) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Time slot rule not found'
         });
+        return;
       }
       
       res.json({
@@ -304,35 +337,46 @@ router.put('/time-slot-rules/:id',
  * DELETE /api/time-slot-rules/:id
  */
 router.delete('/time-slot-rules/:id', 
-  authenticateJWT, 
-  requireRole([UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER]), 
-  async (req, res) => {
+  authenticate, 
+  async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       
       // First check if the rule exists and user has access
       const existingRule = await TimeSlotRuleModel.findById(id);
       if (!existingRule) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Time slot rule not found'
         });
+        return;
       }
       
       if (req.user?.role !== UserRole.SUPER_ADMIN && req.user?.restaurantId !== existingRule.restaurantId) {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Access denied'
         });
+        return;
+      }
+
+      // Only allow owners, managers and super admins to delete rules
+      if (![UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER].includes(req.user?.role!)) {
+        res.status(403).json({
+          success: false,
+          error: 'Insufficient permissions'
+        });
+        return;
       }
 
       const deleted = await TimeSlotRuleModel.delete(id);
       
       if (!deleted) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Time slot rule not found'
         });
+        return;
       }
       
       res.json({

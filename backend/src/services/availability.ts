@@ -44,12 +44,13 @@ export class AvailabilityService {
       }
 
       // Get time slot rules for this day
-      const dayOfWeek = this.getDayOfWeek(requestDate);
-      const timeSlotRules = await TimeSlotRuleModel.findByRestaurantAndDay(restaurantId, dayOfWeek);
+      const dayOfWeekString = this.getDayOfWeek(requestDate);
+      const dayOfWeekNumber = requestDate.getDay(); // 0=Sunday, 1=Monday, etc.
+      const timeSlotRules = await TimeSlotRuleModel.findByRestaurantAndDay(restaurantId, dayOfWeekNumber);
 
       // Fall back to basic opening hours if no time slot rules are defined
       if (timeSlotRules.length === 0) {
-        const daySchedule = openingHours[dayOfWeek];
+        const daySchedule = openingHours[dayOfWeekString];
         if (!daySchedule || !daySchedule.isOpen) {
           return {
             date,
