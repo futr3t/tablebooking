@@ -152,7 +152,8 @@ app.get('/api/debug-tables', async (req, res) => {
       const columnResult = await db.query(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns 
-        WHERE table_name = 'tables' 
+        WHERE table_schema = 'public' 
+        AND table_name = 'tables' 
         ORDER BY ordinal_position;
       `);
       columns = columnResult.rows;
@@ -180,6 +181,64 @@ app.get('/api/debug-tables', async (req, res) => {
         sampleTables,
         timestamp: new Date().toISOString()
       }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Migration endpoint for missing table columns
+app.post('/api/migrate-tables', async (req, res) => {
+  try {
+    const { db } = require('./config/database');
+    
+    // Add missing columns
+    const migrations = [
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS table_type VARCHAR(50) DEFAULT 'standard'",
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS notes TEXT",
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS location_notes VARCHAR(255)",
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS is_accessible BOOLEAN DEFAULT false",
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS is_combinable BOOLEAN DEFAULT true",
+      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0"
+    ];
+    
+    const updates = [
+      "UPDATE tables SET table_type = 'standard' WHERE table_type IS NULL",
+      "UPDATE tables SET is_accessible = false WHERE is_accessible IS NULL",
+      "UPDATE tables SET is_combinable = true WHERE is_combinable IS NULL",
+      "UPDATE tables SET priority = 0 WHERE priority IS NULL"
+    ];
+    
+    const results = [];
+    
+    // Run migrations
+    for (const migration of migrations) {
+      try {
+        await db.query(migration);
+        results.push({ query: migration, status: 'success' });
+      } catch (error) {
+        results.push({ query: migration, status: 'error', error: error.message });
+      }
+    }
+    
+    // Run updates
+    for (const update of updates) {
+      try {
+        const result = await db.query(update);
+        results.push({ query: update, status: 'success', rowsAffected: result.rowCount });
+      } catch (error) {
+        results.push({ query: update, status: 'error', error: error.message });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Table migration completed',
+      results
     });
   } catch (error) {
     res.status(500).json({
