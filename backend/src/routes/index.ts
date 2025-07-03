@@ -8,11 +8,14 @@ import widgetRoutes from './widget';
 import publicWidgetRoutes from './publicWidget';
 import widgetEmbeddedRoutes from './widget-embedded';
 import diagnosticRoutes from './diagnostic';
+import staffBookingRoutes from './staffBooking';
+import dietaryRequirementsRoutes from './dietaryRequirements';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/bookings', bookingRoutes);
+router.use('/bookings/staff', staffBookingRoutes);
 router.use('/tables', tableRoutes);
 router.use('/restaurants', restaurantRoutes);
 router.use('/public', publicRoutes);
@@ -20,6 +23,7 @@ router.use('/widget', widgetRoutes);
 router.use('/widget/public', publicWidgetRoutes); // Public widget API routes
 router.use('/', widgetEmbeddedRoutes); // Root level widget routes
 router.use('/diagnostic', diagnosticRoutes);
+router.use('/dietary-requirements', dietaryRequirementsRoutes);
 
 router.get('/health', (req, res) => {
   res.json({

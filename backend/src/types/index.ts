@@ -166,6 +166,15 @@ export interface Booking {
   status: BookingStatus;
   notes?: string;
   specialRequests?: string;
+  dietaryRequirements?: string;
+  occasion?: string;
+  preferredSeating?: string;
+  marketingConsent?: boolean;
+  source?: BookingSource;
+  createdBy?: string;
+  isVip?: boolean;
+  internalNotes?: string;
+  metadata?: BookingMetadata;
   noShowCount: number;
   isWaitlisted: boolean;
   waitlistPosition?: number;
@@ -181,6 +190,25 @@ export enum BookingStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   NO_SHOW = 'no_show'
+}
+
+export enum BookingSource {
+  PHONE = 'phone',
+  WALK_IN = 'walk_in',
+  WEBSITE = 'website',
+  WIDGET = 'widget',
+  STAFF = 'staff',
+  IMPORT = 'import'
+}
+
+export interface BookingMetadata {
+  tablePreferences?: string[];
+  allergySeverity?: string;
+  celebrationDetails?: string;
+  previousVisits?: number;
+  favoriteItems?: string[];
+  specialInstructions?: string;
+  [key: string]: any;
 }
 
 export interface AuthRequest extends ExpressRequest {
@@ -242,5 +270,52 @@ export interface ReportData {
     time: string;
     count: number;
   }>;
+}
+
+export interface DietaryRequirement {
+  id: string;
+  name: string;
+  category: 'allergy' | 'intolerance' | 'preference' | 'religious';
+  description?: string;
+  commonIngredients?: string[];
+  severity?: 'life_threatening' | 'severe' | 'moderate' | 'mild';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BookingTemplate {
+  id: string;
+  restaurantId: string;
+  customerPhone: string;
+  customerName: string;
+  customerEmail?: string;
+  preferredPartySize?: number;
+  dietaryRequirements?: string;
+  preferredSeating?: string;
+  specialRequests?: string;
+  isVip: boolean;
+  notes?: string;
+  lastBookingDate?: Date;
+  totalBookings: number;
+  noShowCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BookingOccasion {
+  id: string;
+  name: string;
+  icon?: string;
+  requiresSpecialSetup: boolean;
+  defaultDurationMinutes?: number;
+  isActive: boolean;
+}
+
+export interface EnhancedTimeSlot extends TimeSlot {
+  pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
+  tablesAvailable: number;
+  suggestedTables?: Table[];
+  alternativeTimes?: string[];
 }
 

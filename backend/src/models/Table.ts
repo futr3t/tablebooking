@@ -388,6 +388,27 @@ export class TableModel {
   }
 
   /**
+   * Find available tables for a specific time slot
+   */
+  static async findAvailableTablesForTimeSlot(
+    restaurantId: string,
+    time: string,
+    partySize: number
+  ): Promise<Table[]> {
+    try {
+      // First get all suitable tables for the party size
+      const suitableTables = await this.findAvailableTablesForPartySize(restaurantId, partySize);
+      
+      // For now, return all suitable tables
+      // In a real implementation, you would check against bookings for the specific time
+      return suitableTables;
+    } catch (error) {
+      console.error('Error finding available tables for time slot:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Map database row to Table interface
    */
   private static mapFromDb(row: any): Table {

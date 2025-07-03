@@ -7,13 +7,17 @@ import {
   CardContent,
   CircularProgress,
   Alert,
+  Button,
+  Fab,
 } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { format, parseISO, isToday } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 import TimelineView from './TimelineView';
+import { QuickBookingDialog } from '../bookings/QuickBookingDialog';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -28,6 +32,7 @@ const Dashboard: React.FC = () => {
     cancelled: 0,
     totalGuests: 0,
   });
+  const [quickBookingOpen, setQuickBookingOpen] = useState(false);
 
   useEffect(() => {
     if (user?.restaurantId) {
@@ -109,6 +114,13 @@ const Dashboard: React.FC = () => {
     loadTodaysBookings();
   };
 
+  const handleQuickBookingSuccess = (booking: Booking) => {
+    if (isToday(parseISO(booking.bookingDate))) {
+      setBookings(prev => [...prev, booking]);
+      updateStats([...bookings, booking]);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -119,17 +131,33 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ 
-          fontWeight: 700, 
-          color: 'text.primary',
-          mb: 0.5
-        }}>
-          Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {format(new Date(), 'EEEE, MMMM d, yyyy')} • Today's bookings and activity
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700, 
+            color: 'text.primary',
+            mb: 0.5
+          }}>
+            Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {format(new Date(), 'EEEE, MMMM d, yyyy')} • Today's bookings and activity
+          </Typography>
+        </Box>
+        
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setQuickBookingOpen(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+            }
+          }}
+        >
+          Quick Booking
+        </Button>
       </Box>
       
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -240,6 +268,39 @@ const Dashboard: React.FC = () => {
           />
         </Box>
       </Card>
+
+      {/* Quick Booking Dialog */}
+      {user?.restaurantId && (
+        <QuickBookingDialog
+          open={quickBookingOpen}
+          onClose={() => setQuickBookingOpen(false)}
+          restaurantId={user.restaurantId}
+          onSuccess={handleQuickBookingSuccess}
+        />
+      )}
+
+      {/* Floating Action Button for Mobile */}
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          display: { xs: 'block', md: 'none' }
+        }}
+      >
+        <Fab
+          color="primary"
+          onClick={() => setQuickBookingOpen(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+            }
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Box>
     </Box>
   );
 };

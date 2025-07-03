@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions, Table, TableSummary, BulkTableOperation } from '../types';
+import { AuthResponse, LoginCredentials, User, Booking, WidgetConfig, InstallationInstructions, Table, TableSummary, BulkTableOperation, DietaryRequirement, BookingTemplate, EnhancedAvailability } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -103,6 +103,81 @@ export const bookingService = {
     const response = await api.get('/bookings/availability', {
       params: { restaurantId, date, partySize },
     });
+    return response.data.data || response.data;
+  },
+
+  // Staff booking methods
+  createStaffBooking: async (booking: any): Promise<Booking> => {
+    const response = await api.post('/bookings/staff', booking);
+    return response.data.data || response.data;
+  },
+
+  getEnhancedAvailability: async (
+    restaurantId: string, 
+    date: string, 
+    partySize: number,
+    preferredTime?: string
+  ): Promise<EnhancedAvailability> => {
+    const response = await api.get('/bookings/staff/availability', {
+      params: { restaurantId, date, partySize, preferredTime },
+    });
+    return response.data.data || response.data;
+  },
+
+  searchCustomers: async (restaurantId: string, search: string): Promise<BookingTemplate[]> => {
+    const response = await api.get(`/bookings/staff/customers/${restaurantId}`, {
+      params: { search },
+    });
+    return response.data.data || response.data;
+  },
+
+  bulkCheckAvailability: async (
+    restaurantId: string,
+    dates: string[],
+    partySize: number,
+    duration?: number
+  ) => {
+    const response = await api.post('/bookings/staff/availability/bulk', {
+      restaurantId,
+      dates,
+      partySize,
+      duration,
+    });
+    return response.data.data || response.data;
+  },
+};
+
+// New services for optimized booking system
+export const dietaryService = {
+  getRequirements: async (): Promise<DietaryRequirement[]> => {
+    const response = await api.get('/dietary-requirements');
+    return response.data.data || response.data;
+  },
+
+  searchRequirements: async (query: string): Promise<DietaryRequirement[]> => {
+    const response = await api.get('/dietary-requirements/search', {
+      params: { q: query },
+    });
+    return response.data.data || response.data;
+  },
+
+  getCommonCombinations: async () => {
+    const response = await api.get('/dietary-requirements/combinations');
+    return response.data.data || response.data;
+  },
+
+  createRequirement: async (requirement: Partial<DietaryRequirement>): Promise<DietaryRequirement> => {
+    const response = await api.post('/dietary-requirements', requirement);
+    return response.data.data || response.data;
+  },
+
+  updateRequirement: async (id: string, requirement: Partial<DietaryRequirement>): Promise<DietaryRequirement> => {
+    const response = await api.put(`/dietary-requirements/${id}`, requirement);
+    return response.data.data || response.data;
+  },
+
+  getStats: async (restaurantId: string) => {
+    const response = await api.get(`/dietary-requirements/stats/${restaurantId}`);
     return response.data.data || response.data;
   },
 };

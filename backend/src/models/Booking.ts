@@ -1,5 +1,7 @@
-import { db } from '../config/database';
-import { Booking, BookingStatus, PaginatedResponse } from '../types';
+import { pool as db } from '../config/database';
+import { Booking, BookingStatus, PaginatedResponse, BookingSource } from '../types';
+import { toCamelCase, toSnakeCase } from '../utils/caseConverter';
+import { BookingTemplateModel } from './BookingTemplate';
 
 export class BookingModel {
   static async findById(id: string): Promise<Booking | null> {
@@ -30,6 +32,15 @@ export class BookingModel {
     duration?: number;
     notes?: string;
     specialRequests?: string;
+    dietaryRequirements?: string;
+    occasion?: string;
+    preferredSeating?: string;
+    marketingConsent?: boolean;
+    source?: BookingSource;
+    createdBy?: string;
+    isVip?: boolean;
+    internalNotes?: string;
+    metadata?: any;
     isWaitlisted?: boolean;
   }): Promise<Booking> {
     const client = await db.connect();
@@ -44,9 +55,11 @@ export class BookingModel {
         INSERT INTO bookings (
           restaurant_id, table_id, customer_name, customer_email, customer_phone,
           party_size, booking_date, booking_time, duration, notes, special_requests,
+          dietary_requirements, occasion, preferred_seating, marketing_consent,
+          source, created_by, is_vip, internal_notes, metadata,
           is_waitlisted, confirmation_code, status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
         RETURNING *
       `, [
         bookingData.restaurantId,
@@ -60,6 +73,15 @@ export class BookingModel {
         bookingData.duration || 120,
         bookingData.notes || null,
         bookingData.specialRequests || null,
+        bookingData.dietaryRequirements || null,
+        bookingData.occasion || null,
+        bookingData.preferredSeating || null,
+        bookingData.marketingConsent || false,
+        bookingData.source || BookingSource.PHONE,
+        bookingData.createdBy || null,
+        bookingData.isVip || false,
+        bookingData.internalNotes || null,
+        bookingData.metadata ? JSON.stringify(bookingData.metadata) : null,
         bookingData.isWaitlisted || false,
         confirmationCode,
         bookingData.isWaitlisted ? BookingStatus.PENDING : BookingStatus.CONFIRMED
@@ -81,7 +103,29 @@ export class BookingModel {
       }
 
       await client.query('COMMIT');
-      return result.rows[0];
+      
+      // Update booking template for repeat customers
+      if (bookingData.customerPhone) {
+        try {
+          await BookingTemplateModel.upsert({
+            restaurantId: bookingData.restaurantId,
+            customerPhone: bookingData.customerPhone,
+            customerName: bookingData.customerName,
+            customerEmail: bookingData.customerEmail,
+            preferredPartySize: bookingData.partySize,
+            dietaryRequirements: bookingData.dietaryRequirements,
+            preferredSeating: bookingData.preferredSeating,
+            specialRequests: bookingData.specialRequests,
+            isVip: bookingData.isVip || false,
+            lastBookingDate: new Date(bookingData.bookingDate)
+          });
+        } catch (templateError) {
+          console.error('Error updating booking template:', templateError);
+          // Don't fail the booking if template update fails
+        }
+      }
+      
+      return toCamelCase(result.rows[0]);
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Error creating booking:', error);

@@ -23,18 +23,45 @@ export interface AuthResponse {
 export interface Booking {
   id: string;
   restaurantId: string;
-  guestName: string;
-  guestEmail?: string;
-  guestPhone?: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
   partySize: number;
+  bookingDate: string;
   bookingTime: string;
+  duration: number;
   tableId?: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  notes?: string;
   specialRequests?: string;
+  dietaryRequirements?: string;
+  occasion?: string;
+  preferredSeating?: string;
+  marketingConsent?: boolean;
+  source?: 'phone' | 'walk_in' | 'website' | 'widget' | 'staff' | 'import';
+  createdBy?: string;
+  isVip?: boolean;
+  internalNotes?: string;
+  metadata?: BookingMetadata;
+  isWaitlisted: boolean;
+  waitlistPosition?: number;
   confirmationCode?: string;
   createdAt: string;
   updatedAt: string;
   tables?: Table[];
+}
+
+export interface BookingMetadata {
+  tablePreferences?: string[];
+  allergySeverity?: string;
+  celebrationDetails?: string;
+  previousVisits?: number;
+  favoriteItems?: string[];
+  specialInstructions?: string;
+  createdByStaff?: string;
+  overridePacing?: boolean;
+  overrideReason?: string;
+  [key: string]: any;
 }
 
 export interface Table {
@@ -195,5 +222,59 @@ export interface OpeningHours {
   friday: DaySchedule;
   saturday: DaySchedule;
   sunday: DaySchedule;
+}
+
+// New types for optimized booking system
+export interface DietaryRequirement {
+  id: string;
+  name: string;
+  category: 'allergy' | 'intolerance' | 'preference' | 'religious';
+  description?: string;
+  commonIngredients?: string[];
+  severity?: 'life_threatening' | 'severe' | 'moderate' | 'mild';
+  isActive: boolean;
+}
+
+export interface BookingTemplate {
+  id: string;
+  restaurantId: string;
+  customerPhone: string;
+  customerName: string;
+  customerEmail?: string;
+  preferredPartySize?: number;
+  dietaryRequirements?: string;
+  preferredSeating?: string;
+  specialRequests?: string;
+  isVip: boolean;
+  notes?: string;
+  lastBookingDate?: string;
+  totalBookings: number;
+  noShowCount: number;
+}
+
+export interface BookingOccasion {
+  id: string;
+  name: string;
+  icon?: string;
+  requiresSpecialSetup: boolean;
+  defaultDurationMinutes?: number;
+  isActive: boolean;
+}
+
+export interface EnhancedTimeSlot extends TimeSlot {
+  pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
+  tablesAvailable: number;
+  suggestedTables?: Table[];
+  alternativeTimes?: string[];
+}
+
+export interface EnhancedAvailability {
+  date: string;
+  timeSlots: EnhancedTimeSlot[];
+  suggestions: {
+    quietTimes: string[];
+    peakTimes: string[];
+    bestAvailability: string[];
+  };
 }
 
