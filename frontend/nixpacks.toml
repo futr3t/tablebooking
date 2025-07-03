@@ -25,4 +25,4 @@ cmds = [
 ]
 
 [start]
-cmd = "serve -s build -p $PORT"
+cmd = "node server.js"
