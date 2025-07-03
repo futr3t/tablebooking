@@ -256,3 +256,26 @@ export interface ReportData {
     count: number;
   }>;
 }
+
+// Time Slot Rule interfaces for CRUD operations
+export interface CreateTimeSlotRuleData {
+  name: string;
+  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes?: number;
+  maxConcurrentBookings?: number;
+  turnTimeMinutes?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateTimeSlotRuleData {
+  name?: string;
+  dayOfWeek?: number | null;
+  startTime?: string;
+  endTime?: string;
+  slotDurationMinutes?: number;
+  maxConcurrentBookings?: number | null;
+  turnTimeMinutes?: number;
+  isActive?: boolean;
+}

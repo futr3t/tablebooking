@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import bookingRoutes from './booking';
 import tableRoutes from './table';
 import restaurantRoutes from './restaurant';
+import timeSlotRulesRoutes from './timeSlotRules';
 import publicRoutes from './public';
 import widgetRoutes from './widget';
 import publicWidgetRoutes from './publicWidget';
@@ -15,6 +16,8 @@ router.use('/auth', authRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/tables', tableRoutes);
 router.use('/restaurants', restaurantRoutes);
+router.use('/restaurants', timeSlotRulesRoutes); // Restaurant-specific time slot rule routes
+router.use('/', timeSlotRulesRoutes); // Standalone time slot rule routes
 router.use('/public', publicRoutes);
 router.use('/widget', widgetRoutes);
 router.use('/widget/public', publicWidgetRoutes); // Public widget API routes

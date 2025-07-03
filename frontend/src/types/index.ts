@@ -173,3 +173,41 @@ export interface RestaurantSettings {
   staggerMinutes: number;
   defaultSlotDuration: number;
 }
+
+// Time Slot Rule interfaces for multiple opening hours per day
+export interface TimeSlotRule {
+  id: string;
+  restaurantId: string;
+  name: string; // e.g., "Lunch Service", "Dinner Service"
+  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  maxConcurrentBookings?: number;
+  turnTimeMinutes?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTimeSlotRuleData {
+  name: string;
+  dayOfWeek?: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes?: number;
+  maxConcurrentBookings?: number;
+  turnTimeMinutes?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateTimeSlotRuleData {
+  name?: string;
+  dayOfWeek?: number | null;
+  startTime?: string;
+  endTime?: string;
+  slotDurationMinutes?: number;
+  maxConcurrentBookings?: number | null;
+  turnTimeMinutes?: number;
+  isActive?: boolean;
+}

@@ -1,8 +1,9 @@
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
+import { TimeSlotRuleModel } from '../models/TimeSlotRule';
 import { redis } from '../config/database';
-import { BookingAvailability, TimeSlot, Table, Booking } from '../types';
+import { BookingAvailability, TimeSlot, Table, Booking, TimeSlotRule } from '../types';
 
 export class AvailabilityService {
   static async checkAvailability(
@@ -42,23 +43,42 @@ export class AvailabilityService {
         throw new Error(`Must book at least ${minAdvanceHours} hours in advance`);
       }
 
-      // Get day of week opening hours
+      // Get time slot rules for this day
       const dayOfWeek = this.getDayOfWeek(requestDate);
-      const daySchedule = openingHours[dayOfWeek];
+      const timeSlotRules = await TimeSlotRuleModel.findByRestaurantAndDay(restaurantId, dayOfWeek);
 
-      if (!daySchedule || !daySchedule.isOpen) {
+      // Fall back to basic opening hours if no time slot rules are defined
+      if (timeSlotRules.length === 0) {
+        const daySchedule = openingHours[dayOfWeek];
+        if (!daySchedule || !daySchedule.isOpen) {
+          return {
+            date,
+            timeSlots: []
+          };
+        }
+
+        // Generate time slots using basic opening hours (backward compatibility)
+        const timeSlots = await this.generateTimeSlotsFromBasicHours(
+          restaurantId,
+          date,
+          daySchedule.openTime!,
+          daySchedule.closeTime!,
+          partySize,
+          duration,
+          bookingSettings
+        );
+
         return {
           date,
-          timeSlots: []
+          timeSlots
         };
       }
 
-      // Generate time slots
-      const timeSlots = await this.generateTimeSlots(
+      // Generate time slots from time slot rules (multiple periods per day)
+      const timeSlots = await this.generateTimeSlotsFromRules(
         restaurantId,
         date,
-        daySchedule.openTime,
-        daySchedule.closeTime,
+        timeSlotRules,
         partySize,
         duration,
         bookingSettings
@@ -74,7 +94,7 @@ export class AvailabilityService {
     }
   }
 
-  private static async generateTimeSlots(
+  private static async generateTimeSlotsFromBasicHours(
     restaurantId: string,
     date: string,
     openTime: string,
@@ -132,6 +152,81 @@ export class AvailabilityService {
     return slots;
   }
 
+  /**
+   * Generate time slots from time slot rules (supports multiple periods per day)
+   */
+  private static async generateTimeSlotsFromRules(
+    restaurantId: string,
+    date: string,
+    timeSlotRules: TimeSlotRule[],
+    partySize: number,
+    duration: number,
+    bookingSettings: any
+  ): Promise<TimeSlot[]> {
+    const allSlots: TimeSlot[] = [];
+
+    // Get all tables that can accommodate the party size
+    const availableTables = await TableModel.findAvailableTablesForPartySize(restaurantId, partySize);
+    const tableCombinations = await TableModel.findTableCombinationsForPartySize(restaurantId, partySize);
+
+    if (availableTables.length === 0 && tableCombinations.length === 0) {
+      return allSlots;
+    }
+
+    // Get existing bookings for the date
+    const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+
+    // Process each time slot rule (e.g., lunch service, dinner service)
+    for (const rule of timeSlotRules) {
+      const ruleSlots: TimeSlot[] = [];
+      const slotDuration = rule.slotDurationMinutes || bookingSettings.slotDuration || 30;
+
+      // Convert time strings to minutes for easier calculation
+      const openMinutes = this.timeToMinutes(rule.startTime);
+      const closeMinutes = this.timeToMinutes(rule.endTime);
+
+      // Generate slots for this time period
+      for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += slotDuration) {
+        const slotTime = this.minutesToTime(minutes);
+        const endTime = this.minutesToTime(minutes + duration);
+
+        // Check availability for this time slot
+        const availability = await this.checkSlotAvailability(
+          restaurantId,
+          date,
+          slotTime,
+          endTime,
+          partySize,
+          duration,
+          availableTables,
+          tableCombinations,
+          existingBookings,
+          false, // isStaffBooking = false for availability check
+          rule // Pass the rule for concurrent booking limits
+        );
+
+        ruleSlots.push({
+          time: slotTime,
+          available: availability.available,
+          tableId: availability.tableId,
+          waitlistAvailable: availability.waitlistAvailable
+        });
+      }
+
+      // Add rule slots to all slots
+      allSlots.push(...ruleSlots);
+    }
+
+    // Sort all slots by time
+    allSlots.sort((a, b) => {
+      const timeA = this.timeToMinutes(a.time);
+      const timeB = this.timeToMinutes(b.time);
+      return timeA - timeB;
+    });
+
+    return allSlots;
+  }
+
   private static async checkSlotAvailability(
     restaurantId: string,
     date: string,
@@ -142,7 +237,8 @@ export class AvailabilityService {
     availableTables: Table[],
     tableCombinations: Table[][],
     existingBookings: Booking[],
-    isStaffBooking: boolean = false
+    isStaffBooking: boolean = false,
+    timeSlotRule?: TimeSlotRule
   ): Promise<{
     available: boolean;
     tableId?: string;
