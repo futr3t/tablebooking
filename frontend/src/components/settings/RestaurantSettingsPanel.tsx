@@ -22,11 +22,20 @@ import {
   Settings as SettingsIcon,
   Info as InfoIcon,
   GroupWork as ConcurrentIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
-import TimeSlotManager from './TimeSlotManager';
+
+interface ServicePeriod {
+  name: string;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes?: number;
+}
 
 interface RestaurantSettings {
   id?: string;
@@ -43,6 +52,8 @@ interface RestaurantSettings {
   openingHours: {
     [key: string]: {
       isOpen: boolean;
+      periods?: ServicePeriod[];
+      // Backward compatibility
       openTime?: string;
       closeTime?: string;
     }
@@ -115,24 +126,29 @@ const RestaurantSettingsPanel: React.FC = () => {
       const restaurantSettings = await restaurantService.getSettings(user.restaurantId);
       console.log('Loaded restaurant settings:', restaurantSettings);
       
-      // Initialize default opening hours if not set
-      const defaultOpeningHours: any = {};
+      // Initialize and migrate opening hours 
+      let processedOpeningHours: any = {};
       if (!restaurantSettings.openingHours || Object.keys(restaurantSettings.openingHours).length === 0) {
+        // No opening hours set - create defaults with new format
         DAYS_OF_WEEK.forEach(day => {
-          defaultOpeningHours[day.key] = {
+          processedOpeningHours[day.key] = {
             isOpen: day.key !== 'monday', // Closed on Monday by default
-            openTime: '17:00',
-            closeTime: '21:00'
+            periods: day.key !== 'monday' ? [{
+              name: 'Service',
+              startTime: '17:00',
+              endTime: '21:00'
+            }] : []
           };
         });
       } else {
-        Object.assign(defaultOpeningHours, restaurantSettings.openingHours);
+        // Migrate existing opening hours to new format
+        processedOpeningHours = migrateOpeningHours(restaurantSettings.openingHours);
       }
       
       setSettings(prevSettings => ({
         ...prevSettings,
         ...restaurantSettings,
-        openingHours: defaultOpeningHours,
+        openingHours: processedOpeningHours,
         bookingSettings: {
           ...prevSettings.bookingSettings,
           ...restaurantSettings.bookingSettings
@@ -182,6 +198,105 @@ const RestaurantSettingsPanel: React.FC = () => {
         }
       }
     }));
+  };
+
+  const addServicePeriod = (day: string) => {
+    const newPeriod: ServicePeriod = {
+      name: '',
+      startTime: '12:00',
+      endTime: '15:00'
+    };
+
+    setSettings(prev => {
+      const daySchedule = prev.openingHours[day] || { isOpen: false };
+      const periods = daySchedule.periods || [];
+      
+      return {
+        ...prev,
+        openingHours: {
+          ...prev.openingHours,
+          [day]: {
+            ...daySchedule,
+            isOpen: true,
+            periods: [...periods, newPeriod]
+          }
+        }
+      };
+    });
+  };
+
+  const removeServicePeriod = (day: string, periodIndex: number) => {
+    setSettings(prev => {
+      const daySchedule = prev.openingHours[day];
+      if (!daySchedule?.periods) return prev;
+
+      const newPeriods = daySchedule.periods.filter((_, index) => index !== periodIndex);
+      
+      return {
+        ...prev,
+        openingHours: {
+          ...prev.openingHours,
+          [day]: {
+            ...daySchedule,
+            periods: newPeriods,
+            isOpen: newPeriods.length > 0
+          }
+        }
+      };
+    });
+  };
+
+  const updateServicePeriod = (day: string, periodIndex: number, field: keyof ServicePeriod, value: any) => {
+    setSettings(prev => {
+      const daySchedule = prev.openingHours[day];
+      if (!daySchedule?.periods) return prev;
+
+      const newPeriods = [...daySchedule.periods];
+      newPeriods[periodIndex] = {
+        ...newPeriods[periodIndex],
+        [field]: value
+      };
+
+      return {
+        ...prev,
+        openingHours: {
+          ...prev.openingHours,
+          [day]: {
+            ...daySchedule,
+            periods: newPeriods
+          }
+        }
+      };
+    });
+  };
+
+  // Auto-migrate old format to new format
+  const migrateOpeningHours = (openingHours: any) => {
+    const migrated: any = {};
+    
+    DAYS_OF_WEEK.forEach(day => {
+      const daySchedule = openingHours[day.key];
+      if (daySchedule) {
+        if (daySchedule.openTime && daySchedule.closeTime && !daySchedule.periods) {
+          // Old format - convert to new format
+          migrated[day.key] = {
+            isOpen: daySchedule.isOpen,
+            periods: daySchedule.isOpen ? [{
+              name: 'Service',
+              startTime: daySchedule.openTime,
+              endTime: daySchedule.closeTime
+            }] : []
+          };
+        } else {
+          // Already in new format or is closed
+          migrated[day.key] = daySchedule;
+        }
+      } else {
+        migrated[day.key] = { isOpen: false, periods: [] };
+      }
+    });
+    
+    return migrated;
   };
 
   const handleSave = async () => {
@@ -619,72 +734,164 @@ const RestaurantSettingsPanel: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Opening Hours */}
+        {/* Enhanced Opening Hours with Multiple Service Periods */}
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <RestaurantIcon color="primary" />
-                Opening Hours
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ScheduleIcon color="primary" />
+                    Opening Hours & Service Periods
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Configure multiple service periods per day (e.g., lunch and dinner)
+                  </Typography>
+                </Box>
+              </Box>
               
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {DAYS_OF_WEEK.map((day) => {
-                  const daySchedule = settings.openingHours[day.key] || { isOpen: false };
+                  const daySchedule = settings.openingHours[day.key] || { isOpen: false, periods: [] };
+                  const periods = daySchedule.periods || [];
+                  
                   return (
-                    <Grid item xs={12} sm={6} md={4} key={day.key}>
-                      <Card variant="outlined">
-                        <CardContent sx={{ pb: '16px !important' }}>
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                checked={daySchedule.isOpen}
-                                onChange={(e) => handleOpeningHoursChange(day.key, 'isOpen', e.target.checked)}
-                              />
-                            }
-                            label={day.label}
-                            sx={{ mb: 1 }}
-                          />
+                    <Grid item xs={12} lg={6} key={day.key}>
+                      <Card variant="outlined" sx={{ height: '100%' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={daySchedule.isOpen}
+                                  onChange={(e) => {
+                                    const isOpen = e.target.checked;
+                                    if (!isOpen) {
+                                      // Close the day - clear all periods
+                                      handleOpeningHoursChange(day.key, 'periods', []);
+                                    }
+                                    handleOpeningHoursChange(day.key, 'isOpen', isOpen);
+                                  }}
+                                />
+                              }
+                              label={<Typography variant="h6">{day.label}</Typography>}
+                            />
+                            
+                            {daySchedule.isOpen && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<AddIcon />}
+                                onClick={() => addServicePeriod(day.key)}
+                                sx={{ minWidth: 'auto' }}
+                              >
+                                Add Period
+                              </Button>
+                            )}
+                          </Box>
                           
-                          {daySchedule.isOpen && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                              <TextField
+                          {!daySchedule.isOpen && (
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                              Closed
+                            </Typography>
+                          )}
+                          
+                          {daySchedule.isOpen && periods.length === 0 && (
+                            <Box sx={{ textAlign: 'center', py: 2 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                No service periods configured
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                startIcon={<AddIcon />}
+                                onClick={() => addServicePeriod(day.key)}
                                 size="small"
-                                label="Open"
-                                type="time"
-                                value={daySchedule.openTime || '09:00'}
-                                onChange={(e) => handleOpeningHoursChange(day.key, 'openTime', e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{ flex: 1 }}
-                              />
-                              <TextField
-                                size="small"
-                                label="Close"
-                                type="time"
-                                value={daySchedule.closeTime || '21:00'}
-                                onChange={(e) => handleOpeningHoursChange(day.key, 'closeTime', e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{ flex: 1 }}
-                              />
+                              >
+                                Add First Period
+                              </Button>
                             </Box>
                           )}
+                          
+                          {periods.map((period, periodIndex) => (
+                            <Box key={periodIndex} sx={{ 
+                              border: '1px solid', 
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              p: 2,
+                              mb: 2,
+                              '&:last-child': { mb: 0 }
+                            }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <TextField
+                                  size="small"
+                                  label="Period Name"
+                                  value={period.name}
+                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'name', e.target.value)}
+                                  placeholder="e.g., Lunch, Dinner, Brunch"
+                                  sx={{ flex: 1, mr: 1 }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => removeServicePeriod(day.key, periodIndex)}
+                                  sx={{ ml: 1 }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Box>
+                              
+                              <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                <TextField
+                                  size="small"
+                                  label="Start Time"
+                                  type="time"
+                                  value={period.startTime}
+                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'startTime', e.target.value)}
+                                  InputLabelProps={{ shrink: true }}
+                                  sx={{ flex: 1 }}
+                                />
+                                <TextField
+                                  size="small"
+                                  label="End Time"
+                                  type="time"
+                                  value={period.endTime}
+                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'endTime', e.target.value)}
+                                  InputLabelProps={{ shrink: true }}
+                                  sx={{ flex: 1 }}
+                                />
+                              </Box>
+                              
+                              <TextField
+                                size="small"
+                                label="Slot Duration (minutes)"
+                                type="number"
+                                value={period.slotDurationMinutes || ''}
+                                onChange={(e) => updateServicePeriod(day.key, periodIndex, 'slotDurationMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
+                                placeholder={`Default: ${settings.defaultSlotDuration} min`}
+                                inputProps={{ min: 15, max: 120 }}
+                                helperText="Leave empty to use restaurant default"
+                                fullWidth
+                              />
+                            </Box>
+                          ))}
                         </CardContent>
                       </Card>
                     </Grid>
                   );
                 })}
               </Grid>
+              
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2">
+                  <strong>💡 Pro Tip:</strong> You can now configure multiple service periods per day! 
+                  Add separate periods for lunch (12:00-15:00) and dinner (17:00-22:00), 
+                  each with their own custom slot durations.
+                </Typography>
+              </Alert>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Multiple Service Periods */}
-        <Grid item xs={12}>
-          <TimeSlotManager 
-            restaurantId={settings.id || user?.restaurantId || ''}
-            onUpdate={loadSettings}
-          />
-        </Grid>
       </Grid>
     </Box>
   );

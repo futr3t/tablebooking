@@ -55,8 +55,17 @@ export interface OpeningHours {
 
 export interface DaySchedule {
   isOpen: boolean;
+  periods?: ServicePeriod[];  // NEW: Multiple service periods per day
+  // Backward compatibility - will be auto-migrated to periods format
   openTime?: string;
   closeTime?: string;
+}
+
+export interface ServicePeriod {
+  name: string;                    // e.g., "Lunch", "Dinner", "Brunch", "Happy Hour"
+  startTime: string;               // "HH:MM" format
+  endTime: string;                 // "HH:MM" format  
+  slotDurationMinutes?: number;    // Override restaurant's default slot duration
 }
 
 export interface BookingSettings {
@@ -122,20 +131,6 @@ export interface TablePosition {
   height: number;
 }
 
-export interface TimeSlotRule {
-  id: string;
-  restaurantId: string;
-  name: string; // e.g., "Lunch Service", "Dinner Service"
-  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes: number;
-  maxConcurrentBookings?: number; // Max bookings allowed at same time
-  turnTimeMinutes?: number; // Override restaurant default for this time period
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export interface TableCombination {
   id: string;
@@ -257,25 +252,3 @@ export interface ReportData {
   }>;
 }
 
-// Time Slot Rule interfaces for CRUD operations
-export interface CreateTimeSlotRuleData {
-  name: string;
-  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes?: number;
-  maxConcurrentBookings?: number;
-  turnTimeMinutes?: number;
-  isActive?: boolean;
-}
-
-export interface UpdateTimeSlotRuleData {
-  name?: string;
-  dayOfWeek?: number | null;
-  startTime?: string;
-  endTime?: string;
-  slotDurationMinutes?: number;
-  maxConcurrentBookings?: number | null;
-  turnTimeMinutes?: number;
-  isActive?: boolean;
-}

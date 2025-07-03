@@ -171,6 +171,101 @@ export class RestaurantModel {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
   }
 
+  /**
+   * Auto-migrate opening hours from old format to new enhanced format
+   * Converts { openTime, closeTime } to { periods: [{ name: "Service", startTime, endTime }] }
+   */
+  static async migrateOpeningHoursFormat(restaurantId: string): Promise<boolean> {
+    try {
+      const restaurant = await this.findById(restaurantId);
+      if (!restaurant) return false;
+
+      const openingHours = restaurant.openingHours;
+      let migrationNeeded = false;
+      const migratedHours: any = {};
+
+      // Check each day for old format and convert to new format
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      for (const day of days) {
+        const daySchedule = openingHours[day];
+        if (daySchedule) {
+          if (daySchedule.openTime && daySchedule.closeTime && !daySchedule.periods) {
+            // Old format detected - convert to new format
+            migratedHours[day] = {
+              isOpen: daySchedule.isOpen,
+              periods: daySchedule.isOpen ? [{
+                name: 'Service',
+                startTime: daySchedule.openTime,
+                endTime: daySchedule.closeTime
+              }] : []
+            };
+            migrationNeeded = true;
+          } else {
+            // Already in new format or is closed day
+            migratedHours[day] = daySchedule;
+          }
+        } else {
+          // Day not configured - set as closed
+          migratedHours[day] = { isOpen: false, periods: [] };
+        }
+      }
+
+      // Update restaurant with migrated opening hours if migration was needed
+      if (migrationNeeded) {
+        await this.update(restaurantId, { openingHours: migratedHours });
+        console.log(`Migrated opening hours format for restaurant ${restaurantId}`);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error migrating opening hours format:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Add a service period to a specific day
+   */
+  static async addServicePeriod(
+    restaurantId: string, 
+    dayOfWeek: string, 
+    period: { name: string; startTime: string; endTime: string; slotDurationMinutes?: number }
+  ): Promise<boolean> {
+    try {
+      const restaurant = await this.findById(restaurantId);
+      if (!restaurant) return false;
+
+      const openingHours = { ...restaurant.openingHours };
+      
+      if (!openingHours[dayOfWeek]) {
+        openingHours[dayOfWeek] = { isOpen: true, periods: [] };
+      }
+
+      if (!openingHours[dayOfWeek].periods) {
+        openingHours[dayOfWeek].periods = [];
+      }
+
+      // Add the new period
+      openingHours[dayOfWeek].periods.push(period);
+      openingHours[dayOfWeek].isOpen = true;
+
+      // Sort periods by start time
+      openingHours[dayOfWeek].periods.sort((a: any, b: any) => {
+        const timeA = a.startTime.split(':').map(Number);
+        const timeB = b.startTime.split(':').map(Number);
+        return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+      });
+
+      await this.update(restaurantId, { openingHours });
+      return true;
+    } catch (error) {
+      console.error('Error adding service period:', error);
+      return false;
+    }
+  }
+
   static mapFromDb(dbRestaurant: any): Restaurant {
     return {
       id: dbRestaurant.id,

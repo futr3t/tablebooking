@@ -1,9 +1,8 @@
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
-import { TimeSlotRuleModel } from '../models/TimeSlotRule';
 import { redis } from '../config/database';
-import { BookingAvailability, TimeSlot, Table, Booking, TimeSlotRule } from '../types';
+import { BookingAvailability, TimeSlot, Table, Booking } from '../types';
 
 export class AvailabilityService {
   static async checkAvailability(
@@ -43,43 +42,22 @@ export class AvailabilityService {
         throw new Error(`Must book at least ${minAdvanceHours} hours in advance`);
       }
 
-      // Get time slot rules for this day
+      // Get opening hours for this day
       const dayOfWeekString = this.getDayOfWeek(requestDate);
-      const dayOfWeekNumber = requestDate.getDay(); // 0=Sunday, 1=Monday, etc.
-      const timeSlotRules = await TimeSlotRuleModel.findByRestaurantAndDay(restaurantId, dayOfWeekNumber);
-
-      // Fall back to basic opening hours if no time slot rules are defined
-      if (timeSlotRules.length === 0) {
-        const daySchedule = openingHours[dayOfWeekString];
-        if (!daySchedule || !daySchedule.isOpen) {
-          return {
-            date,
-            timeSlots: []
-          };
-        }
-
-        // Generate time slots using basic opening hours (backward compatibility)
-        const timeSlots = await this.generateTimeSlotsFromBasicHours(
-          restaurantId,
-          date,
-          daySchedule.openTime!,
-          daySchedule.closeTime!,
-          partySize,
-          duration,
-          bookingSettings
-        );
-
+      const daySchedule = openingHours[dayOfWeekString];
+      
+      if (!daySchedule || !daySchedule.isOpen) {
         return {
           date,
-          timeSlots
+          timeSlots: []
         };
       }
 
-      // Generate time slots from time slot rules (multiple periods per day)
-      const timeSlots = await this.generateTimeSlotsFromRules(
+      // Generate time slots using enhanced opening hours (supports multiple periods)
+      const timeSlots = await this.generateTimeSlotsFromOpeningHours(
         restaurantId,
         date,
-        timeSlotRules,
+        daySchedule,
         partySize,
         duration,
         bookingSettings
@@ -95,71 +73,14 @@ export class AvailabilityService {
     }
   }
 
-  private static async generateTimeSlotsFromBasicHours(
-    restaurantId: string,
-    date: string,
-    openTime: string,
-    closeTime: string,
-    partySize: number,
-    duration: number,
-    bookingSettings: any
-  ): Promise<TimeSlot[]> {
-    const slots: TimeSlot[] = [];
-    const slotDuration = bookingSettings.slotDuration || 30; // minutes
-    // Removed bufferTime - no longer using stagger/buffer system
-
-    // Get all tables that can accommodate the party size
-    const availableTables = await TableModel.findAvailableTablesForPartySize(restaurantId, partySize);
-    const tableCombinations = await TableModel.findTableCombinationsForPartySize(restaurantId, partySize);
-
-    if (availableTables.length === 0 && tableCombinations.length === 0) {
-      return slots;
-    }
-
-    // Get existing bookings for the date
-    const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
-
-    // Convert time strings to minutes for easier calculation
-    const openMinutes = this.timeToMinutes(openTime);
-    const closeMinutes = this.timeToMinutes(closeTime);
-
-    // Generate slots every slotDuration minutes
-    for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += slotDuration) {
-      const slotTime = this.minutesToTime(minutes);
-      const endTime = this.minutesToTime(minutes + duration);
-
-      // Check availability for this time slot
-      const availability = await this.checkSlotAvailability(
-        restaurantId,
-        date,
-        slotTime,
-        endTime,
-        partySize,
-        duration,
-        availableTables,
-        tableCombinations,
-        existingBookings,
-        false // isStaffBooking = false for availability check
-      );
-
-      slots.push({
-        time: slotTime,
-        available: availability.available,
-        tableId: availability.tableId,
-        waitlistAvailable: availability.waitlistAvailable
-      });
-    }
-
-    return slots;
-  }
-
   /**
-   * Generate time slots from time slot rules (supports multiple periods per day)
+   * Generate time slots from enhanced opening hours (supports multiple periods per day)
+   * Handles both old format (openTime/closeTime) and new format (periods array)
    */
-  private static async generateTimeSlotsFromRules(
+  private static async generateTimeSlotsFromOpeningHours(
     restaurantId: string,
     date: string,
-    timeSlotRules: TimeSlotRule[],
+    daySchedule: any,
     partySize: number,
     duration: number,
     bookingSettings: any
@@ -177,17 +98,40 @@ export class AvailabilityService {
     // Get existing bookings for the date
     const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
 
-    // Process each time slot rule (e.g., lunch service, dinner service)
-    for (const rule of timeSlotRules) {
-      const ruleSlots: TimeSlot[] = [];
-      const slotDuration = rule.slotDurationMinutes || bookingSettings.slotDuration || 30;
+    // Determine service periods - handle both old and new formats
+    let servicePeriods: { name: string; startTime: string; endTime: string; slotDuration: number }[] = [];
+
+    if (daySchedule.periods && daySchedule.periods.length > 0) {
+      // NEW FORMAT: Multiple periods per day
+      servicePeriods = daySchedule.periods.map((period: any) => ({
+        name: period.name,
+        startTime: period.startTime,
+        endTime: period.endTime,
+        slotDuration: period.slotDurationMinutes || bookingSettings.slotDuration || 30
+      }));
+    } else if (daySchedule.openTime && daySchedule.closeTime) {
+      // OLD FORMAT: Single period (backward compatibility)
+      servicePeriods = [{
+        name: 'Service',
+        startTime: daySchedule.openTime,
+        endTime: daySchedule.closeTime,
+        slotDuration: bookingSettings.slotDuration || 30
+      }];
+    } else {
+      // No valid time periods found
+      return allSlots;
+    }
+
+    // Process each service period (e.g., lunch service, dinner service)
+    for (const period of servicePeriods) {
+      const periodSlots: TimeSlot[] = [];
 
       // Convert time strings to minutes for easier calculation
-      const openMinutes = this.timeToMinutes(rule.startTime);
-      const closeMinutes = this.timeToMinutes(rule.endTime);
+      const openMinutes = this.timeToMinutes(period.startTime);
+      const closeMinutes = this.timeToMinutes(period.endTime);
 
       // Generate slots for this time period
-      for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += slotDuration) {
+      for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += period.slotDuration) {
         const slotTime = this.minutesToTime(minutes);
         const endTime = this.minutesToTime(minutes + duration);
 
@@ -202,11 +146,10 @@ export class AvailabilityService {
           availableTables,
           tableCombinations,
           existingBookings,
-          false, // isStaffBooking = false for availability check
-          rule // Pass the rule for concurrent booking limits
+          false // isStaffBooking = false for availability check
         );
 
-        ruleSlots.push({
+        periodSlots.push({
           time: slotTime,
           available: availability.available,
           tableId: availability.tableId,
@@ -214,8 +157,8 @@ export class AvailabilityService {
         });
       }
 
-      // Add rule slots to all slots
-      allSlots.push(...ruleSlots);
+      // Add period slots to all slots
+      allSlots.push(...periodSlots);
     }
 
     // Sort all slots by time
@@ -238,8 +181,7 @@ export class AvailabilityService {
     availableTables: Table[],
     tableCombinations: Table[][],
     existingBookings: Booking[],
-    isStaffBooking: boolean = false,
-    timeSlotRule?: TimeSlotRule
+    isStaffBooking: boolean = false
   ): Promise<{
     available: boolean;
     tableId?: string;

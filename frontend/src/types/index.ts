@@ -174,40 +174,29 @@ export interface RestaurantSettings {
   defaultSlotDuration: number;
 }
 
-// Time Slot Rule interfaces for multiple opening hours per day
-export interface TimeSlotRule {
-  id: string;
-  restaurantId: string;
-  name: string; // e.g., "Lunch Service", "Dinner Service"
-  dayOfWeek?: number; // 0=Sunday, 1=Monday, etc. NULL = applies to all days
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes: number;
-  maxConcurrentBookings?: number;
-  turnTimeMinutes?: number;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+// Enhanced Opening Hours - supports multiple service periods per day
+export interface ServicePeriod {
+  name: string;                    // e.g., "Lunch", "Dinner", "Brunch"
+  startTime: string;               // "HH:MM" format
+  endTime: string;                 // "HH:MM" format  
+  slotDurationMinutes?: number;    // Override restaurant's default slot duration
 }
 
-export interface CreateTimeSlotRuleData {
-  name: string;
-  dayOfWeek?: number;
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes?: number;
-  maxConcurrentBookings?: number;
-  turnTimeMinutes?: number;
-  isActive?: boolean;
+export interface DaySchedule {
+  isOpen: boolean;
+  periods?: ServicePeriod[];       // NEW: Multiple service periods per day
+  // Backward compatibility - auto-migrated to periods format
+  openTime?: string;
+  closeTime?: string;
 }
 
-export interface UpdateTimeSlotRuleData {
-  name?: string;
-  dayOfWeek?: number | null;
-  startTime?: string;
-  endTime?: string;
-  slotDurationMinutes?: number;
-  maxConcurrentBookings?: number | null;
-  turnTimeMinutes?: number;
-  isActive?: boolean;
+export interface OpeningHours {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
 }
+
