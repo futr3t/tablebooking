@@ -98,7 +98,6 @@ export interface Table {
   position: TablePosition;
   tableType: TableType;
   notes?: string;
-  isAccessible: boolean;
   locationNotes?: string;
   isCombinable: boolean;
   priority: number; // Higher priority tables preferred for booking
@@ -156,7 +155,6 @@ export interface TableSummary {
   totalCapacity: number;
   averageCapacity: number;
   tablesByType: Record<TableType, number>;
-  accessibleTables: number;
   combinableTables: number;
 }
 

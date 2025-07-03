@@ -201,14 +201,12 @@ app.post('/api/migrate-tables', async (req, res) => {
       "ALTER TABLE tables ADD COLUMN IF NOT EXISTS table_type VARCHAR(50) DEFAULT 'standard'",
       "ALTER TABLE tables ADD COLUMN IF NOT EXISTS notes TEXT",
       "ALTER TABLE tables ADD COLUMN IF NOT EXISTS location_notes VARCHAR(255)",
-      "ALTER TABLE tables ADD COLUMN IF NOT EXISTS is_accessible BOOLEAN DEFAULT false",
       "ALTER TABLE tables ADD COLUMN IF NOT EXISTS is_combinable BOOLEAN DEFAULT true",
       "ALTER TABLE tables ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0"
     ];
     
     const updates = [
       "UPDATE tables SET table_type = 'standard' WHERE table_type IS NULL",
-      "UPDATE tables SET is_accessible = false WHERE is_accessible IS NULL",
       "UPDATE tables SET is_combinable = true WHERE is_combinable IS NULL",
       "UPDATE tables SET priority = 0 WHERE priority IS NULL"
     ];

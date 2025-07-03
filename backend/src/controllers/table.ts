@@ -8,7 +8,6 @@ export const getTables = asyncHandler(async (req: AuthRequest, res: Response): P
   const { 
     includeInactive, 
     tableType, 
-    isAccessible, 
     page, 
     limit 
   } = req.query;
@@ -25,7 +24,6 @@ export const getTables = asyncHandler(async (req: AuthRequest, res: Response): P
   const result = await TableModel.findByRestaurant(restaurantId, {
     includeInactive: includeInactive === 'true',
     tableType: tableType as string,
-    isAccessible: isAccessible ? isAccessible === 'true' : undefined,
     page: page ? parseInt(page as string) : undefined,
     limit: limit ? parseInt(limit as string) : undefined
   });
@@ -240,8 +238,7 @@ export const searchTables = asyncHandler(async (req: AuthRequest, res: Response)
     q: searchTerm, 
     tableType, 
     minCapacity, 
-    maxCapacity, 
-    isAccessible 
+    maxCapacity 
   } = req.query;
 
   if (!req.user) {
@@ -259,8 +256,7 @@ export const searchTables = asyncHandler(async (req: AuthRequest, res: Response)
     {
       tableType: tableType as string,
       minCapacity: minCapacity ? parseInt(minCapacity as string) : undefined,
-      maxCapacity: maxCapacity ? parseInt(maxCapacity as string) : undefined,
-      isAccessible: isAccessible ? isAccessible === 'true' : undefined
+      maxCapacity: maxCapacity ? parseInt(maxCapacity as string) : undefined
     }
   );
 

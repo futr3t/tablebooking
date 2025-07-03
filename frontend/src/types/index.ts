@@ -53,7 +53,6 @@ export interface Table {
   };
   tableType: 'standard' | 'booth' | 'bar' | 'high_top' | 'patio' | 'private' | 'banquette' | 'communal';
   notes?: string;
-  isAccessible: boolean;
   locationNotes?: string;
   isCombinable: boolean;
   priority: number;
@@ -163,7 +162,6 @@ export interface TableSummary {
   totalCapacity: number;
   averageCapacity: number;
   tablesByType: Record<string, number>;
-  accessibleTables: number;
   combinableTables: number;
 }
 

@@ -38,7 +38,6 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   TableChart as TableIcon,
-  Accessible as AccessibleIcon,
   Restaurant as RestaurantIcon,
   Assessment as StatsIcon
 } from '@mui/icons-material';
@@ -67,7 +66,6 @@ const TableManagementDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     tableType: '',
-    isAccessible: null as boolean | null,
     minCapacity: '',
     maxCapacity: ''
   });
@@ -107,8 +105,7 @@ const TableManagementDashboard: React.FC = () => {
         const searchFilters = {
           tableType: filters.tableType || undefined,
           minCapacity: filters.minCapacity ? parseInt(filters.minCapacity) : undefined,
-          maxCapacity: filters.maxCapacity ? parseInt(filters.maxCapacity) : undefined,
-          isAccessible: filters.isAccessible !== null ? filters.isAccessible : undefined
+          maxCapacity: filters.maxCapacity ? parseInt(filters.maxCapacity) : undefined
         };
         console.log('Searching tables with term:', searchTerm, 'filters:', searchFilters);
         const results = await tableService.searchTables(restaurantId!, searchTerm, searchFilters);
@@ -119,7 +116,6 @@ const TableManagementDashboard: React.FC = () => {
         const options = {
           includeInactive,
           tableType: filters.tableType || undefined,
-          isAccessible: filters.isAccessible !== null ? filters.isAccessible : undefined,
           page: page + 1,
           limit: rowsPerPage
         };
@@ -164,7 +160,6 @@ const TableManagementDashboard: React.FC = () => {
   const clearFilters = () => {
     setFilters({
       tableType: '',
-      isAccessible: null,
       minCapacity: '',
       maxCapacity: ''
     });
@@ -317,27 +312,6 @@ const TableManagementDashboard: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <Card sx={{ 
-              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-              color: 'white',
-              border: 'none'
-            }}>
-              <CardContent sx={{ pb: '16px !important' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      {summary.accessibleTables}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Accessible Tables
-                    </Typography>
-                  </Box>
-                  <AccessibleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
               background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
               color: 'white',
               border: 'none'
@@ -432,22 +406,6 @@ const TableManagementDashboard: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Accessibility</InputLabel>
-                  <Select
-                    value={filters.isAccessible === null ? '' : filters.isAccessible.toString()}
-                    onChange={(e) => handleFilterChange('isAccessible', 
-                      e.target.value === '' ? null : e.target.value === 'true'
-                    )}
-                    label="Accessibility"
-                  >
-                    <MenuItem value="">All Tables</MenuItem>
-                    <MenuItem value="true">Accessible Only</MenuItem>
-                    <MenuItem value="false">Non-Accessible Only</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   fullWidth
                   label="Min Capacity"
@@ -486,7 +444,6 @@ const TableManagementDashboard: React.FC = () => {
                 <TableCell>Type</TableCell>
                 <TableCell>Capacity</TableCell>
                 <TableCell>Range</TableCell>
-                <TableCell>Accessible</TableCell>
                 <TableCell>Combinable</TableCell>
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
@@ -527,13 +484,6 @@ const TableManagementDashboard: React.FC = () => {
                     <TableCell>{table.capacity}</TableCell>
                     <TableCell>
                       {table.minCapacity}-{table.maxCapacity}
-                    </TableCell>
-                    <TableCell>
-                      {table.isAccessible ? (
-                        <AccessibleIcon color="primary" />
-                      ) : (
-                        '-'
-                      )}
                     </TableCell>
                     <TableCell>
                       <Chip 

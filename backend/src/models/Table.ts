@@ -20,7 +20,6 @@ export class TableModel {
     options?: {
       includeInactive?: boolean;
       tableType?: string;
-      isAccessible?: boolean;
       page?: number;
       limit?: number;
     }
@@ -40,11 +39,6 @@ export class TableModel {
         paramCount++;
       }
 
-      if (options?.isAccessible !== undefined) {
-        conditions.push(`is_accessible = $${paramCount}`);
-        values.push(options.isAccessible);
-        paramCount++;
-      }
 
       const whereClause = conditions.join(' AND ');
       const orderBy = 'ORDER BY priority DESC, number ASC';
@@ -301,7 +295,6 @@ export class TableModel {
           COUNT(*) as total_tables,
           SUM(capacity) as total_capacity,
           AVG(capacity) as average_capacity,
-          COUNT(CASE WHEN is_accessible = true THEN 1 END) as accessible_tables,
           COUNT(CASE WHEN is_combinable = true THEN 1 END) as combinable_tables,
           table_type,
           COUNT(*) as type_count
@@ -315,7 +308,6 @@ export class TableModel {
           COUNT(*) as total_tables,
           SUM(capacity) as total_capacity,
           AVG(capacity) as average_capacity,
-          COUNT(CASE WHEN is_accessible = true THEN 1 END) as accessible_tables,
           COUNT(CASE WHEN is_combinable = true THEN 1 END) as combinable_tables
         FROM tables 
         WHERE restaurant_id = $1 AND is_active = true
@@ -333,7 +325,6 @@ export class TableModel {
         totalCapacity: parseInt(totals.total_capacity) || 0,
         averageCapacity: parseFloat(totals.average_capacity) || 0,
         tablesByType,
-        accessibleTables: parseInt(totals.accessible_tables) || 0,
         combinableTables: parseInt(totals.combinable_tables) || 0
       };
     } catch (error) {
@@ -352,7 +343,6 @@ export class TableModel {
       tableType?: string;
       minCapacity?: number;
       maxCapacity?: number;
-      isAccessible?: boolean;
     }
   ): Promise<Table[]> {
     try {
@@ -423,7 +413,6 @@ export class TableModel {
       position: row.position,
       tableType: row.table_type,
       notes: row.notes,
-      isAccessible: row.is_accessible,
       locationNotes: row.location_notes,
       isCombinable: row.is_combinable,
       priority: row.priority,

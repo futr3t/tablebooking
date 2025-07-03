@@ -155,7 +155,6 @@ export const tableService = {
   getTables: async (restaurantId: string, options?: {
     includeInactive?: boolean;
     tableType?: string;
-    isAccessible?: boolean;
     page?: number;
     limit?: number;
   }): Promise<{ tables: Table[]; total: number }> => {
@@ -206,7 +205,6 @@ export const tableService = {
     tableType?: string;
     minCapacity?: number;
     maxCapacity?: number;
-    isAccessible?: boolean;
   }): Promise<Table[]> => {
     const params = { q: searchTerm, ...filters };
     const response = await api.get(`/tables/restaurant/${restaurantId}/search`, { params });

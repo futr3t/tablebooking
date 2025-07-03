@@ -60,7 +60,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
     shape: 'round' as 'square' | 'round' | 'rectangle',
     notes: '',
     locationNotes: '',
-    isAccessible: false,
     isCombinable: true,
     priority: 0,
     isActive: true
@@ -79,7 +78,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         shape: table.shape,
         notes: table.notes || '',
         locationNotes: table.locationNotes || '',
-        isAccessible: table.isAccessible,
         isCombinable: table.isCombinable,
         priority: table.priority,
         isActive: table.isActive
@@ -338,17 +336,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
           </Typography>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.isAccessible}
-                onChange={(e) => handleChange('isAccessible', e.target.checked)}
-              />
-            }
-            label="Wheelchair Accessible"
-          />
-        </Grid>
 
         <Grid item xs={12} md={6}>
           <FormControlLabel
@@ -417,7 +404,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
                 <Chip label={selectedTableType?.label || formData.tableType} />
                 <Chip label={`${formData.capacity} seats`} />
                 <Chip label={`Range: ${formData.minCapacity}-${formData.maxCapacity}`} />
-                {formData.isAccessible && <Chip label="Accessible" color="success" />}
                 {formData.isCombinable && <Chip label="Combinable" color="info" />}
                 {!formData.isActive && <Chip label="Inactive" color="warning" />}
               </Box>
