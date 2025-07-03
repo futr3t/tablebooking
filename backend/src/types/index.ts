@@ -94,7 +94,6 @@ export interface Table {
   capacity: number;
   minCapacity: number;
   maxCapacity: number;
-  shape: TableShape;
   position: TablePosition;
   tableType: TableType;
   notes?: string;
@@ -106,11 +105,6 @@ export interface Table {
   updatedAt: Date;
 }
 
-export enum TableShape {
-  SQUARE = 'square',
-  ROUND = 'round',
-  RECTANGLE = 'rectangle'
-}
 
 export enum TableType {
   STANDARD = 'standard',

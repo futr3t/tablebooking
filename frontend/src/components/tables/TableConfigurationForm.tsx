@@ -39,11 +39,6 @@ const TABLE_TYPES = [
   { value: 'communal', label: 'Communal', description: 'Shared large table' }
 ];
 
-const TABLE_SHAPES = [
-  { value: 'round', label: 'Round' },
-  { value: 'square', label: 'Square' },
-  { value: 'rectangle', label: 'Rectangle' }
-];
 
 const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
   table,
@@ -57,7 +52,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
     minCapacity: 2,
     maxCapacity: 6,
     tableType: 'standard' as 'standard' | 'booth' | 'bar' | 'high_top' | 'patio' | 'private' | 'banquette' | 'communal',
-    shape: 'round' as 'square' | 'round' | 'rectangle',
     notes: '',
     locationNotes: '',
     isCombinable: true,
@@ -75,7 +69,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         minCapacity: table.minCapacity,
         maxCapacity: table.maxCapacity,
         tableType: table.tableType,
-        shape: table.shape,
         notes: table.notes || '',
         locationNotes: table.locationNotes || '',
         isCombinable: table.isCombinable,
@@ -300,22 +293,6 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
           </Typography>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Shape</InputLabel>
-            <Select
-              value={formData.shape}
-              onChange={(e) => handleChange('shape', e.target.value)}
-              label="Shape"
-            >
-              {TABLE_SHAPES.map(shape => (
-                <MenuItem key={shape.value} value={shape.value}>
-                  {shape.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
 
         <Grid item xs={12} md={6}>
           <TextField

@@ -144,11 +144,9 @@ export class TableModel {
     capacity: number;
     minCapacity: number;
     maxCapacity: number;
-    shape?: string;
     position?: any;
     tableType?: string;
     notes?: string;
-    isAccessible?: boolean;
     locationNotes?: string;
     isCombinable?: boolean;
     priority?: number;
@@ -157,10 +155,10 @@ export class TableModel {
       const result = await db.query(`
         INSERT INTO tables (
           restaurant_id, number, capacity, min_capacity, max_capacity, 
-          shape, position, table_type, notes, is_accessible, 
+          position, table_type, notes, 
           location_notes, is_combinable, priority
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `, [
         tableData.restaurantId,
@@ -168,11 +166,9 @@ export class TableModel {
         tableData.capacity,
         tableData.minCapacity,
         tableData.maxCapacity,
-        tableData.shape || 'round',
         JSON.stringify(tableData.position || {}),
         tableData.tableType || 'standard',
         tableData.notes || null,
-        tableData.isAccessible || false,
         tableData.locationNotes || null,
         tableData.isCombinable !== false, // Default to true
         tableData.priority || 0
@@ -247,10 +243,10 @@ export class TableModel {
           const result = await client.query(`
             INSERT INTO tables (
               restaurant_id, number, capacity, min_capacity, max_capacity, 
-              shape, position, table_type, notes, is_accessible, 
+              position, table_type, notes, 
               location_notes, is_combinable, priority
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
           `, [
             tableData.restaurantId,
@@ -258,11 +254,9 @@ export class TableModel {
             tableData.capacity,
             tableData.minCapacity,
             tableData.maxCapacity,
-            tableData.shape || 'round',
             JSON.stringify(tableData.position || {}),
             tableData.tableType || 'standard',
             tableData.notes || null,
-            tableData.isAccessible || false,
             tableData.locationNotes || null,
             tableData.isCombinable !== false,
             tableData.priority || 0
@@ -379,11 +373,6 @@ export class TableModel {
         paramCount++;
       }
 
-      if (filters?.isAccessible !== undefined) {
-        conditions.push(`is_accessible = $${paramCount}`);
-        values.push(filters.isAccessible);
-        paramCount++;
-      }
 
       const result = await db.query(`
         SELECT * FROM tables 
@@ -409,7 +398,6 @@ export class TableModel {
       capacity: row.capacity,
       minCapacity: row.min_capacity,
       maxCapacity: row.max_capacity,
-      shape: row.shape,
       position: row.position,
       tableType: row.table_type,
       notes: row.notes,

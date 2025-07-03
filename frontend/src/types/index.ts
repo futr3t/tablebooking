@@ -44,7 +44,6 @@ export interface Table {
   capacity: number;
   minCapacity: number;
   maxCapacity: number;
-  shape: 'square' | 'round' | 'rectangle';
   position: {
     x: number;
     y: number;

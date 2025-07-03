@@ -44,7 +44,14 @@ describe('AvailabilityService', () => {
       capacity: 2,
       minCapacity: 2,
       maxCapacity: 4,
-      restaurantId: 'restaurant-1'
+      restaurantId: 'restaurant-1',
+      position: { x: 0, y: 0, width: 80, height: 80 },
+      tableType: 'standard' as any,
+      isCombinable: true,
+      priority: 0,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
     },
     {
       id: 'table-2',
@@ -52,7 +59,14 @@ describe('AvailabilityService', () => {
       capacity: 4,
       minCapacity: 2,
       maxCapacity: 6,
-      restaurantId: 'restaurant-1'
+      restaurantId: 'restaurant-1',
+      position: { x: 100, y: 0, width: 80, height: 80 },
+      tableType: 'standard' as any,
+      isCombinable: true,
+      priority: 0,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
     },
     {
       id: 'table-3',
@@ -60,7 +74,14 @@ describe('AvailabilityService', () => {
       capacity: 6,
       minCapacity: 4,
       maxCapacity: 8,
-      restaurantId: 'restaurant-1'
+      restaurantId: 'restaurant-1',
+      position: { x: 200, y: 0, width: 80, height: 80 },
+      tableType: 'standard' as any,
+      isCombinable: true,
+      priority: 0,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ];
 
