@@ -77,7 +77,16 @@ export class AvailabilityService {
         timeSlots
       };
     } catch (error) {
-      console.error('Error checking availability:', error);
+      console.error('❌ Error checking availability:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        restaurantId,
+        date,
+        partySize,
+        duration
+      });
       throw error;
     }
   }

@@ -93,7 +93,16 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         suggestions
       };
     } catch (error) {
-      console.error('Error getting enhanced availability:', error);
+      console.error('❌ Error getting enhanced availability:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        restaurantId,
+        date,
+        partySize,
+        duration
+      });
       throw error;
     }
   }

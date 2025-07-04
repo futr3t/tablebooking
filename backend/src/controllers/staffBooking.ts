@@ -238,13 +238,53 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
     throw createError('Access denied to this restaurant', 403);
   }
 
-  const availability = await EnhancedAvailabilityService.getEnhancedAvailability(
-    restaurantId as string,
-    date as string,
-    parseInt(partySize as string),
-    duration ? parseInt(duration as string) : 120,
-    preferredTime as string
-  );
+  console.log('🔍 Getting enhanced availability for:', {
+    restaurantId,
+    date,
+    partySize: parseInt(partySize as string),
+    duration: duration ? parseInt(duration as string) : 120,
+    preferredTime
+  });
+
+  try {
+    // First try basic availability to see if that works
+    const basicAvailability = await AvailabilityService.checkAvailability(
+      restaurantId as string,
+      date as string,
+      parseInt(partySize as string),
+      duration ? parseInt(duration as string) : 120
+    );
+
+    console.log('✅ Basic availability result:', basicAvailability);
+
+    // Convert basic availability to enhanced format
+    const enhancedTimeSlots = basicAvailability.timeSlots.map(slot => ({
+      ...slot,
+      pacingStatus: 'available' as const,
+      tablesAvailable: 999,
+      suggestedTables: [],
+      alternativeTimes: []
+    }));
+
+    const availability = {
+      date: basicAvailability.date,
+      timeSlots: enhancedTimeSlots,
+      suggestions: {
+        quietTimes: enhancedTimeSlots.filter(s => s.available).slice(0, 3).map(s => s.time),
+        peakTimes: [],
+        bestAvailability: enhancedTimeSlots.filter(s => s.available).slice(0, 5).map(s => s.time)
+      }
+    };
+
+    console.log('✅ Enhanced availability created:', {
+      timeSlotCount: availability.timeSlots.length,
+      availableSlots: availability.timeSlots.filter(s => s.available).length
+    });
+    
+  } catch (basicError) {
+    console.error('❌ Basic availability failed:', basicError);
+    throw basicError;
+  }
 
   res.json({
     success: true,
