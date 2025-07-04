@@ -76,6 +76,42 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
     throw createError('Slot duration must be between 15 and 120 minutes', 400);
   }
 
+  // Validate opening hours if provided
+  if (updates.openingHours) {
+    const { openingHours } = updates;
+    const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    for (const day of daysOfWeek) {
+      if (openingHours[day]) {
+        const daySchedule = openingHours[day];
+        
+        // Validate periods structure if using new format
+        if (daySchedule.periods && Array.isArray(daySchedule.periods)) {
+          for (const period of daySchedule.periods) {
+            if (!period.name || typeof period.name !== 'string') {
+              throw createError(`Period name is required for ${day}`, 400);
+            }
+            if (!period.startTime || !period.endTime) {
+              throw createError(`Start time and end time are required for ${day} ${period.name}`, 400);
+            }
+            // Validate time format (HH:MM)
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(period.startTime) || !timeRegex.test(period.endTime)) {
+              throw createError(`Invalid time format for ${day} ${period.name}. Use HH:MM format`, 400);
+            }
+          }
+        }
+        // Validate simple format if using old format
+        else if (daySchedule.openTime && daySchedule.closeTime) {
+          const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (!timeRegex.test(daySchedule.openTime) || !timeRegex.test(daySchedule.closeTime)) {
+            throw createError(`Invalid time format for ${day}. Use HH:MM format`, 400);
+          }
+        }
+      }
+    }
+  }
+
   // Validate booking settings if provided
   if (updates.bookingSettings) {
     const { bookingSettings } = updates;
