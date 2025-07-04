@@ -223,72 +223,71 @@ export const getCustomerSuggestions = asyncHandler(async (req: AuthRequest, res:
  * Get enhanced availability for staff
  */
 export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  console.log('🚀 Enhanced availability endpoint hit');
+  console.log('📋 Query params:', req.query);
+  console.log('👤 User:', req.user ? { id: req.user.id, role: req.user.role, restaurantId: req.user.restaurantId } : 'No user');
+  
   const { restaurantId, date, partySize, duration, preferredTime } = req.query;
 
   if (!req.user) {
+    console.log('❌ No user found in request');
     throw createError('Authentication required', 401);
   }
 
   if (!restaurantId || !date || !partySize) {
+    console.log('❌ Missing required parameters:', { restaurantId, date, partySize });
     throw createError('Restaurant ID, date, and party size are required', 400);
   }
 
   // Check restaurant access
   if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+    console.log('❌ Access denied:', { userRole: req.user.role, userRestaurantId: req.user.restaurantId, requestedRestaurantId: restaurantId });
     throw createError('Access denied to this restaurant', 403);
   }
 
-  console.log('🔍 Getting enhanced availability for:', {
-    restaurantId,
-    date,
-    partySize: parseInt(partySize as string),
-    duration: duration ? parseInt(duration as string) : 120,
-    preferredTime
-  });
+  console.log('✅ All checks passed, proceeding with availability check');
 
-  try {
-    // First try basic availability to see if that works
-    const basicAvailability = await AvailabilityService.checkAvailability(
-      restaurantId as string,
-      date as string,
-      parseInt(partySize as string),
-      duration ? parseInt(duration as string) : 120
-    );
-
-    console.log('✅ Basic availability result:', basicAvailability);
-
-    // Convert basic availability to enhanced format
-    const enhancedTimeSlots = basicAvailability.timeSlots.map(slot => ({
-      ...slot,
-      pacingStatus: 'available' as const,
-      tablesAvailable: 999,
-      suggestedTables: [],
-      alternativeTimes: []
-    }));
-
-    const availability = {
-      date: basicAvailability.date,
-      timeSlots: enhancedTimeSlots,
-      suggestions: {
-        quietTimes: enhancedTimeSlots.filter(s => s.available).slice(0, 3).map(s => s.time),
-        peakTimes: [],
-        bestAvailability: enhancedTimeSlots.filter(s => s.available).slice(0, 5).map(s => s.time)
+  // For now, just return a simple mock response to test if the endpoint works
+  const mockAvailability = {
+    date: date as string,
+    timeSlots: [
+      {
+        time: '18:00',
+        available: true,
+        pacingStatus: 'available' as const,
+        tablesAvailable: 5,
+        suggestedTables: [],
+        alternativeTimes: []
+      },
+      {
+        time: '18:30',
+        available: true,
+        pacingStatus: 'available' as const,
+        tablesAvailable: 5,
+        suggestedTables: [],
+        alternativeTimes: []
+      },
+      {
+        time: '19:00',
+        available: true,
+        pacingStatus: 'moderate' as const,
+        tablesAvailable: 3,
+        suggestedTables: [],
+        alternativeTimes: []
       }
-    };
+    ],
+    suggestions: {
+      quietTimes: ['18:00', '18:30'],
+      peakTimes: ['19:00'],
+      bestAvailability: ['18:00', '18:30', '19:00']
+    }
+  };
 
-    console.log('✅ Enhanced availability created:', {
-      timeSlotCount: availability.timeSlots.length,
-      availableSlots: availability.timeSlots.filter(s => s.available).length
-    });
-    
-  } catch (basicError) {
-    console.error('❌ Basic availability failed:', basicError);
-    throw basicError;
-  }
+  console.log('✅ Returning mock availability:', mockAvailability);
 
   res.json({
     success: true,
-    data: availability
+    data: mockAvailability
   } as ApiResponse);
 });
 
