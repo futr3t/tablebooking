@@ -25,6 +25,14 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     };
   }> {
     try {
+      console.log('🔍 EnhancedAvailabilityService.getEnhancedAvailability called with:', {
+        restaurantId,
+        date,
+        partySize,
+        duration,
+        preferredTime
+      });
+
       // Get basic availability
       const basicAvailability = await EnhancedAvailabilityService.checkAvailability(
         restaurantId,
@@ -32,6 +40,12 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         partySize,
         duration
       );
+
+      console.log('📊 Basic availability result:', {
+        date: basicAvailability.date,
+        timeSlotsCount: basicAvailability.timeSlots?.length || 0,
+        firstFewSlots: basicAvailability.timeSlots?.slice(0, 3)
+      });
 
       // Get restaurant settings
       const restaurant = await RestaurantModel.findById(restaurantId);

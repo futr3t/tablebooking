@@ -46,7 +46,16 @@ export class AvailabilityService {
       const dayOfWeekString = this.getDayOfWeek(requestDate);
       const daySchedule = openingHours[dayOfWeekString];
       
+      console.log('📅 Availability check debug:', {
+        requestDate: requestDate.toISOString(),
+        dayOfWeekString,
+        daySchedule,
+        hasOpeningHours: !!openingHours,
+        openingHoursKeys: Object.keys(openingHours || {})
+      });
+      
       if (!daySchedule || !daySchedule.isOpen) {
+        console.log('❌ Restaurant closed or no schedule found');
         return {
           date,
           timeSlots: []
