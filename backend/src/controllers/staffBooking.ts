@@ -18,7 +18,7 @@ export const staffBookingValidation = [
   body('customerPhone').optional().matches(/^[\d\s\-\+\(\)]+$/).withMessage('Invalid phone number'),
   body('customerEmail').optional().isEmail().withMessage('Invalid email address'),
   body('partySize').isInt({ min: 1, max: 50 }).withMessage('Party size must be between 1 and 50'),
-  body('bookingDate').isDate().withMessage('Invalid booking date'),
+  body('bookingDate').isISO8601().toDate().withMessage('Invalid booking date'),
   body('bookingTime').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid time format (HH:MM)'),
   body('duration').optional().isInt({ min: 30, max: 480 }).withMessage('Duration must be between 30 and 480 minutes'),
   body('dietaryRequirements').optional().trim(),
@@ -35,10 +35,15 @@ export const staffBookingValidation = [
  * Create booking with enhanced features for staff
  */
 export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  // Debug logging
+  console.log('Staff booking request body:', JSON.stringify(req.body, null, 2));
+  
   // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw createError('Validation failed', 400);
+    const errorMessages = errors.array().map((err: any) => `${err.path || err.param}: ${err.msg}`).join(', ');
+    console.log('Validation errors:', errorMessages);
+    throw createError(`Validation failed: ${errorMessages}`, 400);
   }
 
   const {
@@ -70,7 +75,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
   }
 
   // Check restaurant access
-  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+  if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
     throw createError('Access denied to this restaurant', 403);
   }
 
@@ -157,12 +162,12 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           preferredSeating,
           marketingConsent,
           source: BookingSource.STAFF,
-          createdBy: req.user.id,
+          createdBy: req.user?.id,
           isVip,
           internalNotes,
           metadata: {
-            ...metadata,
-            createdByStaff: req.user.email,
+            ...(metadata || {}),
+            createdByStaff: req.user?.email,
             overridePacing,
             overrideReason
           },
@@ -200,7 +205,7 @@ export const getCustomerSuggestions = asyncHandler(async (req: AuthRequest, res:
   }
 
   // Check restaurant access
-  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+  if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
     throw createError('Access denied to this restaurant', 403);
   }
 
@@ -235,7 +240,7 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
   }
 
   // Check restaurant access
-  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+  if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
     throw createError('Access denied to this restaurant', 403);
   }
 
@@ -294,7 +299,7 @@ export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Res
   }
 
   // Check restaurant access
-  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+  if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
     throw createError('Access denied to this restaurant', 403);
   }
 
@@ -374,7 +379,7 @@ export const bulkCheckAvailability = asyncHandler(async (req: AuthRequest, res: 
   }
 
   // Check restaurant access
-  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+  if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
     throw createError('Access denied to this restaurant', 403);
   }
 
