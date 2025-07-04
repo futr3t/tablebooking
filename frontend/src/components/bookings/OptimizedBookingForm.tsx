@@ -22,7 +22,8 @@ import {
   Divider,
   Stack,
   Collapse,
-  CircularProgress
+  CircularProgress,
+  FormHelperText
 } from '@mui/material';
 import {
   CalendarMonth,
@@ -44,7 +45,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, addDays, parseISO } from 'date-fns';
-import { Booking, BookingTemplate, DietaryRequirement, EnhancedAvailability, EnhancedTimeSlot } from '../../types';
+import { Booking, BookingTemplate, DietaryRequirement, EnhancedAvailability, EnhancedTimeSlot, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -101,10 +102,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     isVip: false,
     internalNotes: '',
     overridePacing: false,
-    overrideReason: ''
+    overrideReason: '',
+    tableId: ''
   });
 
   // UI state
+  const [availableTables, setAvailableTables] = useState<Table[]>([]);
+  const [suggestedTableId, setSuggestedTableId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -126,6 +130,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       loadAvailability();
     }
   }, [formData.bookingDate, formData.partySize]);
+
+  // Load available tables when time is selected
+  useEffect(() => {
+    if (formData.bookingTime && formData.bookingDate && formData.partySize) {
+      loadAvailableTables();
+    }
+  }, [formData.bookingTime, formData.bookingDate, formData.partySize]);
 
   const loadDietaryRequirements = async () => {
     try {
@@ -152,6 +163,36 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       console.error('Failed to load availability:', error);
     } finally {
       setLoadingAvailability(false);
+    }
+  };
+
+  const loadAvailableTables = async () => {
+    if (!formData.bookingTime || !formData.bookingDate) {
+      setAvailableTables([]);
+      return;
+    }
+
+    try {
+      const response = await api.get('/bookings/staff/tables/available', {
+        params: {
+          restaurantId,
+          date: formData.bookingDate,
+          time: formData.bookingTime,
+          partySize: formData.partySize
+        }
+      });
+      
+      const { availableTables, suggestedTable } = response.data.data;
+      setAvailableTables(availableTables);
+      
+      // Auto-select suggested table if no table is selected
+      if (suggestedTable && !formData.tableId) {
+        setSuggestedTableId(suggestedTable.id);
+        setFormData(prev => ({ ...prev, tableId: suggestedTable.id }));
+      }
+    } catch (error) {
+      console.error('Failed to load available tables:', error);
+      setAvailableTables([]);
     }
   };
 
@@ -471,6 +512,50 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       This time is busy. Alternative times: {selectedSlot.alternativeTimes.join(', ')}
                     </Alert>
                   )}
+                </Box>
+              )}
+
+              {/* Table Selection */}
+              {formData.bookingTime && availableTables.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Select Table
+                  </Typography>
+                  
+                  <FormControl fullWidth>
+                    <Select
+                      value={formData.tableId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tableId: e.target.value }))}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>Auto-assign table</em>
+                      </MenuItem>
+                      {availableTables.map((table) => (
+                        <MenuItem 
+                          key={table.id} 
+                          value={table.id}
+                          sx={{
+                            backgroundColor: table.id === suggestedTableId ? 'action.hover' : 'transparent',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                            <span>
+                              Table {table.number} 
+                              {table.id === suggestedTableId && ' (Recommended)'}
+                            </span>
+                            <Box component="span" sx={{ color: 'text.secondary', ml: 2 }}>
+                              {table.minCapacity}-{table.maxCapacity} guests • {table.tableType}
+                              {table.notes && ` • ${table.notes}`}
+                            </Box>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>
+                      {availableTables.length} table{availableTables.length !== 1 ? 's' : ''} available
+                    </FormHelperText>
+                  </FormControl>
                 </Box>
               )}
             </Paper>

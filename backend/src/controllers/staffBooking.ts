@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { BookingModel } from '../models/Booking';
 import { BookingTemplateModel } from '../models/BookingTemplate';
+import { TableModel } from '../models/Table';
 import { EnhancedAvailabilityService } from '../services/enhanced-availability';
+import { AvailabilityService } from '../services/availability';
 import { BookingLockService } from '../services/booking-lock';
 import { AuthRequest, ApiResponse, BookingStatus, BookingSource } from '../types';
 import { createError, asyncHandler } from '../middleware/error';
@@ -25,7 +27,8 @@ export const staffBookingValidation = [
   body('isVip').optional().isBoolean(),
   body('internalNotes').optional().trim(),
   body('overridePacing').optional().isBoolean(),
-  body('overrideReason').optional().trim()
+  body('overrideReason').optional().trim(),
+  body('tableId').optional().isUUID().withMessage('Invalid table ID')
 ];
 
 /**
@@ -58,7 +61,8 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     metadata,
     forceWaitlist = false,
     overridePacing = false,
-    overrideReason
+    overrideReason,
+    tableId
   } = req.body;
 
   if (!req.user) {
@@ -94,20 +98,51 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     bookingDate,
     bookingTime,
     async () => {
-      // Staff bookings bypass concurrent limits
-      const bestTable = await EnhancedAvailabilityService.findBestTable(
-        restaurantId,
-        bookingDate,
-        bookingTime,
-        partySize,
-        duration,
-        true // isStaffBooking = true
-      );
+      let assignedTable = null;
+      
+      // If tableId is provided, verify it's available
+      if (tableId) {
+        const table = await TableModel.findById(tableId);
+        if (table && table.restaurantId === restaurantId && table.isActive) {
+          // Check if table is available at the requested time
+          const existingBookings = await BookingModel.findByDateRange(restaurantId, bookingDate, bookingDate);
+          const startMinutes = AvailabilityService.timeToMinutes(bookingTime);
+          const endMinutes = startMinutes + duration;
+          
+          const isAvailable = !existingBookings.some(booking => {
+            if (booking.status === 'cancelled' || booking.status === 'no_show') {
+              return false;
+            }
+            if (booking.tableId !== tableId) {
+              return false;
+            }
+            const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+            const bookingEndMinutes = bookingMinutes + booking.duration;
+            return (startMinutes < bookingEndMinutes) && (endMinutes > bookingMinutes);
+          });
+          
+          if (isAvailable) {
+            assignedTable = table;
+          }
+        }
+      }
+      
+      // If no table was assigned yet, find the best available table
+      if (!assignedTable && !forceWaitlist) {
+        assignedTable = await EnhancedAvailabilityService.findBestTable(
+          restaurantId,
+          bookingDate,
+          bookingTime,
+          partySize,
+          duration,
+          true // isStaffBooking = true
+        );
+      }
 
-      if (bestTable || forceWaitlist) {
+      if (assignedTable || forceWaitlist) {
         const bookingData = {
           restaurantId,
-          tableId: bestTable?.id,
+          tableId: assignedTable?.id,
           customerName,
           customerEmail,
           customerPhone,
@@ -131,7 +166,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
             overridePacing,
             overrideReason
           },
-          isWaitlisted: !bestTable
+          isWaitlisted: !assignedTable
         };
 
         const booking = await BookingModel.create(bookingData);
@@ -220,6 +255,85 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
 /**
  * Bulk check availability for multiple dates
  */
+/**
+ * Get available tables for a specific time slot
+ */
+export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw createError('Authentication required', 401);
+  }
+
+  const { restaurantId, date, time, partySize } = req.query;
+
+  if (!restaurantId || !date || !time || !partySize) {
+    throw createError('Restaurant ID, date, time, and party size are required', 400);
+  }
+
+  // Check restaurant access
+  if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
+    throw createError('Access denied to this restaurant', 403);
+  }
+
+  // Get all active tables that can accommodate the party size
+  const allTablesResult = await TableModel.findByRestaurant(restaurantId as string, {
+    includeInactive: false
+  });
+
+  // Get existing bookings for the date
+  const existingBookings = await BookingModel.findByDateRange(
+    restaurantId as string, 
+    date as string, 
+    date as string
+  );
+
+  // Check which tables are available at the specified time
+  const startMinutes = AvailabilityService.timeToMinutes(time as string);
+  const duration = 90; // Standard 90 minute booking
+  const endMinutes = startMinutes + duration;
+
+  // Filter tables by capacity
+  const suitableTables = allTablesResult.tables.filter(table => 
+    table.minCapacity <= Number(partySize) && table.maxCapacity >= Number(partySize)
+  );
+
+  const availableTables = suitableTables.filter(table => {
+    // Check if table is available during the time slot
+    const conflictingBooking = existingBookings.find(booking => {
+      if (booking.status === 'cancelled' || booking.status === 'no_show') {
+        return false;
+      }
+      if (booking.tableId !== table.id) {
+        return false;
+      }
+
+      const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+      const bookingEndMinutes = bookingMinutes + booking.duration;
+
+      // Check for overlap
+      return (startMinutes < bookingEndMinutes) && (endMinutes > bookingMinutes);
+    });
+
+    return !conflictingBooking;
+  });
+
+  // Sort tables by capacity (smallest suitable first) and priority
+  availableTables.sort((a, b) => {
+    if (a.capacity !== b.capacity) {
+      return a.capacity - b.capacity;
+    }
+    return b.priority - a.priority;
+  });
+
+  res.json({
+    success: true,
+    data: {
+      availableTables,
+      suggestedTable: availableTables[0] || null,
+      totalAvailable: availableTables.length
+    }
+  });
+});
+
 export const bulkCheckAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const { restaurantId, dates, partySize, duration = 120 } = req.body;
 

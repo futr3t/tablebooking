@@ -6,6 +6,7 @@ import {
   getCustomerSuggestions,
   getEnhancedAvailability,
   bulkCheckAvailability,
+  getAvailableTables,
   staffBookingValidation
 } from '../controllers/staffBooking';
 
@@ -41,6 +42,13 @@ router.post(
   '/availability/bulk',
   requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
   bulkCheckAvailability
+);
+
+// Get available tables for a specific time slot
+router.get(
+  '/tables/available',
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST, UserRole.SERVER),
+  getAvailableTables
 );
 
 export default router;

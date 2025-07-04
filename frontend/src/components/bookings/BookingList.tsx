@@ -32,6 +32,7 @@ import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import BookingForm from './BookingForm';
 import BookingDetails from './BookingDetails';
+import { QuickBookingDialog } from './QuickBookingDialog';
 
 const BookingList: React.FC = () => {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ const BookingList: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [openQuickBooking, setOpenQuickBooking] = useState(false);
 
   useEffect(() => {
     if (user?.restaurantId) {
@@ -100,9 +102,7 @@ const BookingList: React.FC = () => {
   };
 
   const handleAddBooking = () => {
-    setSelectedBooking(null);
-    setEditMode(false);
-    setOpenForm(true);
+    setOpenQuickBooking(true);
   };
 
   const handleCancelBooking = async (booking: Booking) => {
@@ -135,6 +135,11 @@ const BookingList: React.FC = () => {
 
   const handleFormSuccess = () => {
     handleFormClose();
+    loadBookings();
+  };
+
+  const handleQuickBookingSuccess = () => {
+    setOpenQuickBooking(false);
     loadBookings();
   };
 
@@ -301,6 +306,15 @@ const BookingList: React.FC = () => {
         onClose={() => setOpenDetails(false)}
         booking={selectedBooking}
       />
+
+      {user?.restaurantId && (
+        <QuickBookingDialog
+          open={openQuickBooking}
+          onClose={() => setOpenQuickBooking(false)}
+          restaurantId={user.restaurantId}
+          onSuccess={handleQuickBookingSuccess}
+        />
+      )}
     </Box>
   );
 };
