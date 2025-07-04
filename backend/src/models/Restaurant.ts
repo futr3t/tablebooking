@@ -86,13 +86,30 @@ export class RestaurantModel {
       const values = [];
       let paramCount = 1;
 
+      // Map field names to actual database columns
+      const fieldMapping: { [key: string]: string } = {
+        'maxCovers': 'max_covers',
+        'turnTimeMinutes': 'turn_time_minutes',
+        'defaultSlotDuration': 'default_slot_duration',
+        'timeZone': 'time_zone'
+      };
+
       for (const [key, value] of Object.entries(updates)) {
         if (value !== undefined && key !== 'id' && key !== 'createdAt') {
+          let dbFieldName: string;
+          
+          // Use field mapping if available, otherwise convert to snake_case
+          if (fieldMapping[key]) {
+            dbFieldName = fieldMapping[key];
+          } else {
+            dbFieldName = this.camelToSnake(key);
+          }
+          
           if (key === 'openingHours' || key === 'bookingSettings') {
-            fields.push(`${this.camelToSnake(key)} = $${paramCount}`);
+            fields.push(`${dbFieldName} = $${paramCount}`);
             values.push(JSON.stringify(value));
           } else {
-            fields.push(`${this.camelToSnake(key)} = $${paramCount}`);
+            fields.push(`${dbFieldName} = $${paramCount}`);
             values.push(value);
           }
           paramCount++;
@@ -111,7 +128,7 @@ export class RestaurantModel {
         RETURNING *
       `, values);
 
-      return result.rows[0] || null;
+      return result.rows[0] ? this.mapFromDb(result.rows[0]) : null;
     } catch (error) {
       console.error('Error updating restaurant:', error);
       throw error;
@@ -275,7 +292,7 @@ export class RestaurantModel {
       address: dbRestaurant.address,
       cuisine: dbRestaurant.cuisine,
       description: dbRestaurant.description,
-      maxCovers: dbRestaurant.capacity, // Map capacity field to maxCovers
+      maxCovers: dbRestaurant.max_covers, // Fixed: use max_covers from DB
       timeZone: dbRestaurant.time_zone,
       turnTimeMinutes: dbRestaurant.turn_time_minutes || 120,
       defaultSlotDuration: dbRestaurant.default_slot_duration || 30,

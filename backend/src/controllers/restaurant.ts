@@ -31,10 +31,10 @@ export const getRestaurantSettings = asyncHandler(async (req: AuthRequest, res: 
       address: restaurant.address,
       cuisine: restaurant.cuisine,
       description: restaurant.description,
-      maxCovers: (restaurant.bookingSettings as any)?.maxCovers || restaurant.maxCovers,
+      maxCovers: restaurant.maxCovers,
       timeZone: restaurant.timeZone,
-      turnTimeMinutes: (restaurant.bookingSettings as any)?.turnTimeMinutes || restaurant.turnTimeMinutes || 120,
-      defaultSlotDuration: (restaurant.bookingSettings as any)?.defaultSlotDuration || restaurant.defaultSlotDuration || 30,
+      turnTimeMinutes: restaurant.turnTimeMinutes || 120,
+      defaultSlotDuration: restaurant.defaultSlotDuration || 30,
       openingHours: restaurant.openingHours,
       bookingSettings: restaurant.bookingSettings
     }
@@ -150,33 +150,8 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
     }
   }
 
-  // Prepare updates - move certain fields to bookingSettings
-  const processedUpdates = { ...updates };
-  
-  // Move these fields into bookingSettings JSON
-  if (updates.turnTimeMinutes !== undefined || updates.defaultSlotDuration !== undefined || updates.maxCovers !== undefined) {
-    if (!processedUpdates.bookingSettings) {
-      processedUpdates.bookingSettings = {};
-    }
-    
-    if (updates.turnTimeMinutes !== undefined) {
-      processedUpdates.bookingSettings.turnTimeMinutes = updates.turnTimeMinutes;
-      delete processedUpdates.turnTimeMinutes;
-    }
-    
-    if (updates.defaultSlotDuration !== undefined) {
-      processedUpdates.bookingSettings.defaultSlotDuration = updates.defaultSlotDuration;
-      delete processedUpdates.defaultSlotDuration;
-    }
-    
-    if (updates.maxCovers !== undefined) {
-      processedUpdates.bookingSettings.maxCovers = updates.maxCovers;
-      delete processedUpdates.maxCovers;
-    }
-  }
-
-  // Update restaurant
-  const updatedRestaurant = await RestaurantModel.update(restaurantId, processedUpdates);
+  // Update restaurant directly - these fields are actual columns, not in bookingSettings
+  const updatedRestaurant = await RestaurantModel.update(restaurantId, updates);
   if (!updatedRestaurant) {
     throw createError('Failed to update restaurant settings', 500);
   }
@@ -191,10 +166,10 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
       address: updatedRestaurant.address,
       cuisine: updatedRestaurant.cuisine,
       description: updatedRestaurant.description,
-      maxCovers: (updatedRestaurant.bookingSettings as any)?.maxCovers || updatedRestaurant.maxCovers,
+      maxCovers: updatedRestaurant.maxCovers,
       timeZone: updatedRestaurant.timeZone,
-      turnTimeMinutes: (updatedRestaurant.bookingSettings as any)?.turnTimeMinutes || updatedRestaurant.turnTimeMinutes,
-      defaultSlotDuration: (updatedRestaurant.bookingSettings as any)?.defaultSlotDuration || updatedRestaurant.defaultSlotDuration,
+      turnTimeMinutes: updatedRestaurant.turnTimeMinutes,
+      defaultSlotDuration: updatedRestaurant.defaultSlotDuration,
       openingHours: updatedRestaurant.openingHours,
       bookingSettings: updatedRestaurant.bookingSettings
     },
