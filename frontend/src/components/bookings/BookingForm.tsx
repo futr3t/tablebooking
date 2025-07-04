@@ -133,7 +133,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{editMode ? 'Edit Booking' : 'New Booking'}</DialogTitle>
+        <DialogTitle>📝 {editMode ? 'Edit Booking (Legacy Form)' : 'New Booking (Legacy Form)'}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           

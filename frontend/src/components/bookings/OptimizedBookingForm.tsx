@@ -148,6 +148,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   const loadAvailability = async () => {
+    console.log('🔍 Loading availability for:', {
+      restaurantId,
+      date: formData.bookingDate,
+      partySize: formData.partySize,
+      preferredTime: formData.bookingTime || undefined
+    });
+    
     setLoadingAvailability(true);
     try {
       const response = await api.get('/bookings/staff/availability', {
@@ -158,9 +165,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           preferredTime: formData.bookingTime || undefined
         }
       });
+      console.log('✅ Availability loaded:', response.data.data);
       setAvailability(response.data.data);
     } catch (error) {
-      console.error('Failed to load availability:', error);
+      console.error('❌ Failed to load availability:', error);
     } finally {
       setLoadingAvailability(false);
     }
@@ -282,8 +290,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2 }}>
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          New Booking
+        <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
+          🚀 Enhanced Booking Form
         </Typography>
 
         {error && (
@@ -467,15 +475,25 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               </Grid>
 
               {/* Time Slot Selection */}
-              {loadingAvailability ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                  <CircularProgress />
-                </Box>
-              ) : availability && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Select Time
-                  </Typography>
+              <Box sx={{ mt: 3, p: 2, border: '2px dashed #2563eb', borderRadius: 1 }}>
+                <Typography variant="subtitle1" gutterBottom color="primary">
+                  🕐 Time & Table Selection
+                </Typography>
+                
+                {!formData.bookingDate || !formData.partySize ? (
+                  <Alert severity="info">
+                    Please select a date and party size to see available times
+                  </Alert>
+                ) : loadingAvailability ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <CircularProgress />
+                    <Typography sx={{ ml: 2 }}>Loading available times...</Typography>
+                  </Box>
+                ) : availability ? (
+                  <Box>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Select Time
+                    </Typography>
                   
                   {availability.suggestions.bestAvailability.length > 0 && (
                     <Alert severity="info" sx={{ mb: 2 }}>
@@ -512,8 +530,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       This time is busy. Alternative times: {selectedSlot.alternativeTimes.join(', ')}
                     </Alert>
                   )}
-                </Box>
-              )}
+                  </Box>
+                ) : (
+                  <Alert severity="warning">
+                    No available times found. Please try a different date or party size.
+                  </Alert>
+                )}
+              </Box>
 
               {/* Table Selection */}
               {formData.bookingTime && availableTables.length > 0 && (
