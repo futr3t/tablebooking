@@ -1,7 +1,7 @@
 import { redis } from '../config/database';
 
 export class BookingLockService {
-  private static readonly LOCK_TIMEOUT = 30; // seconds
+  private static readonly LOCK_TIMEOUT = 10; // seconds - reduced from 30 to prevent stuck locks
   private static readonly LOCK_PREFIX = 'booking-lock:';
 
   static async acquireLock(
@@ -121,18 +121,33 @@ export class BookingLockService {
       return await operation();
     }
 
-    const lockValue = await this.acquireLock(restaurantId, date, time, tableId);
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
     
-    if (!lockValue) {
-      throw new Error('Unable to acquire booking lock - another operation in progress');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const lockValue = await this.acquireLock(restaurantId, date, time, tableId);
+      
+      if (lockValue) {
+        try {
+          const result = await operation();
+          return result;
+        } finally {
+          await this.releaseLock(restaurantId, date, time, lockValue, tableId);
+        }
+      }
+      
+      // If this is the last attempt, throw error
+      if (attempt === maxRetries) {
+        throw new Error('Unable to acquire booking lock - system is busy, please try again');
+      }
+      
+      // Wait before retrying
+      console.log(`Lock acquisition failed, retrying in ${retryDelay}ms (attempt ${attempt}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
-
-    try {
-      const result = await operation();
-      return result;
-    } finally {
-      await this.releaseLock(restaurantId, date, time, lockValue, tableId);
-    }
+    
+    // This should never be reached due to the throw above, but TypeScript requires it
+    throw new Error('Unable to acquire booking lock - maximum retries exceeded');
   }
 
   static async acquireTableLock(tableId: string): Promise<string | null> {
