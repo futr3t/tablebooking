@@ -27,7 +27,8 @@
       "Bash(npx ts-node:*)",
       "Bash(npx tsc:*)",
       "Bash(touch:*)",
-      "Bash(pg_isready:*)"
+      "Bash(pg_isready:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

@@ -53,6 +53,8 @@ interface OptimizedBookingFormProps {
   restaurantId: string;
   onSuccess: (booking: Booking) => void;
   onCancel: () => void;
+  booking?: Booking | null;
+  editMode?: boolean;
 }
 
 const OCCASIONS = [
@@ -80,7 +82,9 @@ const SEATING_PREFERENCES = [
 export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   restaurantId,
   onSuccess,
-  onCancel
+  onCancel,
+  booking,
+  editMode = false
 }) => {
   const { user } = useAuth();
   
@@ -123,6 +127,35 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   useEffect(() => {
     loadDietaryRequirements();
   }, []);
+
+  // Populate form data when editing
+  useEffect(() => {
+    if (booking && editMode) {
+      const bookingDate = booking.bookingDate || format(parseISO(booking.bookingTime), 'yyyy-MM-dd');
+      const bookingTime = booking.bookingTime ? format(parseISO(booking.bookingTime), 'HH:mm') : '';
+      
+      setFormData({
+        customerName: booking.customerName || '',
+        customerPhone: booking.customerPhone || '',
+        customerEmail: booking.customerEmail || '',
+        partySize: booking.partySize || 2,
+        bookingDate,
+        bookingTime,
+        duration: booking.duration || 120,
+        dietaryRequirements: booking.dietaryRequirements ? booking.dietaryRequirements.split(', ') : [],
+        customDietary: '',
+        occasion: booking.occasion || '',
+        preferredSeating: booking.preferredSeating || '',
+        specialRequests: booking.specialRequests || '',
+        marketingConsent: booking.marketingConsent || false,
+        isVip: booking.isVip || false,
+        internalNotes: booking.internalNotes || '',
+        overridePacing: false,
+        overrideReason: '',
+        tableId: booking.tableId || ''
+      });
+    }
+  }, [booking, editMode]);
 
   // Load availability when date or party size changes
   useEffect(() => {
@@ -268,10 +301,18 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         createdBy: user?.id
       };
 
-      const response = await api.post('/bookings/staff', bookingData);
+      let response;
+      if (editMode && booking) {
+        // Update existing booking
+        response = await api.put(`/bookings/${booking.id}`, bookingData);
+      } else {
+        // Create new booking
+        response = await api.post('/bookings/staff', bookingData);
+      }
+      
       onSuccess(response.data.data);
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to create booking');
+      setError(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} booking`);
     } finally {
       setLoading(false);
     }
@@ -291,7 +332,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
-          🚀 Enhanced Booking Form
+          🚀 {editMode ? 'Edit Booking (Enhanced Form)' : 'Enhanced Booking Form'}
         </Typography>
 
         {error && (
@@ -786,7 +827,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 disabled={loading || !formData.customerName || !formData.bookingTime}
                 startIcon={loading && <CircularProgress size={20} />}
               >
-                Create Booking
+                {editMode ? 'Update Booking' : 'Create Booking'}
               </Button>
             </Box>
           </Grid>

@@ -15,13 +15,17 @@ interface QuickBookingDialogProps {
   onClose: () => void;
   restaurantId: string;
   onSuccess: (booking: Booking) => void;
+  booking?: Booking | null;
+  editMode?: boolean;
 }
 
 export const QuickBookingDialog: React.FC<QuickBookingDialogProps> = ({
   open,
   onClose,
   restaurantId,
-  onSuccess
+  onSuccess,
+  booking,
+  editMode = false
 }) => {
   const handleSuccess = (booking: Booking) => {
     onSuccess(booking);
@@ -42,7 +46,7 @@ export const QuickBookingDialog: React.FC<QuickBookingDialogProps> = ({
     >
       <DialogTitle sx={{ m: 0, p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          Quick Booking
+          {editMode ? 'Edit Booking' : 'Quick Booking'}
           <IconButton
             aria-label="close"
             onClick={onClose}
@@ -62,6 +66,8 @@ export const QuickBookingDialog: React.FC<QuickBookingDialogProps> = ({
           restaurantId={restaurantId}
           onSuccess={handleSuccess}
           onCancel={onClose}
+          booking={booking}
+          editMode={editMode}
         />
       </DialogContent>
     </Dialog>

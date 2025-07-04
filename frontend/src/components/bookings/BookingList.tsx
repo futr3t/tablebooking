@@ -30,9 +30,9 @@ import { format, parseISO } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import BookingForm from './BookingForm';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
+import { OptimizedBookingForm } from './OptimizedBookingForm';
 
 const BookingList: React.FC = () => {
   const { user } = useAuth();
@@ -43,10 +43,9 @@ const BookingList: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [openQuickBooking, setOpenQuickBooking] = useState(false);
+  const [openEnhancedEdit, setOpenEnhancedEdit] = useState(false);
 
   useEffect(() => {
     if (user?.restaurantId) {
@@ -97,8 +96,7 @@ const BookingList: React.FC = () => {
 
   const handleEditBooking = (booking: Booking) => {
     setSelectedBooking(booking);
-    setEditMode(true);
-    setOpenForm(true);
+    setOpenEnhancedEdit(true);
   };
 
   const handleAddBooking = () => {
@@ -127,20 +125,20 @@ const BookingList: React.FC = () => {
     }
   };
 
-  const handleFormClose = () => {
-    setOpenForm(false);
-    setSelectedBooking(null);
-    setEditMode(false);
-  };
-
-  const handleFormSuccess = () => {
-    handleFormClose();
-    loadBookings();
-  };
-
   const handleQuickBookingSuccess = () => {
     setOpenQuickBooking(false);
     loadBookings();
+  };
+
+  const handleEnhancedEditSuccess = () => {
+    setOpenEnhancedEdit(false);
+    setSelectedBooking(null);
+    loadBookings();
+  };
+
+  const handleEnhancedEditClose = () => {
+    setOpenEnhancedEdit(false);
+    setSelectedBooking(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -293,13 +291,17 @@ const BookingList: React.FC = () => {
         />
       </TableContainer>
 
-      <BookingForm
-        open={openForm}
-        onClose={handleFormClose}
-        onSuccess={handleFormSuccess}
-        booking={selectedBooking}
-        editMode={editMode}
-      />
+      {/* Enhanced Edit Booking Dialog */}
+      {selectedBooking && user?.restaurantId && (
+        <QuickBookingDialog
+          open={openEnhancedEdit}
+          onClose={handleEnhancedEditClose}
+          restaurantId={user.restaurantId}
+          onSuccess={handleEnhancedEditSuccess}
+          booking={selectedBooking}
+          editMode={true}
+        />
+      )}
 
       <BookingDetails
         open={openDetails}
