@@ -181,13 +181,6 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   const loadAvailability = async () => {
-    console.log('🔍 Loading availability for:', {
-      restaurantId,
-      date: formData.bookingDate,
-      partySize: formData.partySize,
-      preferredTime: formData.bookingTime || undefined
-    });
-    
     setLoadingAvailability(true);
     try {
       const response = await api.get('/bookings/staff/availability', {
@@ -198,10 +191,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           preferredTime: formData.bookingTime || undefined
         }
       });
-      console.log('✅ Availability loaded:', response.data.data);
       setAvailability(response.data.data);
     } catch (error) {
-      console.error('❌ Failed to load availability:', error);
+      console.error('Failed to load availability:', error);
     } finally {
       setLoadingAvailability(false);
     }

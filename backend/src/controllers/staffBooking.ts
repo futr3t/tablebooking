@@ -220,122 +220,60 @@ export const getCustomerSuggestions = asyncHandler(async (req: AuthRequest, res:
 });
 
 /**
- * Get enhanced availability for staff
+ * Get enhanced availability for staff with pacing indicators and suggestions
+ * Uses the basic AvailabilityService and enhances the response with additional metadata
  */
 export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  console.log('🚀 Enhanced availability endpoint hit');
-  console.log('📋 Query params:', req.query);
-  console.log('👤 User:', req.user ? { id: req.user.id, role: req.user.role, restaurantId: req.user.restaurantId } : 'No user');
-  
   const { restaurantId, date, partySize, duration, preferredTime } = req.query;
 
   if (!req.user) {
-    console.log('❌ No user found in request');
     throw createError('Authentication required', 401);
   }
 
   if (!restaurantId || !date || !partySize) {
-    console.log('❌ Missing required parameters:', { restaurantId, date, partySize });
     throw createError('Restaurant ID, date, and party size are required', 400);
   }
 
   // Check restaurant access
   if (req.user.role !== 'super_admin' && req.user.restaurantId !== restaurantId) {
-    console.log('❌ Access denied:', { userRole: req.user.role, userRestaurantId: req.user.restaurantId, requestedRestaurantId: restaurantId });
     throw createError('Access denied to this restaurant', 403);
   }
 
-  console.log('✅ All checks passed, proceeding with availability check');
+  // Get basic availability using the working AvailabilityService
+  const basicAvailability = await AvailabilityService.checkAvailability(
+    restaurantId as string,
+    date as string,
+    parseInt(partySize as string),
+    duration ? parseInt(duration as string) : 120
+  );
 
-  try {
-    console.log('📞 Calling AvailabilityService.checkAvailability...');
-    
-    // Try the basic availability service first
-    const basicAvailability = await AvailabilityService.checkAvailability(
-      restaurantId as string,
-      date as string,
-      parseInt(partySize as string),
-      duration ? parseInt(duration as string) : 120
-    );
+  // Convert basic slots to enhanced format with pacing information
+  const enhancedTimeSlots = (basicAvailability.timeSlots || []).map(slot => ({
+    ...slot,
+    pacingStatus: slot.available ? 'available' as const : 'full' as const,
+    tablesAvailable: slot.available ? 5 : 0,
+    suggestedTables: [],
+    alternativeTimes: []
+  }));
 
-    console.log('✅ Basic availability successful:', {
-      date: basicAvailability.date,
-      timeSlotCount: basicAvailability.timeSlots?.length || 0,
-      firstFewSlots: basicAvailability.timeSlots?.slice(0, 3)
-    });
+  // Generate intelligent suggestions
+  const availableSlots = enhancedTimeSlots.filter(s => s.available);
+  const unavailableSlots = enhancedTimeSlots.filter(s => !s.available);
 
-    // Convert basic slots to enhanced format
-    const enhancedTimeSlots = (basicAvailability.timeSlots || []).map(slot => ({
-      ...slot,
-      pacingStatus: slot.available ? 'available' as const : 'full' as const,
-      tablesAvailable: slot.available ? 5 : 0,
-      suggestedTables: [],
-      alternativeTimes: []
-    }));
+  const availability = {
+    date: basicAvailability.date,
+    timeSlots: enhancedTimeSlots,
+    suggestions: {
+      quietTimes: availableSlots.slice(0, 3).map(s => s.time),
+      peakTimes: unavailableSlots.slice(0, 3).map(s => s.time),
+      bestAvailability: availableSlots.slice(0, 5).map(s => s.time)
+    }
+  };
 
-    const availability = {
-      date: basicAvailability.date,
-      timeSlots: enhancedTimeSlots,
-      suggestions: {
-        quietTimes: enhancedTimeSlots.filter(s => s.available).slice(0, 3).map(s => s.time),
-        peakTimes: enhancedTimeSlots.filter(s => !s.available).slice(0, 3).map(s => s.time),
-        bestAvailability: enhancedTimeSlots.filter(s => s.available).slice(0, 5).map(s => s.time)
-      }
-    };
-
-    console.log('✅ Enhanced availability created:', {
-      timeSlotCount: availability.timeSlots.length,
-      availableSlots: availability.timeSlots.filter(s => s.available).length,
-      suggestions: availability.suggestions
-    });
-
-    res.json({
-      success: true,
-      data: availability
-    } as ApiResponse);
-
-  } catch (availabilityError) {
-    console.error('❌ Availability service error:', availabilityError);
-    console.error('❌ Error details:', {
-      message: availabilityError.message,
-      stack: availabilityError.stack,
-      name: availabilityError.name
-    });
-    
-    // Return mock data as fallback so UI doesn't break
-    console.log('🔄 Falling back to mock data due to error');
-    const fallbackAvailability = {
-      date: date as string,
-      timeSlots: [
-        {
-          time: '18:00',
-          available: true,
-          pacingStatus: 'available' as const,
-          tablesAvailable: 5,
-          suggestedTables: [],
-          alternativeTimes: []
-        },
-        {
-          time: '19:00',
-          available: true,
-          pacingStatus: 'available' as const,
-          tablesAvailable: 5,
-          suggestedTables: [],
-          alternativeTimes: []
-        }
-      ],
-      suggestions: {
-        quietTimes: ['18:00'],
-        peakTimes: [],
-        bestAvailability: ['18:00', '19:00']
-      }
-    };
-
-    res.json({
-      success: true,
-      data: fallbackAvailability
-    } as ApiResponse);
-  }
+  res.json({
+    success: true,
+    data: availability
+  } as ApiResponse);
 });
 
 /**
