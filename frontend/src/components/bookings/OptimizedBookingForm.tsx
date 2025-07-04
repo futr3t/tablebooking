@@ -304,7 +304,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       
       onSuccess(response.data.data);
     } catch (error: any) {
-      setError(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} booking`);
+      console.error('Booking creation/update error:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} booking`;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
