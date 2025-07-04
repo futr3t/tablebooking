@@ -31,6 +31,7 @@ export interface Booking {
   bookingTime: string;
   duration: number;
   tableId?: string;
+  tableNumber?: string;
   status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
   notes?: string;
   specialRequests?: string;

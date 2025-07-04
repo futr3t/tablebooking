@@ -13,7 +13,7 @@ export class BookingModel {
         WHERE b.id = $1
       `, [id]);
       
-      return result.rows[0] || null;
+      return result.rows[0] ? toCamelCase(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding booking by ID:', error);
       throw error;
@@ -236,7 +236,7 @@ export class BookingModel {
 
       return {
         success: true,
-        data: dataResult.rows,
+        data: dataResult.rows.map(row => toCamelCase(row)),
         pagination: {
           page,
           limit,
@@ -275,7 +275,7 @@ export class BookingModel {
         ORDER BY booking_date, booking_time
       `, [restaurantId, startDate, endDate]);
 
-      return result.rows;
+      return result.rows.map(row => toCamelCase(row));
     } catch (error) {
       console.error('Error finding bookings by date range:', error);
       throw error;
@@ -409,7 +409,7 @@ export class BookingModel {
         WHERE b.confirmation_code = $1
       `, [confirmationCode]);
       
-      return result.rows[0] || null;
+      return result.rows[0] ? toCamelCase(result.rows[0]) : null;
     } catch (error) {
       console.error('Error finding booking by confirmation code:', error);
       throw error;

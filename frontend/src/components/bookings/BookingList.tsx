@@ -231,7 +231,7 @@ const BookingList: React.FC = () => {
                   </TableCell>
                   <TableCell>{booking.partySize}</TableCell>
                   <TableCell>
-                    {booking.tableId ? `Table ${booking.tableId}` : '-'}
+                    {booking.tableNumber ? `Table ${booking.tableNumber}` : '-'}
                   </TableCell>
                   <TableCell>
                     <Chip

@@ -118,15 +118,18 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
             </Box>
           </Grid>
 
-          {booking.tableId && (
+          {(booking.tableId || booking.tableNumber) && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <TableBar sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Table
+                    Table Assignment
                   </Typography>
-                  <Typography variant="body1">Table {booking.tableId}</Typography>
+                  <Typography variant="body1">
+                    {booking.tableNumber ? `Table ${booking.tableNumber}` : 
+                     booking.tableId ? `Table ${booking.tableId}` : 'Not assigned'}
+                  </Typography>
                 </Box>
               </Box>
             </Grid>

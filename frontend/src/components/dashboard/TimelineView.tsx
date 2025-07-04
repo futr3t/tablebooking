@@ -76,28 +76,35 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
       </Box>
 
       <Box sx={{ position: 'relative', minHeight: 200 }}>
-        {Object.entries(groupedBookings).map(([tableId, tableBookings], rowIndex) => (
-          <Box
-            key={tableId}
-            sx={{
-              position: 'relative',
-              mb: 1,
-              height: 60,
-              borderBottom: '1px solid #f0f0f0',
-            }}
-          >
-            <Typography
-              variant="caption"
+        {Object.entries(groupedBookings).map(([tableId, tableBookings], rowIndex) => {
+          // Get table number from the first booking in this group
+          const tableNumber = tableBookings[0]?.tableNumber;
+          const displayName = tableId === 'unassigned' ? 'Unassigned' : 
+                             tableNumber ? `Table ${tableNumber}` : 
+                             `Table ${tableId}`;
+          
+          return (
+            <Box
+              key={tableId}
               sx={{
-                position: 'absolute',
-                left: -80,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 70,
+                position: 'relative',
+                mb: 1,
+                height: 60,
+                borderBottom: '1px solid #f0f0f0',
               }}
             >
-              {tableId === 'unassigned' ? 'Unassigned' : `Table ${tableId}`}
-            </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  position: 'absolute',
+                  left: -80,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 70,
+                }}
+              >
+                {displayName}
+              </Typography>
 
             {tableBookings.map((booking) => {
               const position = getBookingPosition(booking);
@@ -177,7 +184,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
               );
             })}
           </Box>
-        ))}
+          );
+        })}
       </Box>
 
       <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
