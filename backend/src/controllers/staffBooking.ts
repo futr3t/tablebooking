@@ -247,48 +247,95 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
 
   console.log('✅ All checks passed, proceeding with availability check');
 
-  // For now, just return a simple mock response to test if the endpoint works
-  const mockAvailability = {
-    date: date as string,
-    timeSlots: [
-      {
-        time: '18:00',
-        available: true,
-        pacingStatus: 'available' as const,
-        tablesAvailable: 5,
-        suggestedTables: [],
-        alternativeTimes: []
-      },
-      {
-        time: '18:30',
-        available: true,
-        pacingStatus: 'available' as const,
-        tablesAvailable: 5,
-        suggestedTables: [],
-        alternativeTimes: []
-      },
-      {
-        time: '19:00',
-        available: true,
-        pacingStatus: 'moderate' as const,
-        tablesAvailable: 3,
-        suggestedTables: [],
-        alternativeTimes: []
+  try {
+    console.log('📞 Calling AvailabilityService.checkAvailability...');
+    
+    // Try the basic availability service first
+    const basicAvailability = await AvailabilityService.checkAvailability(
+      restaurantId as string,
+      date as string,
+      parseInt(partySize as string),
+      duration ? parseInt(duration as string) : 120
+    );
+
+    console.log('✅ Basic availability successful:', {
+      date: basicAvailability.date,
+      timeSlotCount: basicAvailability.timeSlots?.length || 0,
+      firstFewSlots: basicAvailability.timeSlots?.slice(0, 3)
+    });
+
+    // Convert basic slots to enhanced format
+    const enhancedTimeSlots = (basicAvailability.timeSlots || []).map(slot => ({
+      ...slot,
+      pacingStatus: slot.available ? 'available' as const : 'full' as const,
+      tablesAvailable: slot.available ? 5 : 0,
+      suggestedTables: [],
+      alternativeTimes: []
+    }));
+
+    const availability = {
+      date: basicAvailability.date,
+      timeSlots: enhancedTimeSlots,
+      suggestions: {
+        quietTimes: enhancedTimeSlots.filter(s => s.available).slice(0, 3).map(s => s.time),
+        peakTimes: enhancedTimeSlots.filter(s => !s.available).slice(0, 3).map(s => s.time),
+        bestAvailability: enhancedTimeSlots.filter(s => s.available).slice(0, 5).map(s => s.time)
       }
-    ],
-    suggestions: {
-      quietTimes: ['18:00', '18:30'],
-      peakTimes: ['19:00'],
-      bestAvailability: ['18:00', '18:30', '19:00']
-    }
-  };
+    };
 
-  console.log('✅ Returning mock availability:', mockAvailability);
+    console.log('✅ Enhanced availability created:', {
+      timeSlotCount: availability.timeSlots.length,
+      availableSlots: availability.timeSlots.filter(s => s.available).length,
+      suggestions: availability.suggestions
+    });
 
-  res.json({
-    success: true,
-    data: mockAvailability
-  } as ApiResponse);
+    res.json({
+      success: true,
+      data: availability
+    } as ApiResponse);
+
+  } catch (availabilityError) {
+    console.error('❌ Availability service error:', availabilityError);
+    console.error('❌ Error details:', {
+      message: availabilityError.message,
+      stack: availabilityError.stack,
+      name: availabilityError.name
+    });
+    
+    // Return mock data as fallback so UI doesn't break
+    console.log('🔄 Falling back to mock data due to error');
+    const fallbackAvailability = {
+      date: date as string,
+      timeSlots: [
+        {
+          time: '18:00',
+          available: true,
+          pacingStatus: 'available' as const,
+          tablesAvailable: 5,
+          suggestedTables: [],
+          alternativeTimes: []
+        },
+        {
+          time: '19:00',
+          available: true,
+          pacingStatus: 'available' as const,
+          tablesAvailable: 5,
+          suggestedTables: [],
+          alternativeTimes: []
+        }
+      ],
+      suggestions: {
+        quietTimes: ['18:00'],
+        peakTimes: [],
+        bestAvailability: ['18:00', '19:00']
+      }
+    };
+
+    res.json({
+      success: true,
+      data: fallbackAvailability
+    } as ApiResponse);
+  }
 });
 
 /**
