@@ -31,10 +31,10 @@ export const getRestaurantSettings = asyncHandler(async (req: AuthRequest, res: 
       address: restaurant.address,
       cuisine: restaurant.cuisine,
       description: restaurant.description,
-      maxCovers: restaurant.maxCovers,
+      maxCovers: (restaurant.bookingSettings as any)?.maxCovers || restaurant.maxCovers,
       timeZone: restaurant.timeZone,
-      turnTimeMinutes: restaurant.turnTimeMinutes,
-      defaultSlotDuration: restaurant.defaultSlotDuration,
+      turnTimeMinutes: (restaurant.bookingSettings as any)?.turnTimeMinutes || restaurant.turnTimeMinutes || 120,
+      defaultSlotDuration: (restaurant.bookingSettings as any)?.defaultSlotDuration || restaurant.defaultSlotDuration || 30,
       openingHours: restaurant.openingHours,
       bookingSettings: restaurant.bookingSettings
     }
@@ -102,10 +102,15 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
           }
         }
         // Validate simple format if using old format
-        else if (daySchedule.openTime && daySchedule.closeTime) {
-          const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-          if (!timeRegex.test(daySchedule.openTime) || !timeRegex.test(daySchedule.closeTime)) {
-            throw createError(`Invalid time format for ${day}. Use HH:MM format`, 400);
+        else if (daySchedule.isOpen && (daySchedule.openTime || daySchedule.closeTime)) {
+          // Only validate times if the day is marked as open and has time fields
+          if (daySchedule.openTime && daySchedule.closeTime) {
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(daySchedule.openTime) || !timeRegex.test(daySchedule.closeTime)) {
+              throw createError(`Invalid time format for ${day}. Use HH:MM format`, 400);
+            }
+          } else if (daySchedule.isOpen) {
+            throw createError(`Open time and close time are required for ${day} when marked as open`, 400);
           }
         }
       }
@@ -145,8 +150,33 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
     }
   }
 
+  // Prepare updates - move certain fields to bookingSettings
+  const processedUpdates = { ...updates };
+  
+  // Move these fields into bookingSettings JSON
+  if (updates.turnTimeMinutes !== undefined || updates.defaultSlotDuration !== undefined || updates.maxCovers !== undefined) {
+    if (!processedUpdates.bookingSettings) {
+      processedUpdates.bookingSettings = {};
+    }
+    
+    if (updates.turnTimeMinutes !== undefined) {
+      processedUpdates.bookingSettings.turnTimeMinutes = updates.turnTimeMinutes;
+      delete processedUpdates.turnTimeMinutes;
+    }
+    
+    if (updates.defaultSlotDuration !== undefined) {
+      processedUpdates.bookingSettings.defaultSlotDuration = updates.defaultSlotDuration;
+      delete processedUpdates.defaultSlotDuration;
+    }
+    
+    if (updates.maxCovers !== undefined) {
+      processedUpdates.bookingSettings.maxCovers = updates.maxCovers;
+      delete processedUpdates.maxCovers;
+    }
+  }
+
   // Update restaurant
-  const updatedRestaurant = await RestaurantModel.update(restaurantId, updates);
+  const updatedRestaurant = await RestaurantModel.update(restaurantId, processedUpdates);
   if (!updatedRestaurant) {
     throw createError('Failed to update restaurant settings', 500);
   }
@@ -161,10 +191,10 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
       address: updatedRestaurant.address,
       cuisine: updatedRestaurant.cuisine,
       description: updatedRestaurant.description,
-      maxCovers: updatedRestaurant.maxCovers,
+      maxCovers: (updatedRestaurant.bookingSettings as any)?.maxCovers || updatedRestaurant.maxCovers,
       timeZone: updatedRestaurant.timeZone,
-      turnTimeMinutes: updatedRestaurant.turnTimeMinutes,
-      defaultSlotDuration: updatedRestaurant.defaultSlotDuration,
+      turnTimeMinutes: (updatedRestaurant.bookingSettings as any)?.turnTimeMinutes || updatedRestaurant.turnTimeMinutes,
+      defaultSlotDuration: (updatedRestaurant.bookingSettings as any)?.defaultSlotDuration || updatedRestaurant.defaultSlotDuration,
       openingHours: updatedRestaurant.openingHours,
       bookingSettings: updatedRestaurant.bookingSettings
     },

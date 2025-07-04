@@ -46,7 +46,7 @@ router.put('/:restaurantId/settings',
     { field: 'maxCovers', required: false, type: 'number', min: 0 },
     { field: 'timeZone', required: false, type: 'string', maxLength: 50 },
     { field: 'turnTimeMinutes', required: false, type: 'number', min: 30, max: 480 },
-    { field: 'defaultSlotDuration', required: false, type: 'number', min: 15, max: 120 }
+    { field: 'defaultSlotDuration', required: false, type: 'number', min: 15, max: 120 },
     // openingHours and bookingSettings validation handled in controller
   ]),
   updateRestaurantSettings
