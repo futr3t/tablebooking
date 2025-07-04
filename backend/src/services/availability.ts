@@ -134,8 +134,8 @@ export class AvailabilityService {
       const openMinutes = this.timeToMinutes(period.startTime);
       const closeMinutes = this.timeToMinutes(period.endTime);
 
-      // Generate slots for this time period
-      for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += period.slotDuration) {
+      // Generate slots for this time period (closing time is last bookable slot)
+      for (let minutes = openMinutes; minutes <= closeMinutes; minutes += period.slotDuration) {
         const slotTime = this.minutesToTime(minutes);
         const startMinutes = minutes;
         const endMinutes = minutes + duration;
