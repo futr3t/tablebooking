@@ -26,7 +26,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
   }> {
     try {
       // Get basic availability
-      const basicAvailability = await this.checkAvailability(
+      const basicAvailability = await EnhancedAvailabilityService.checkAvailability(
         restaurantId,
         date,
         partySize,
@@ -51,7 +51,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       // Enhance time slots with pacing information
       const enhancedSlots: EnhancedTimeSlot[] = await Promise.all(
         basicAvailability.timeSlots.map(async (slot) => {
-          const slotData = await this.getSlotPacingData(
+          const slotData = await EnhancedAvailabilityService.getSlotPacingData(
             slot.time,
             existingBookings,
             totalTables,
@@ -71,7 +71,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       );
 
       // Generate suggestions
-      const suggestions = this.generateSuggestions(enhancedSlots, preferredTime);
+      const suggestions = EnhancedAvailabilityService.generateSuggestions(enhancedSlots, preferredTime);
 
       return {
         date,
@@ -212,6 +212,46 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       peakTimes: peakTimes.slice(0, 5),
       bestAvailability: bestAvailability.slice(0, 5)
     };
+  }
+
+  /**
+   * Check basic availability (delegates to parent class)
+   */
+  static async checkAvailability(
+    restaurantId: string,
+    date: string,
+    partySize: number,
+    duration: number = 120
+  ): Promise<any> {
+    return AvailabilityService.checkAvailability(restaurantId, date, partySize, duration);
+  }
+
+  /**
+   * Find the best available table for a booking (delegates to parent class)
+   */
+  static async findBestTable(
+    restaurantId: string,
+    date: string,
+    startTime: string,
+    partySize: number,
+    duration: number = 120,
+    isStaffBooking: boolean = false
+  ): Promise<Table | null> {
+    return AvailabilityService.findBestTable(
+      restaurantId,
+      date,
+      startTime,
+      partySize,
+      duration,
+      isStaffBooking
+    );
+  }
+
+  /**
+   * Invalidate availability cache (delegates to parent class)
+   */
+  static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
+    return AvailabilityService.invalidateAvailabilityCache(restaurantId, date);
   }
 
   /**
