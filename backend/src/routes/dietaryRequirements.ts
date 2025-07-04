@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { UserRole } from '../types';
 import {
   getDietaryRequirements,
   searchDietaryRequirements,
@@ -20,14 +21,14 @@ router.get('/combinations', getCommonCombinations);
 router.post(
   '/',
   authenticateToken,
-  requireRole(['super_admin', 'owner', 'manager']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER),
   createDietaryRequirement
 );
 
 router.put(
   '/:id',
   authenticateToken,
-  requireRole(['super_admin', 'owner', 'manager']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER),
   updateDietaryRequirement
 );
 

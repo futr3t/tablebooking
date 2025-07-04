@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { UserRole } from '../types';
 import {
   createStaffBooking,
   getCustomerSuggestions,
@@ -16,7 +17,7 @@ router.use(authenticateToken);
 // Create booking with enhanced features
 router.post(
   '/',
-  requireRole(['super_admin', 'owner', 'manager', 'host']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
   staffBookingValidation,
   createStaffBooking
 );
@@ -24,21 +25,21 @@ router.post(
 // Get customer suggestions for auto-complete
 router.get(
   '/customers/:restaurantId',
-  requireRole(['super_admin', 'owner', 'manager', 'host', 'server']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST, UserRole.SERVER),
   getCustomerSuggestions
 );
 
 // Get enhanced availability with pacing information
 router.get(
   '/availability',
-  requireRole(['super_admin', 'owner', 'manager', 'host', 'server']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST, UserRole.SERVER),
   getEnhancedAvailability
 );
 
 // Bulk check availability for multiple dates
 router.post(
   '/availability/bulk',
-  requireRole(['super_admin', 'owner', 'manager', 'host']),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
   bulkCheckAvailability
 );
 

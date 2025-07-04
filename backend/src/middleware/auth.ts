@@ -166,3 +166,7 @@ const extractToken = (req: Request): string | null => {
 
 // Alias for authenticate - commonly used name
 export const requireAuth = authenticate;
+
+// Legacy aliases for backward compatibility
+export const authenticateToken = authenticate;
+export const requireRole = authorize;

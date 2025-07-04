@@ -477,12 +477,12 @@ export class AvailabilityService {
     return days[date.getDay()];
   }
 
-  private static timeToMinutes(timeString: string): number {
+  public static timeToMinutes(timeString: string): number {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;
   }
 
-  private static minutesToTime(minutes: number): string {
+  public static minutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;

@@ -43,7 +43,8 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
       
       // Get all tables
-      const allTables = await TableModel.findByRestaurant(restaurantId);
+      const allTablesResult = await TableModel.findByRestaurant(restaurantId);
+      const allTables = allTablesResult.tables;
       const totalTables = allTables.filter(t => t.isActive).length;
       const totalCapacity = allTables.reduce((sum, t) => sum + t.capacity, 0);
 
@@ -99,14 +100,14 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     suggestedTables?: Table[];
     alternativeTimes: string[];
   }> {
-    const slotMinutes = this.timeToMinutes(slotTime);
+    const slotMinutes = AvailabilityService.timeToMinutes(slotTime);
     
     // Count bookings starting within 30 minutes of this slot
     const nearbyBookings = existingBookings.filter(booking => {
       if (booking.status === 'cancelled' || booking.status === 'no_show') {
         return false;
       }
-      const bookingMinutes = this.timeToMinutes(booking.bookingTime);
+      const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
       return Math.abs(bookingMinutes - slotMinutes) < 30;
     });
 
@@ -144,9 +145,9 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       for (const offset of searchTimes) {
         const altMinutes = slotMinutes + offset;
         if (altMinutes >= 0 && altMinutes <= 1440) { // Valid time range
-          const altTime = this.minutesToTime(altMinutes);
+          const altTime = AvailabilityService.minutesToTime(altMinutes);
           const altBookings = existingBookings.filter(booking => {
-            const bookingMinutes = this.timeToMinutes(booking.bookingTime);
+            const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
             return Math.abs(bookingMinutes - altMinutes) < 30;
           });
           
@@ -198,10 +199,10 @@ export class EnhancedAvailabilityService extends AvailabilityService {
 
     // If preferred time is provided, sort by proximity
     if (preferredTime) {
-      const preferredMinutes = this.timeToMinutes(preferredTime);
+      const preferredMinutes = AvailabilityService.timeToMinutes(preferredTime);
       bestAvailability.sort((a, b) => {
-        const aMinutes = this.timeToMinutes(a);
-        const bMinutes = this.timeToMinutes(b);
+        const aMinutes = AvailabilityService.timeToMinutes(a);
+        const bMinutes = AvailabilityService.timeToMinutes(b);
         return Math.abs(aMinutes - preferredMinutes) - Math.abs(bMinutes - preferredMinutes);
       });
     }
@@ -237,7 +238,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     }
 
     const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
-    const slotMinutes = this.timeToMinutes(time);
+    const slotMinutes = AvailabilityService.timeToMinutes(time);
     
     // Check various override conditions
     const risks: string[] = [];
@@ -245,7 +246,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     
     // Check kitchen capacity
     const bookingsInWindow = existingBookings.filter(booking => {
-      const bookingMinutes = this.timeToMinutes(booking.bookingTime);
+      const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
       return Math.abs(bookingMinutes - slotMinutes) < 15; // Within 15 minutes
     });
     

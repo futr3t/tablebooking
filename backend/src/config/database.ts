@@ -12,6 +12,9 @@ export const db = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+// Legacy alias for backward compatibility
+export const pool = db;
+
 // Create Redis client with proper error handling
 let redis: Redis | null = null;
 

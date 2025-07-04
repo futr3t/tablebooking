@@ -35,7 +35,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
   // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw createError('Validation failed', 400, errors.array());
+    throw createError('Validation failed', 400);
   }
 
   const {
@@ -81,10 +81,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     );
 
     if (!overrideCheck.canOverride) {
-      throw createError('Cannot override pacing limits', 400, {
-        risks: overrideCheck.risks,
-        recommendations: overrideCheck.recommendations
-      });
+      throw createError('Cannot override pacing limits', 400);
     }
 
     // Log the override for audit trail
