@@ -72,9 +72,9 @@ const BookingList: React.FC = () => {
   const filteredBookings = bookings.filter(booking => {
     const search = searchTerm.toLowerCase();
     return (
-      booking.guestName.toLowerCase().includes(search) ||
-      booking.guestEmail?.toLowerCase().includes(search) ||
-      booking.guestPhone?.includes(search) ||
+      booking.customerName.toLowerCase().includes(search) ||
+      booking.customerEmail?.toLowerCase().includes(search) ||
+      booking.customerPhone?.includes(search) ||
       booking.confirmationCode?.toLowerCase().includes(search)
     );
   });
@@ -213,14 +213,14 @@ const BookingList: React.FC = () => {
                   <TableCell>
                     {format(parseISO(booking.bookingTime), 'MMM d, yyyy h:mm a')}
                   </TableCell>
-                  <TableCell>{booking.guestName}</TableCell>
+                  <TableCell>{booking.customerName}</TableCell>
                   <TableCell>
                     <Box>
-                      {booking.guestEmail && (
-                        <Typography variant="body2">{booking.guestEmail}</Typography>
+                      {booking.customerEmail && (
+                        <Typography variant="body2">{booking.customerEmail}</Typography>
                       )}
-                      {booking.guestPhone && (
-                        <Typography variant="body2">{booking.guestPhone}</Typography>
+                      {booking.customerPhone && (
+                        <Typography variant="body2">{booking.customerPhone}</Typography>
                       )}
                     </Box>
                   </TableCell>

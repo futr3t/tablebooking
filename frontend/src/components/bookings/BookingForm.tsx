@@ -42,9 +42,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    guestName: '',
-    guestEmail: '',
-    guestPhone: '',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
     partySize: 2,
     bookingTime: new Date(),
     specialRequests: '',
@@ -58,9 +58,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
   useEffect(() => {
     if (booking && editMode) {
       setFormData({
-        guestName: booking.guestName,
-        guestEmail: booking.guestEmail || '',
-        guestPhone: booking.guestPhone || '',
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail || '',
+        customerPhone: booking.customerPhone || '',
         partySize: booking.partySize,
         bookingTime: parseISO(booking.bookingTime),
         specialRequests: booking.specialRequests || '',
@@ -68,9 +68,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
       });
     } else {
       setFormData({
-        guestName: '',
-        guestEmail: '',
-        guestPhone: '',
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
         partySize: 2,
         bookingTime: new Date(),
         specialRequests: '',
@@ -142,8 +142,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <TextField
                 fullWidth
                 label="Guest Name"
-                value={formData.guestName}
-                onChange={(e) => handleChange('guestName', e.target.value)}
+                value={formData.customerName}
+                onChange={(e) => handleChange('customerName', e.target.value)}
                 required
               />
             </Grid>
@@ -153,8 +153,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 fullWidth
                 label="Email"
                 type="email"
-                value={formData.guestEmail}
-                onChange={(e) => handleChange('guestEmail', e.target.value)}
+                value={formData.customerEmail}
+                onChange={(e) => handleChange('customerEmail', e.target.value)}
               />
             </Grid>
             
@@ -162,8 +162,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <TextField
                 fullWidth
                 label="Phone"
-                value={formData.guestPhone}
-                onChange={(e) => handleChange('guestPhone', e.target.value)}
+                value={formData.customerPhone}
+                onChange={(e) => handleChange('customerPhone', e.target.value)}
               />
             </Grid>
             

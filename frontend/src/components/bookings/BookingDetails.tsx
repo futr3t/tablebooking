@@ -62,25 +62,25 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
             <Box display="flex" alignItems="center" mb={1}>
               <Person sx={{ mr: 1, color: 'text.secondary' }} />
               <Typography variant="subtitle1" fontWeight="bold">
-                {booking.guestName}
+                {booking.customerName}
               </Typography>
             </Box>
           </Grid>
 
-          {booking.guestEmail && (
+          {booking.customerEmail && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <Email sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
-                <Typography variant="body2">{booking.guestEmail}</Typography>
+                <Typography variant="body2">{booking.customerEmail}</Typography>
               </Box>
             </Grid>
           )}
 
-          {booking.guestPhone && (
+          {booking.customerPhone && (
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center">
                 <Phone sx={{ mr: 1, color: 'text.secondary' }} fontSize="small" />
-                <Typography variant="body2">{booking.guestPhone}</Typography>
+                <Typography variant="body2">{booking.customerPhone}</Typography>
               </Box>
             </Grid>
           )}

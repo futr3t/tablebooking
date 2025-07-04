@@ -110,14 +110,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                   title={
                     <Box>
                       <Typography variant="body2">
-                        {booking.guestName} - {booking.partySize} guests
+                        {booking.customerName} - {booking.partySize} guests
                       </Typography>
                       <Typography variant="caption">
                         {format(parseISO(booking.bookingTime), 'h:mm a')}
                       </Typography>
-                      {booking.guestPhone && (
+                      {booking.customerPhone && (
                         <Typography variant="caption" display="block">
-                          <Phone fontSize="small" /> {booking.guestPhone}
+                          <Phone fontSize="small" /> {booking.customerPhone}
                         </Typography>
                       )}
                       {booking.specialRequests && (
@@ -154,7 +154,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                     }}
                   >
                     <Typography variant="caption" noWrap fontWeight="bold">
-                      {booking.guestName}
+                      {booking.customerName}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={0.5}>
                       <People fontSize="small" />
