@@ -19,26 +19,33 @@ export const pool = db;
 let redis: Redis | null = null;
 
 try {
-  redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-    lazyConnect: true,
-    enableReadyCheck: false,
-    maxRetriesPerRequest: null,
-    connectTimeout: 5000,
-    commandTimeout: 5000,
-  });
+  if (process.env.REDIS_URL) {
+    redis = new Redis(process.env.REDIS_URL, {
+      lazyConnect: true,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: null,
+      connectTimeout: 5000,
+      commandTimeout: 5000,
+    });
+  } else {
+    console.log('Redis URL not configured, skipping Redis connection');
+    redis = null;
+  }
 
   // Handle Redis errors to prevent unhandled error events
-  redis.on('error', (error) => {
-    console.warn('Redis error (continuing without Redis):', error.message);
-  });
+  if (redis) {
+    redis.on('error', (error) => {
+      console.warn('Redis error (continuing without Redis):', error.message);
+    });
 
-  redis.on('connect', () => {
-    console.log('Redis connected successfully');
-  });
+    redis.on('connect', () => {
+      console.log('Redis connected successfully');
+    });
 
-  redis.on('close', () => {
-    console.log('Redis connection closed');
-  });
+    redis.on('close', () => {
+      console.log('Redis connection closed');
+    });
+  }
 } catch (error) {
   console.warn('Failed to create Redis client:', error.message);
   redis = null;

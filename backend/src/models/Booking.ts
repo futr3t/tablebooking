@@ -258,13 +258,13 @@ export class BookingModel {
   ): Promise<Booking[]> {
     try {
       let whereConditions = [
-        'restaurant_id = $1',
-        'booking_date >= $2',
-        'booking_date <= $3'
+        'b.restaurant_id = $1',
+        'b.booking_date >= $2',
+        'b.booking_date <= $3'
       ];
 
       if (!includeWaitlist) {
-        whereConditions.push('is_waitlisted = false');
+        whereConditions.push('b.is_waitlisted = false');
       }
 
       const result = await db.query(`
