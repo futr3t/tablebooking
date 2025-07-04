@@ -344,15 +344,30 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                   <Autocomplete
+                    freeSolo
                     options={customerSuggestions}
+                    value={formData.customerName}
+                    inputValue={formData.customerName}
                     getOptionLabel={(option) => 
-                      typeof option === 'string' ? option : `${option.customerName} (${option.customerPhone})`
+                      typeof option === 'string' ? option : option.customerName
                     }
-                    onInputChange={(_, value) => {
-                      setFormData(prev => ({ ...prev, customerName: value }));
-                      searchCustomers(value);
+                    onInputChange={(_, value, reason) => {
+                      // Update the customer name in form data
+                      setFormData(prev => ({ ...prev, customerName: value || '' }));
+                      // Only search when user is typing, not when clearing
+                      if (reason === 'input' && value) {
+                        searchCustomers(value);
+                      }
                     }}
-                    onChange={(_, value) => handleCustomerSelect(value as BookingTemplate)}
+                    onChange={(_, value) => {
+                      if (typeof value === 'string') {
+                        // User typed a custom value
+                        setFormData(prev => ({ ...prev, customerName: value }));
+                      } else if (value) {
+                        // User selected from dropdown
+                        handleCustomerSelect(value as BookingTemplate);
+                      }
+                    }}
                     loading={loadingCustomer}
                     renderOption={(props, option) => (
                       <Box component="li" {...props}>
