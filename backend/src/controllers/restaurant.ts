@@ -87,17 +87,19 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
         
         // Validate periods structure if using new format
         if (daySchedule.periods && Array.isArray(daySchedule.periods)) {
-          for (const period of daySchedule.periods) {
-            if (!period.name || typeof period.name !== 'string') {
-              throw createError(`Period name is required for ${day}`, 400);
+          for (let i = 0; i < daySchedule.periods.length; i++) {
+            const period = daySchedule.periods[i];
+            // Allow empty name but provide default if not present
+            if (!period.name) {
+              period.name = `Service ${i + 1}`;
             }
             if (!period.startTime || !period.endTime) {
-              throw createError(`Start time and end time are required for ${day} ${period.name}`, 400);
+              throw createError(`Start time and end time are required for ${day} period ${i + 1}`, 400);
             }
             // Validate time format (HH:MM)
             const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
             if (!timeRegex.test(period.startTime) || !timeRegex.test(period.endTime)) {
-              throw createError(`Invalid time format for ${day} ${period.name}. Use HH:MM format`, 400);
+              throw createError(`Invalid time format for ${day} period ${i + 1}. Use HH:MM format`, 400);
             }
           }
         }
