@@ -98,6 +98,10 @@ export class AvailabilityService {
     // Get existing bookings for the date
     const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
 
+    // Pre-calculate concurrent booking limits once
+    const maxConcurrentTables = bookingSettings.maxConcurrentTables;
+    const maxConcurrentCovers = bookingSettings.maxConcurrentCovers;
+
     // Determine service periods - handle both old and new formats
     let servicePeriods: { name: string; startTime: string; endTime: string; slotDuration: number }[] = [];
 
@@ -133,27 +137,65 @@ export class AvailabilityService {
       // Generate slots for this time period
       for (let minutes = openMinutes; minutes <= closeMinutes - duration; minutes += period.slotDuration) {
         const slotTime = this.minutesToTime(minutes);
-        const endTime = this.minutesToTime(minutes + duration);
+        const startMinutes = minutes;
+        const endMinutes = minutes + duration;
 
-        // Check availability for this time slot
-        const availability = await this.checkSlotAvailability(
-          restaurantId,
-          date,
-          slotTime,
-          endTime,
-          partySize,
-          duration,
-          availableTables,
-          tableCombinations,
-          existingBookings,
-          false // isStaffBooking = false for availability check
-        );
+        // Check concurrent booking limits in-memory
+        let concurrentLimitExceeded = false;
+        if (maxConcurrentTables || maxConcurrentCovers) {
+          const concurrentBookings = existingBookings.filter(booking => {
+            if (booking.status === 'cancelled' || booking.status === 'no_show') {
+              return false;
+            }
+            const bookingStartMinutes = this.timeToMinutes(booking.bookingTime);
+            return bookingStartMinutes === startMinutes;
+          });
+
+          if (maxConcurrentTables && concurrentBookings.length >= maxConcurrentTables) {
+            concurrentLimitExceeded = true;
+          }
+
+          if (maxConcurrentCovers) {
+            const currentCovers = concurrentBookings.reduce((sum, booking) => sum + booking.partySize, 0);
+            if (currentCovers + partySize > maxConcurrentCovers) {
+              concurrentLimitExceeded = true;
+            }
+          }
+        }
+
+        let available = false;
+        let tableId: string | undefined;
+
+        if (!concurrentLimitExceeded) {
+          // Check single table availability first (preferred)
+          for (const table of availableTables) {
+            if (this.isTableAvailable(table.id, startMinutes, endMinutes, existingBookings)) {
+              available = true;
+              tableId = table.id;
+              break;
+            }
+          }
+
+          // Check table combinations if no single table available
+          if (!available) {
+            for (const combination of tableCombinations) {
+              const allTablesAvailable = combination.every(table =>
+                this.isTableAvailable(table.id, startMinutes, endMinutes, existingBookings)
+              );
+              if (allTablesAvailable) {
+                available = true;
+                tableId = combination[0].id; // Primary table
+                break;
+              }
+            }
+          }
+        }
 
         periodSlots.push({
           time: slotTime,
-          available: availability.available,
-          tableId: availability.tableId,
-          waitlistAvailable: availability.waitlistAvailable
+          available,
+          tableId,
+          waitlistAvailable: !available
         });
       }
 
