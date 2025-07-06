@@ -97,10 +97,16 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                   Date & Time
                 </Typography>
                 <Typography variant="body1">
-                  {format(parseISO(booking.bookingTime), 'MMMM d, yyyy')}
+                  {booking.bookingDate && booking.bookingTime ? 
+                    format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'MMMM d, yyyy') :
+                    'Invalid date'
+                  }
                 </Typography>
                 <Typography variant="body1">
-                  {format(parseISO(booking.bookingTime), 'h:mm a')}
+                  {booking.bookingDate && booking.bookingTime ? 
+                    format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'h:mm a') :
+                    'Invalid time'
+                  }
                 </Typography>
               </Box>
             </Box>

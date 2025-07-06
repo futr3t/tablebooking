@@ -62,7 +62,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
         customerEmail: booking.customerEmail || '',
         customerPhone: booking.customerPhone || '',
         partySize: booking.partySize,
-        bookingTime: parseISO(booking.bookingTime),
+        bookingTime: booking.bookingDate && booking.bookingTime 
+          ? parseISO(`${booking.bookingDate}T${booking.bookingTime}`)
+          : new Date(),
         specialRequests: booking.specialRequests || '',
         status: booking.status,
       });
@@ -109,7 +111,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const data = {
         ...formData,
         restaurantId: user.restaurantId,
-        bookingTime: formData.bookingTime.toISOString(),
+        bookingDate: format(formData.bookingTime, 'yyyy-MM-dd'),
+        bookingTime: format(formData.bookingTime, 'HH:mm:ss'),
       };
 
       if (editMode && booking) {

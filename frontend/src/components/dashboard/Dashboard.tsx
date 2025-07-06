@@ -42,14 +42,14 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const handleBookingCreated = (booking: Booking) => {
-      if (isToday(parseISO(booking.bookingTime))) {
+      if (booking.bookingDate && isToday(parseISO(booking.bookingDate))) {
         setBookings(prev => [...prev, booking]);
         updateStats([...bookings, booking]);
       }
     };
 
     const handleBookingUpdated = (booking: Booking) => {
-      if (isToday(parseISO(booking.bookingTime))) {
+      if (booking.bookingDate && isToday(parseISO(booking.bookingDate))) {
         setBookings(prev => prev.map(b => b.id === booking.id ? booking : b));
         updateStats(bookings.map(b => b.id === booking.id ? booking : b));
       }
@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
       const data = await bookingService.getBookings(user.restaurantId, today);
       
       const todaysBookings = data.filter(booking => 
-        isToday(parseISO(booking.bookingTime))
+        booking.bookingDate && isToday(parseISO(booking.bookingDate))
       );
       
       setBookings(todaysBookings);

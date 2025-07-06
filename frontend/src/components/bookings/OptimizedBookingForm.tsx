@@ -131,8 +131,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   // Populate form data when editing
   useEffect(() => {
     if (booking && editMode) {
-      const bookingDate = booking.bookingDate || format(parseISO(booking.bookingTime), 'yyyy-MM-dd');
-      const bookingTime = booking.bookingTime ? format(parseISO(booking.bookingTime), 'HH:mm') : '';
+      const bookingDate = booking.bookingDate || '';
+      const bookingTime = booking.bookingTime || '';
       
       setFormData({
         customerName: booking.customerName || '',

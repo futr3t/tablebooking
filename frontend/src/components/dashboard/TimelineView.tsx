@@ -24,9 +24,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
   const totalHours = endHour - startHour;
 
   const getBookingPosition = (booking: Booking) => {
-    const bookingTime = parseISO(booking.bookingTime);
-    const hour = bookingTime.getHours();
-    const minutes = bookingTime.getMinutes();
+    if (!booking.bookingDate || !booking.bookingTime) return 0;
+    const bookingDateTime = parseISO(`${booking.bookingDate}T${booking.bookingTime}`);
+    const hour = bookingDateTime.getHours();
+    const minutes = bookingDateTime.getMinutes();
     const totalMinutes = (hour - startHour) * 60 + minutes;
     const percentage = (totalMinutes / (totalHours * 60)) * 100;
     return percentage;
@@ -120,7 +121,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                         {booking.customerName} - {booking.partySize} guests
                       </Typography>
                       <Typography variant="caption">
-                        {format(parseISO(booking.bookingTime), 'h:mm a')}
+                        {booking.bookingDate && booking.bookingTime ? 
+                          format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'h:mm a') :
+                          'Invalid time'
+                        }
                       </Typography>
                       {booking.customerPhone && (
                         <Typography variant="caption" display="block">

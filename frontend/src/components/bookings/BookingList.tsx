@@ -214,7 +214,10 @@ const BookingList: React.FC = () => {
               .map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell>
-                    {format(parseISO(booking.bookingTime), 'MMM d, yyyy h:mm a')}
+                    {booking.bookingDate && booking.bookingTime ? 
+                      format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'MMM d, yyyy h:mm a') :
+                      'Invalid date'
+                    }
                   </TableCell>
                   <TableCell>{booking.customerName}</TableCell>
                   <TableCell>
