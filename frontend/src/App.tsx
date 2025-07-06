@@ -9,7 +9,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
 import Dashboard from './components/dashboard/Dashboard';
-import BookingList from './components/bookings/BookingList';
+import BookingDashboard from './components/bookings/BookingDashboard';
 import TableManagementDashboard from './components/tables/TableManagementDashboard';
 import RestaurantSettingsPanel from './components/settings/RestaurantSettingsPanel';
 import WidgetManager from './components/widget/WidgetManager';
@@ -269,7 +269,7 @@ function App() {
                 }
               >
                 <Route index element={<Dashboard />} />
-                <Route path="bookings" element={<BookingList />} />
+                <Route path="bookings" element={<BookingDashboard />} />
                 <Route path="tables" element={<TableManagementDashboard />} />
                 <Route path="settings" element={<RestaurantSettingsPanel />} />
                 <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
