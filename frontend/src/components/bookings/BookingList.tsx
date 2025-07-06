@@ -26,13 +26,14 @@ import {
   Add,
   NoMeals,
 } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 import { OptimizedBookingForm } from './OptimizedBookingForm';
+import { formatBookingDate, formatBookingTime } from '../../utils/dateHelpers';
 
 const BookingList: React.FC = () => {
   const { user } = useAuth();
@@ -214,10 +215,10 @@ const BookingList: React.FC = () => {
               .map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell>
-                    {booking.bookingDate && booking.bookingTime ? 
-                      format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'MMM d, yyyy h:mm a') :
-                      'Invalid date'
-                    }
+                    <Box>
+                      <Typography variant="body2">{formatBookingDate(booking)}</Typography>
+                      <Typography variant="body2" color="text.secondary">{formatBookingTime(booking)}</Typography>
+                    </Box>
                   </TableCell>
                   <TableCell>{booking.customerName}</TableCell>
                   <TableCell>

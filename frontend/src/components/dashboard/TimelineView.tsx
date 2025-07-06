@@ -7,9 +7,10 @@ import {
   Tooltip,
   useTheme,
 } from '@mui/material';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Booking } from '../../types';
 import { People, Phone } from '@mui/icons-material';
+import { parseBookingDateTime, formatBookingTime } from '../../utils/dateHelpers';
 
 interface TimelineViewProps {
   bookings: Booking[];
@@ -24,8 +25,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
   const totalHours = endHour - startHour;
 
   const getBookingPosition = (booking: Booking) => {
-    if (!booking.bookingDate || !booking.bookingTime) return 0;
-    const bookingDateTime = parseISO(`${booking.bookingDate}T${booking.bookingTime}`);
+    const bookingDateTime = parseBookingDateTime(booking);
+    if (!bookingDateTime) return 0;
+    
     const hour = bookingDateTime.getHours();
     const minutes = bookingDateTime.getMinutes();
     const totalMinutes = (hour - startHour) * 60 + minutes;
@@ -121,10 +123,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }
                         {booking.customerName} - {booking.partySize} guests
                       </Typography>
                       <Typography variant="caption">
-                        {booking.bookingDate && booking.bookingTime ? 
-                          format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'h:mm a') :
-                          'Invalid time'
-                        }
+                        {formatBookingTime(booking)}
                       </Typography>
                       {booking.customerPhone && (
                         <Typography variant="caption" display="block">

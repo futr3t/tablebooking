@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { format, parseISO } from 'date-fns';
 import { Booking } from '../../types';
+import { formatBookingDate, formatBookingTime } from '../../utils/dateHelpers';
 import {
   Person,
   Email,
@@ -97,16 +98,10 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
                   Date & Time
                 </Typography>
                 <Typography variant="body1">
-                  {booking.bookingDate && booking.bookingTime ? 
-                    format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'MMMM d, yyyy') :
-                    'Invalid date'
-                  }
+                  {formatBookingDate(booking)}
                 </Typography>
                 <Typography variant="body1">
-                  {booking.bookingDate && booking.bookingTime ? 
-                    format(parseISO(`${booking.bookingDate}T${booking.bookingTime}`), 'h:mm a') :
-                    'Invalid time'
-                  }
+                  {formatBookingTime(booking)}
                 </Typography>
               </Box>
             </Box>

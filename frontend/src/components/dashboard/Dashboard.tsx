@@ -11,10 +11,11 @@ import {
   Fab,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { format, parseISO, isToday } from 'date-fns';
+import { format } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { isBookingToday } from '../../utils/dateHelpers';
 import { useSocket } from '../../hooks/useSocket';
 import TimelineView from './TimelineView';
 import { QuickBookingDialog } from '../bookings/QuickBookingDialog';
@@ -42,14 +43,14 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const handleBookingCreated = (booking: Booking) => {
-      if (booking.bookingDate && isToday(parseISO(booking.bookingDate))) {
+      if (isBookingToday(booking)) {
         setBookings(prev => [...prev, booking]);
         updateStats([...bookings, booking]);
       }
     };
 
     const handleBookingUpdated = (booking: Booking) => {
-      if (booking.bookingDate && isToday(parseISO(booking.bookingDate))) {
+      if (isBookingToday(booking)) {
         setBookings(prev => prev.map(b => b.id === booking.id ? booking : b));
         updateStats(bookings.map(b => b.id === booking.id ? booking : b));
       }
@@ -87,7 +88,7 @@ const Dashboard: React.FC = () => {
       const data = await bookingService.getBookings(user.restaurantId, today);
       
       const todaysBookings = data.filter(booking => 
-        booking.bookingDate && isToday(parseISO(booking.bookingDate))
+        isBookingToday(booking)
       );
       
       setBookings(todaysBookings);
@@ -115,7 +116,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleQuickBookingSuccess = (booking: Booking) => {
-    if (isToday(parseISO(booking.bookingDate))) {
+    if (isBookingToday(booking)) {
       setBookings(prev => [...prev, booking]);
       updateStats([...bookings, booking]);
     }
