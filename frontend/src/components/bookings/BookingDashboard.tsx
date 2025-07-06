@@ -25,7 +25,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
-import { bookingService } from '../../services/api';
+import { bookingService, tableService } from '../../services/api';
 import { Booking, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { QuickBookingDialog } from './QuickBookingDialog';
@@ -112,20 +112,8 @@ const BookingDashboard: React.FC = () => {
     if (!user?.restaurantId) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tables/${user.restaurantId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTables(data.data?.tables || data.tables || []);
-      } else {
-        console.error('Failed to load tables:', response.status);
-      }
+      const data = await tableService.getTables(user.restaurantId);
+      setTables(data.tables || []);
     } catch (err) {
       console.error('Error loading tables:', err);
     }
