@@ -14,8 +14,8 @@ import dietaryRequirementsRoutes from './dietaryRequirements';
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/bookings/staff', staffBookingRoutes);  // Must come before general bookings route
 router.use('/bookings', bookingRoutes);
-router.use('/bookings/staff', staffBookingRoutes);
 router.use('/tables', tableRoutes);
 router.use('/restaurants', restaurantRoutes);
 router.use('/public', publicRoutes);
