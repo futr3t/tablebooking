@@ -52,12 +52,16 @@ export const DateFormatProvider: React.FC<DateFormatProviderProps> = ({ children
         const settings = await restaurantService.getSettings(user.restaurantId);
         setRestaurantSettings(settings);
         
-        if (settings.dateFormat) {
-          setDateFormat(settings.dateFormat);
+        // Use UK format as default, only change if API explicitly returns US format
+        if (settings.dateFormat === 'us') {
+          setDateFormat('us');
+        } else {
+          setDateFormat('uk'); // Default to UK for null/undefined or any other value
         }
       } catch (error) {
         console.error('Error loading restaurant settings:', error);
-        // Keep default format on error
+        // Ensure UK format is used when API is unavailable
+        setDateFormat('uk');
       } finally {
         setIsLoading(false);
       }
