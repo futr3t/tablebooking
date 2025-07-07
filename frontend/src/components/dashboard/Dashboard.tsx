@@ -15,7 +15,8 @@ import { format } from 'date-fns';
 import { bookingService, restaurantService } from '../../services/api';
 import { Booking } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { isBookingToday, formatDateWithPreference, setGlobalDateFormat } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
+import { isBookingToday } from '../../utils/dateHelpers';
 import { useSocket } from '../../hooks/useSocket';
 import TimelineView from './TimelineView';
 import { QuickBookingDialog } from '../bookings/QuickBookingDialog';
@@ -23,8 +24,8 @@ import { QuickBookingDialog } from '../bookings/QuickBookingDialog';
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const socket = useSocket();
+  const { formatDate } = useDateFormat();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState({
@@ -39,7 +40,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (user?.restaurantId) {
       loadTodaysBookings();
-      loadRestaurantSettings();
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -113,21 +113,6 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  const loadRestaurantSettings = async () => {
-    if (!user?.restaurantId) return;
-    
-    try {
-      const settings = await restaurantService.getSettings(user.restaurantId);
-      setRestaurantSettings(settings);
-      
-      // Set global date format preference
-      if (settings.dateFormat) {
-        setGlobalDateFormat(settings.dateFormat);
-      }
-    } catch (err) {
-      console.error('Error loading restaurant settings:', err);
-    }
-  };
 
   const handleBookingUpdate = () => {
     loadTodaysBookings();
@@ -160,7 +145,7 @@ const Dashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {formatDateWithPreference(new Date(), 'long')} • Today's bookings and activity
+            {formatDate(new Date(), 'long')} • Today's bookings and activity
           </Typography>
         </Box>
         
@@ -283,7 +268,6 @@ const Dashboard: React.FC = () => {
         <Box sx={{ p: 3 }}>
           <TimelineView 
             bookings={bookings} 
-            restaurantSettings={restaurantSettings}
             onBookingUpdate={handleBookingUpdate}
           />
         </Box>

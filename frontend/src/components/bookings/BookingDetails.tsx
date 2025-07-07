@@ -11,9 +11,9 @@ import {
   Divider,
   Grid,
 } from '@mui/material';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { Booking } from '../../types';
-import { formatBookingDate, formatBookingTime } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 import {
   Person,
   Email,
@@ -32,6 +32,8 @@ interface BookingDetailsProps {
 }
 
 const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking }) => {
+  const { formatDateTime, formatBookingDate, formatBookingTime } = useDateFormat();
+  
   if (!booking) return null;
 
   const getStatusColor = (status: string) => {
@@ -175,11 +177,11 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ open, onClose, booking 
 
           <Grid item xs={12}>
             <Typography variant="caption" color="text.secondary">
-              Created: {format(parseISO(booking.createdAt), 'MMM d, yyyy h:mm a')}
+              Created: {formatDateTime(parseISO(booking.createdAt), 'display')}
             </Typography>
             <br />
             <Typography variant="caption" color="text.secondary">
-              Last Updated: {format(parseISO(booking.updatedAt), 'MMM d, yyyy h:mm a')}
+              Last Updated: {formatDateTime(parseISO(booking.updatedAt), 'display')}
             </Typography>
           </Grid>
         </Grid>

@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider } from './contexts/AuthContext';
+import { DateFormatProvider } from './contexts/DateFormatContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
@@ -257,27 +258,29 @@ function App() {
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <AuthProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="bookings" element={<BookingDashboard />} />
-                <Route path="tables" element={<TableManagementDashboard />} />
-                <Route path="settings" element={<RestaurantSettingsPanel />} />
-                <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
-                <Route path="widget" element={<WidgetManager />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Router>
+          <DateFormatProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Dashboard />} />
+                  <Route path="bookings" element={<BookingDashboard />} />
+                  <Route path="tables" element={<TableManagementDashboard />} />
+                  <Route path="settings" element={<RestaurantSettingsPanel />} />
+                  <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
+                  <Route path="widget" element={<WidgetManager />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Router>
+          </DateFormatProvider>
         </AuthProvider>
       </LocalizationProvider>
     </ThemeProvider>

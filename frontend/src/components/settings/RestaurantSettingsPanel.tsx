@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
-import { setGlobalDateFormat } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 
 interface ServicePeriod {
   name: string;
@@ -95,6 +95,7 @@ const DAYS_OF_WEEK = [
 
 const RestaurantSettingsPanel: React.FC = () => {
   const { user } = useAuth();
+  const { updateDateFormat, refreshSettings } = useDateFormat();
   const [settings, setSettings] = useState<RestaurantSettings>({
     dateFormat: 'uk', // Default to UK format
     turnTimeMinutes: 120,
@@ -161,11 +162,6 @@ const RestaurantSettingsPanel: React.FC = () => {
           ...restaurantSettings.bookingSettings
         }
       }));
-      
-      // Set global date format preference
-      if (restaurantSettings.dateFormat) {
-        setGlobalDateFormat(restaurantSettings.dateFormat);
-      }
     } catch (err: any) {
       console.error('Error loading settings:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load restaurant settings');
@@ -189,9 +185,9 @@ const RestaurantSettingsPanel: React.FC = () => {
       sanitizedValue = nested ? null : undefined;
     }
     
-    // Update global date format if dateFormat is being changed
+    // Update date format context if dateFormat is being changed
     if (field === 'dateFormat' && !nested) {
-      setGlobalDateFormat(sanitizedValue);
+      updateDateFormat(sanitizedValue);
     }
     
     setSettings(prev => {
@@ -369,6 +365,9 @@ const RestaurantSettingsPanel: React.FC = () => {
       console.log('Saving settings:', updatePayload);
       
       await restaurantService.updateSettings(user.restaurantId, updatePayload);
+      
+      // Refresh the context with the latest settings
+      await refreshSettings();
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);

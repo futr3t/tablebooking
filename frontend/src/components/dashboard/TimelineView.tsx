@@ -11,15 +11,16 @@ import { format } from 'date-fns';
 import { Booking } from '../../types';
 import { People, Phone } from '@mui/icons-material';
 import { parseBookingDateTime, formatBookingTime } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 
 interface TimelineViewProps {
   bookings: Booking[];
-  restaurantSettings?: any;
   onBookingUpdate: () => void;
 }
 
-const TimelineView: React.FC<TimelineViewProps> = ({ bookings, restaurantSettings, onBookingUpdate }) => {
+const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }) => {
   const theme = useTheme();
+  const { restaurantSettings } = useDateFormat();
 
   // Calculate dynamic start time based on first service period (for today)
   const calculateFirstServiceHour = () => {

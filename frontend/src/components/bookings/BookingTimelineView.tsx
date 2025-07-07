@@ -23,7 +23,8 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Booking, Table } from '../../types';
-import { parseBookingDateTime, formatBookingTime, formatDateWithPreference } from '../../utils/dateHelpers';
+import { parseBookingDateTime, formatBookingTime } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 
@@ -31,7 +32,6 @@ interface BookingTimelineViewProps {
   bookings: Booking[];
   tables: Table[];
   selectedDate: Date;
-  restaurantSettings?: any;
   onBookingUpdate: () => void;
 }
 
@@ -51,10 +51,10 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   bookings,
   tables,
   selectedDate,
-  restaurantSettings,
   onBookingUpdate
 }) => {
   const theme = useTheme();
+  const { restaurantSettings, formatDate } = useDateFormat();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -228,7 +228,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     <Box sx={{ p: 3 }}>
       {/* Timeline Header */}
       <Typography variant="h6" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        Timeline View - {formatDateWithPreference(selectedDate, 'long')}
+        Timeline View - {formatDate(selectedDate, 'long')}
       </Typography>
 
       {/* Timeline Container */}

@@ -67,9 +67,12 @@ export function parseBookingDateTime(booking: { bookingDate?: string | null; boo
 }
 
 /**
- * Format a booking's date for display
+ * Format a booking's date for display using a custom formatter
  */
-export function formatBookingDate(booking: { bookingDate?: string | null }): string {
+export function formatBookingDate(
+  booking: { bookingDate?: string | null },
+  customFormatter?: (date: Date, type?: 'short' | 'long' | 'display') => string
+): string {
   if (!booking.bookingDate) {
     return 'N/A';
   }
@@ -78,7 +81,15 @@ export function formatBookingDate(booking: { bookingDate?: string | null }): str
     // Extract just the date part to avoid timezone issues
     const datePart = booking.bookingDate.split('T')[0];
     const parsed = parseISO(datePart + 'T00:00:00');
-    return isValid(parsed) ? formatDateWithPreference(parsed, 'display') : 'Invalid Date';
+    
+    if (!isValid(parsed)) return 'Invalid Date';
+    
+    // Use custom formatter if provided, otherwise fall back to default
+    if (customFormatter) {
+      return customFormatter(parsed, 'display');
+    } else {
+      return formatDateWithPreference(parsed, 'display');
+    }
   } catch (error) {
     return 'Invalid Date';
   }

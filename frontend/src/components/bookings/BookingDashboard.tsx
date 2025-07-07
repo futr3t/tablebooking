@@ -25,10 +25,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
-import { bookingService, tableService, restaurantService } from '../../services/api';
+import { bookingService, tableService } from '../../services/api';
 import { Booking, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { formatDateWithPreference, setGlobalDateFormat } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 import { QuickBookingDialog } from './QuickBookingDialog';
 import BookingDayView from './BookingDayView';
 import BookingTimelineView from './BookingTimelineView';
@@ -59,13 +59,13 @@ const BookingDashboard: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { formatDate, restaurantSettings } = useDateFormat();
   
   // State management
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentTab, setCurrentTab] = useState(0);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
-  const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quickBookingOpen, setQuickBookingOpen] = useState(false);
@@ -81,13 +81,6 @@ const BookingDashboard: React.FC = () => {
   useEffect(() => {
     if (user?.restaurantId) {
       loadTables();
-    }
-  }, [user]);
-
-  // Load restaurant settings once
-  useEffect(() => {
-    if (user?.restaurantId) {
-      loadRestaurantSettings();
     }
   }, [user]);
 
@@ -128,21 +121,6 @@ const BookingDashboard: React.FC = () => {
     }
   };
 
-  const loadRestaurantSettings = async () => {
-    if (!user?.restaurantId) return;
-    
-    try {
-      const settings = await restaurantService.getSettings(user.restaurantId);
-      setRestaurantSettings(settings);
-      
-      // Set global date format preference
-      if (settings.dateFormat) {
-        setGlobalDateFormat(settings.dateFormat);
-      }
-    } catch (err) {
-      console.error('Error loading restaurant settings:', err);
-    }
-  };
 
   const handleDateChange = (newDate: Date | null) => {
     if (newDate) {
@@ -291,7 +269,7 @@ const BookingDashboard: React.FC = () => {
                 fontSize: { xs: '1rem', sm: '1.25rem' },
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
-                {formatDateWithPreference(selectedDate, isMobile ? 'display' : 'long')}
+                {formatDate(selectedDate, isMobile ? 'display' : 'long')}
               </Typography>
               <Chip 
                 label={`${bookingCount} booking${bookingCount !== 1 ? 's' : ''}`}
@@ -353,7 +331,6 @@ const BookingDashboard: React.FC = () => {
                   bookings={bookings}
                   tables={tables}
                   selectedDate={selectedDate}
-                  restaurantSettings={restaurantSettings}
                   onBookingUpdate={() => loadBookingsForDate(selectedDate)}
                 />
               </TabPanel>

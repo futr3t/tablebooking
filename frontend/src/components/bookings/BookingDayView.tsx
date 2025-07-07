@@ -40,8 +40,9 @@ import {
   ErrorOutline,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 import { Booking } from '../../types';
-import { formatBookingTime, parseBookingDateTime } from '../../utils/dateHelpers';
+import { parseBookingDateTime } from '../../utils/dateHelpers';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 
@@ -56,6 +57,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
   selectedDate,
   onBookingUpdate
 }) => {
+  const { formatDate, formatBookingTime } = useDateFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -249,7 +251,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
           <Typography variant="body2">
             {searchTerm 
               ? 'Try adjusting your search criteria'
-              : `No bookings scheduled for ${format(selectedDate, 'MMMM d, yyyy')}`
+              : `No bookings scheduled for ${formatDate(selectedDate, 'long')}`
             }
           </Typography>
         </Alert>

@@ -33,10 +33,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 import { OptimizedBookingForm } from './OptimizedBookingForm';
-import { formatBookingDate, formatBookingTime } from '../../utils/dateHelpers';
+import { useDateFormat } from '../../contexts/DateFormatContext';
 
 const BookingList: React.FC = () => {
   const { user } = useAuth();
+  const { formatBookingDate, formatBookingTime } = useDateFormat();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
