@@ -618,7 +618,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Advance Booking Days"
                     type="number"
                     value={settings.bookingSettings.maxAdvanceBookingDays}
-                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', e.target.value ? parseInt(e.target.value) : 90, 'bookingSettings'))
+                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', e.target.value ? parseInt(e.target.value) : 90, 'bookingSettings')}
                     inputProps={{ min: 1, max: 365 }}
                     required
                   />
@@ -630,7 +630,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Min Advance Booking Hours"
                     type="number"
                     value={settings.bookingSettings.minAdvanceBookingHours}
-                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings'))
+                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
                     inputProps={{ min: 0, max: 168 }}
                     required
                   />
@@ -642,7 +642,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Party Size"
                     type="number"
                     value={settings.bookingSettings.maxPartySize}
-                    onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings'))
+                    onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings')}
                     inputProps={{ min: 1, max: 50 }}
                     required
                   />
@@ -654,7 +654,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Reminder Hours"
                     type="number"
                     value={settings.bookingSettings.reminderHours}
-                    onChange={(e) => handleSettingChange('reminderHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings'))
+                    onChange={(e) => handleSettingChange('reminderHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
                     helperText="Hours before booking to send reminders"
                     inputProps={{ min: 0, max: 72 }}
                   />
