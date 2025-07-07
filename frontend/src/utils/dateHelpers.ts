@@ -1,5 +1,44 @@
 import { parseISO, format, isValid } from 'date-fns';
 
+// Global date format state - will be updated by restaurant settings
+let globalDateFormat: 'us' | 'uk' = 'uk'; // Default to UK format
+
+/**
+ * Set the global date format preference
+ */
+export function setGlobalDateFormat(format: 'us' | 'uk') {
+  globalDateFormat = format;
+}
+
+/**
+ * Get the appropriate date format string based on the global preference
+ */
+export function getDateFormatString(type: 'short' | 'long' | 'display' = 'display'): string {
+  if (globalDateFormat === 'uk') {
+    switch (type) {
+      case 'short': return 'd/M/yyyy';
+      case 'long': return 'EEEE, d MMMM yyyy';
+      case 'display': return 'd MMM yyyy';
+      default: return 'd MMM yyyy';
+    }
+  } else {
+    switch (type) {
+      case 'short': return 'M/d/yyyy';
+      case 'long': return 'EEEE, MMMM d, yyyy';
+      case 'display': return 'MMM d, yyyy';
+      default: return 'MMM d, yyyy';
+    }
+  }
+}
+
+/**
+ * Format a date using the configured format preference
+ */
+export function formatDateWithPreference(date: Date, type: 'short' | 'long' | 'display' = 'display'): string {
+  if (!isValid(date)) return 'Invalid Date';
+  return format(date, getDateFormatString(type));
+}
+
 /**
  * Safely parse a booking's date and time fields into a valid Date object
  * Handles the backend's format where bookingDate is a UTC timestamp and bookingTime is a time string
@@ -39,7 +78,7 @@ export function formatBookingDate(booking: { bookingDate?: string | null }): str
     // Extract just the date part to avoid timezone issues
     const datePart = booking.bookingDate.split('T')[0];
     const parsed = parseISO(datePart + 'T00:00:00');
-    return isValid(parsed) ? format(parsed, 'MMM d, yyyy') : 'Invalid Date';
+    return isValid(parsed) ? formatDateWithPreference(parsed, 'display') : 'Invalid Date';
   } catch (error) {
     return 'Invalid Date';
   }

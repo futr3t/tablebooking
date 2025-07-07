@@ -13,7 +13,11 @@ import {
   Divider,
   Chip,
   CircularProgress,
-  IconButton
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -29,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
+import { setGlobalDateFormat } from '../../utils/dateHelpers';
 
 interface ServicePeriod {
   name: string;
@@ -47,6 +52,7 @@ interface RestaurantSettings {
   description?: string;
   maxCovers?: number;
   timeZone?: string;
+  dateFormat?: 'us' | 'uk';  // NEW: Date format preference
   turnTimeMinutes: number;
   defaultSlotDuration: number;
   openingHours: {
@@ -90,6 +96,7 @@ const DAYS_OF_WEEK = [
 const RestaurantSettingsPanel: React.FC = () => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<RestaurantSettings>({
+    dateFormat: 'uk', // Default to UK format
     turnTimeMinutes: 120,
     defaultSlotDuration: 30,
     openingHours: {},
@@ -154,6 +161,11 @@ const RestaurantSettingsPanel: React.FC = () => {
           ...restaurantSettings.bookingSettings
         }
       }));
+      
+      // Set global date format preference
+      if (restaurantSettings.dateFormat) {
+        setGlobalDateFormat(restaurantSettings.dateFormat);
+      }
     } catch (err: any) {
       console.error('Error loading settings:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load restaurant settings');
@@ -175,6 +187,11 @@ const RestaurantSettingsPanel: React.FC = () => {
     // Handle NaN from parseInt
     if (typeof value === 'number' && isNaN(value)) {
       sanitizedValue = nested ? null : undefined;
+    }
+    
+    // Update global date format if dateFormat is being changed
+    if (field === 'dateFormat' && !nested) {
+      setGlobalDateFormat(sanitizedValue);
     }
     
     setSettings(prev => {
@@ -342,6 +359,7 @@ const RestaurantSettingsPanel: React.FC = () => {
         description: settings.description,
         maxCovers: settings.maxCovers,
         timeZone: settings.timeZone,
+        dateFormat: settings.dateFormat,
         turnTimeMinutes: settings.turnTimeMinutes,
         defaultSlotDuration: settings.defaultSlotDuration,
         openingHours: settings.openingHours,
@@ -546,6 +564,20 @@ const RestaurantSettingsPanel: React.FC = () => {
                     inputProps={{ min: 15, max: 120 }}
                     required
                   />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Date Format</InputLabel>
+                    <Select
+                      value={settings.dateFormat || 'uk'}
+                      onChange={(e) => handleSettingChange('dateFormat', e.target.value as 'us' | 'uk')}
+                      label="Date Format"
+                    >
+                      <MenuItem value="uk">UK Format (dd/MM/yyyy)</MenuItem>
+                      <MenuItem value="us">US Format (MM/dd/yyyy)</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
               </Grid>
             </CardContent>

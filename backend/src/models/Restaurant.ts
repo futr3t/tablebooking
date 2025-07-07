@@ -99,6 +99,7 @@ export class RestaurantModel {
         'turnTimeMinutes': 'turn_time_minutes',
         'defaultSlotDuration': 'default_slot_duration',
         'timeZone': 'time_zone',
+        'dateFormat': 'date_format',
         'openingHours': 'opening_hours',
         'bookingSettings': 'booking_settings'
         // Note: stagger_minutes was removed from schema

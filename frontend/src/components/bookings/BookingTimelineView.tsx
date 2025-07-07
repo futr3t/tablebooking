@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Booking, Table } from '../../types';
-import { parseBookingDateTime, formatBookingTime } from '../../utils/dateHelpers';
+import { parseBookingDateTime, formatBookingTime, formatDateWithPreference } from '../../utils/dateHelpers';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 
@@ -31,6 +31,7 @@ interface BookingTimelineViewProps {
   bookings: Booking[];
   tables: Table[];
   selectedDate: Date;
+  restaurantSettings?: any;
   onBookingUpdate: () => void;
 }
 
@@ -50,6 +51,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   bookings,
   tables,
   selectedDate,
+  restaurantSettings,
   onBookingUpdate
 }) => {
   const theme = useTheme();
@@ -59,9 +61,42 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuBooking, setMenuBooking] = useState<Booking | null>(null);
 
+  // Calculate dynamic start time based on first service period
+  const calculateFirstServiceHour = () => {
+    if (!restaurantSettings?.openingHours) {
+      return 12; // Default fallback
+    }
+
+    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = selectedDate.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    const daySchedule = restaurantSettings.openingHours[dayName];
+    
+    if (!daySchedule?.isOpen || !daySchedule.periods || daySchedule.periods.length === 0) {
+      return 12; // Default fallback if closed or no periods
+    }
+
+    // Find the earliest start time among all service periods
+    let earliestHour = 24; // Start with impossible hour
+    
+    daySchedule.periods.forEach((period: any) => {
+      if (period.startTime) {
+        const [hours, minutes] = period.startTime.split(':').map(Number);
+        const hourWithMinutes = hours + (minutes / 60);
+        if (hourWithMinutes < earliestHour) {
+          earliestHour = hourWithMinutes;
+        }
+      }
+    });
+    
+    return earliestHour < 24 ? Math.floor(earliestHour) : 12;
+  };
+
   // Timeline configuration
-  const startHour = 12; // 12 PM
-  const endHour = 22;   // 10 PM
+  const startHour = calculateFirstServiceHour();
+  const endHour = Math.max(startHour + 10, 22); // Ensure at least 10 hours, minimum end at 10 PM
   const totalHours = endHour - startHour;
   const slotMinutes = 30; // 30-minute intervals
   const totalSlots = (totalHours * 60) / slotMinutes;
@@ -193,7 +228,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     <Box sx={{ p: 3 }}>
       {/* Timeline Header */}
       <Typography variant="h6" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        Timeline View - {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+        Timeline View - {formatDateWithPreference(selectedDate, 'long')}
       </Typography>
 
       {/* Timeline Container */}
