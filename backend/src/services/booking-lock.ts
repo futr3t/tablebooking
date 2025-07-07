@@ -114,10 +114,11 @@ export class BookingLockService {
     operation: () => Promise<T>,
     tableId?: string
   ): Promise<T> {
-    // If Redis is not available, run operation without locking
+    // TEMPORARY FIX: Disable Redis locking in production to bypass the issue
     // This reduces consistency but allows the system to continue functioning
-    if (!redis) {
-      console.warn('Redis not available, running operation without distributed locking');
+    if (!redis || process.env.NODE_ENV === 'production') {
+      const reason = !redis ? 'Redis not available' : 'Production Redis bypass enabled';
+      console.warn(`${reason}, running operation without distributed locking`);
       try {
         return await operation();
       } catch (error: any) {
@@ -269,10 +270,11 @@ export class BookingLockService {
     tableId: string,
     operation: () => Promise<T>
   ): Promise<T> {
-    // If Redis is not available, run operation without locking
+    // TEMPORARY FIX: Disable Redis locking in production to bypass the issue
     // This reduces consistency but allows the system to continue functioning
-    if (!redis) {
-      console.warn('Redis not available, running table operation without distributed locking');
+    if (!redis || process.env.NODE_ENV === 'production') {
+      const reason = !redis ? 'Redis not available' : 'Production Redis table bypass enabled';
+      console.warn(`${reason}, running table operation without distributed locking`);
       try {
         return await operation();
       } catch (error: any) {

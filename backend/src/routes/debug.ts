@@ -125,5 +125,73 @@ router.get('/check-bookings-schema', async (req, res) => {
   }
 });
 
+/**
+ * Debug endpoint to test direct booking creation bypassing complex flows
+ */
+router.post('/direct-booking-test', async (req, res) => {
+  try {
+    console.log('🧪 Direct booking test started');
+    
+    const { db } = await import('../config/database');
+    
+    // Simple direct booking creation - no locks, no complex logic
+    const testBooking = {
+      restaurant_id: '1723b385-dc14-461f-a06a-119d2bc0ba5c',
+      customer_name: 'Direct Test User',
+      customer_email: 'direct@test.com',
+      customer_phone: '5551234567',
+      party_size: 4,
+      booking_date: '2025-07-08',
+      booking_time: '18:00',
+      duration: 120,
+      status: 'confirmed',
+      notes: 'Direct test booking',
+      confirmation_code: 'TEST' + Math.random().toString(36).substring(2, 8).toUpperCase()
+    };
+    
+    console.log('🔧 Attempting direct database insert...');
+    const result = await db.query(`
+      INSERT INTO bookings (
+        restaurant_id, customer_name, customer_email, customer_phone,
+        party_size, booking_date, booking_time, duration, status, notes, confirmation_code
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `, [
+      testBooking.restaurant_id,
+      testBooking.customer_name,
+      testBooking.customer_email,
+      testBooking.customer_phone,
+      testBooking.party_size,
+      testBooking.booking_date,
+      testBooking.booking_time,
+      testBooking.duration,
+      testBooking.status,
+      testBooking.notes,
+      testBooking.confirmation_code
+    ]);
+    
+    console.log('✅ Direct booking created successfully');
+    
+    res.json({
+      success: true,
+      data: {
+        message: 'Direct booking creation successful',
+        booking: result.rows[0],
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Direct booking test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 export default router;
