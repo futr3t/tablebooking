@@ -86,16 +86,26 @@ export class RestaurantModel {
       const values = [];
       let paramCount = 1;
 
+      // Log incoming updates for debugging
+      console.log('Restaurant.update called with:', {
+        id,
+        updates: Object.keys(updates),
+        updateValues: updates
+      });
+
       // Map field names to actual database columns
       const fieldMapping: { [key: string]: string } = {
         'maxCovers': 'max_covers',
         'turnTimeMinutes': 'turn_time_minutes',
         'defaultSlotDuration': 'default_slot_duration',
-        'timeZone': 'time_zone'
+        'timeZone': 'time_zone',
+        'openingHours': 'opening_hours',
+        'bookingSettings': 'booking_settings',
+        'staggerMinutes': 'stagger_minutes'
       };
 
       for (const [key, value] of Object.entries(updates)) {
-        if (value !== undefined && key !== 'id' && key !== 'createdAt') {
+        if (value !== undefined && key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
           let dbFieldName: string;
           
           // Use field mapping if available, otherwise convert to snake_case
@@ -117,7 +127,10 @@ export class RestaurantModel {
       }
 
       if (fields.length === 0) {
-        throw new Error('No valid fields to update');
+        console.warn('No fields to update. This might be intentional.');
+        // Return the current restaurant data without updating
+        const current = await this.findById(id);
+        return current;
       }
 
       values.push(id);

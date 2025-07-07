@@ -216,6 +216,11 @@ export const restaurantService = {
   },
 
   updateSettings: async (restaurantId: string, settings: any): Promise<any> => {
+    console.log('Sending settings update:', {
+      restaurantId,
+      settings,
+      settingsKeys: Object.keys(settings)
+    });
     const response = await api.put(`/restaurants/${restaurantId}/settings`, settings);
     return response.data.data || response.data;
   },

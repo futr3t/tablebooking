@@ -54,6 +54,15 @@ export const errorHandler = (
     message = 'Invalid reference';
   }
 
+  // Log the full error for debugging
+  if (statusCode >= 500) {
+    console.error('Server Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      originalError: error
+    });
+  }
+
   const response: ApiResponse = {
     success: false,
     error: message

@@ -324,15 +324,48 @@ const RestaurantSettingsPanel: React.FC = () => {
         throw new Error('Max concurrent covers must be non-negative');
       }
 
-      console.log('Saving settings:', settings);
+      // Extract only the fields that should be updated
+      const updatePayload = {
+        name: settings.name,
+        email: settings.email,
+        phone: settings.phone,
+        address: settings.address,
+        cuisine: settings.cuisine,
+        description: settings.description,
+        maxCovers: settings.maxCovers,
+        timeZone: settings.timeZone,
+        turnTimeMinutes: settings.turnTimeMinutes,
+        defaultSlotDuration: settings.defaultSlotDuration,
+        openingHours: settings.openingHours,
+        bookingSettings: settings.bookingSettings
+      };
       
-      await restaurantService.updateSettings(user.restaurantId, settings);
+      console.log('Saving settings:', updatePayload);
+      
+      await restaurantService.updateSettings(user.restaurantId, updatePayload);
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error('Error saving settings:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to save settings');
+      console.error('Full error object:', {
+        response: err.response,
+        data: err.response?.data,
+        message: err.message,
+        statusCode: err.response?.status
+      });
+      
+      // Extract error message from various possible formats
+      let errorMessage = 'Failed to save settings';
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }

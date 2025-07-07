@@ -45,6 +45,12 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
   const { restaurantId } = req.params;
   const updates = req.body;
 
+  console.log('updateRestaurantSettings called with:', {
+    restaurantId,
+    body: req.body,
+    bodyKeys: Object.keys(req.body)
+  });
+
   if (!req.user) {
     throw createError('Authentication required', 401);
   }
