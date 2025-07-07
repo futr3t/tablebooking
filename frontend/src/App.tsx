@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -13,6 +13,7 @@ import BookingDashboard from './components/bookings/BookingDashboard';
 import TableManagementDashboard from './components/tables/TableManagementDashboard';
 import RestaurantSettingsPanel from './components/settings/RestaurantSettingsPanel';
 import WidgetManager from './components/widget/WidgetManager';
+import darkTheme from './themes/darkTheme';
 
 const theme = createTheme({
   palette: {
@@ -252,8 +253,12 @@ const theme = createTheme({
 });
 
 function App() {
+  // Theme switching state - hardcoded to dark for now
+  const [isDarkMode] = useState(true);
+  const currentTheme = isDarkMode ? darkTheme : theme;
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={currentTheme}>
       <CssBaseline />
       <AuthProvider>
         <DateFormatProvider>

@@ -6,6 +6,7 @@ import {
   Chip,
   Tooltip,
   useTheme,
+  useMediaQuery,
   Fade,
   Slide,
   Grow,
@@ -26,8 +27,11 @@ interface TimelineViewProps {
 const TimelineView: React.FC<TimelineViewProps> = ({ bookings, onBookingUpdate }) => {
   const theme = useTheme();
   const { restaurantSettings } = useDateFormat();
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [hoveredBooking, setHoveredBooking] = useState<string | null>(null);
   const [hoveredTimeSlot, setHoveredTimeSlot] = useState<string | null>(null);
+  const [clickedBooking, setClickedBooking] = useState<string | null>(null);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const [animationKey, setAnimationKey] = useState(0);
 
   const handleBookingClick = useCallback((booking: Booking) => {

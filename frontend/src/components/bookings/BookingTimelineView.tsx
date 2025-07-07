@@ -259,7 +259,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     event.stopPropagation();
     
     // Add pulse animation to indicate menu opening
-    setPulsingBookings(prev => new Set([...prev, booking.id]));
+    setPulsingBookings(prev => new Set([...Array.from(prev), booking.id]));
     
     setMenuAnchor(event.currentTarget as HTMLElement);
     setMenuBooking(booking);
@@ -1255,7 +1255,6 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
         onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
         TransitionComponent={Slide}
-        TransitionProps={{ direction: 'up' }}
         sx={{
           '& .MuiSnackbarContent-root': {
             borderRadius: 3,
