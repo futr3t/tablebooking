@@ -273,21 +273,66 @@ export class BookingLockService {
     // This reduces consistency but allows the system to continue functioning
     if (!redis) {
       console.warn('Redis not available, running table operation without distributed locking');
-      return await operation();
+      try {
+        return await operation();
+      } catch (error: any) {
+        // Preserve the original error when Redis is unavailable
+        console.error('Table operation failed without locking:', error);
+        throw error;
+      }
     }
 
-    const lockValue = await this.acquireTableLock(tableId);
+    const maxRetries = 3;
+    const retryDelay = 500; // 0.5 seconds for table locks
+    let lastOperationError: any = null;
     
-    if (!lockValue) {
-      throw new Error('Unable to acquire table lock - another operation in progress');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const lockValue = await this.acquireTableLock(tableId);
+      
+      if (lockValue) {
+        try {
+          const result = await operation();
+          return result;
+        } catch (error: any) {
+          // Store the operation error - this might be the actual issue
+          lastOperationError = error;
+          console.error('Table operation failed within lock:', error);
+          
+          // If it's a database error or other non-lock related error, throw it immediately
+          if (this.isNonRetryableError(error)) {
+            throw error;
+          }
+          
+          // For other errors, log and retry
+          console.log(`Table operation failed, will retry. Error: ${error.message}`);
+        } finally {
+          await this.releaseTableLock(tableId, lockValue);
+        }
+      }
+      
+      // If this is the last attempt, decide what error to throw
+      if (attempt === maxRetries) {
+        if (lastOperationError && this.isNonRetryableError(lastOperationError)) {
+          // Throw the actual operation error if it's non-retryable
+          throw lastOperationError;
+        } else if (lastOperationError) {
+          // Wrap the operation error with lock context
+          const lockError = new Error(`Table operation failed after ${maxRetries} attempts: ${lastOperationError.message}`);
+          (lockError as any).originalError = lastOperationError;
+          throw lockError;
+        } else {
+          // Only throw generic lock error if we never got a lock
+          throw new Error('Unable to acquire table lock - another operation in progress');
+        }
+      }
+      
+      // Wait before retrying
+      console.log(`Table lock acquisition failed, retrying in ${retryDelay}ms (attempt ${attempt}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
-
-    try {
-      const result = await operation();
-      return result;
-    } finally {
-      await this.releaseTableLock(tableId, lockValue);
-    }
+    
+    // This should never be reached due to the throw above, but TypeScript requires it
+    throw new Error('Unable to acquire table lock - maximum retries exceeded');
   }
 
   private static generateLockKey(
