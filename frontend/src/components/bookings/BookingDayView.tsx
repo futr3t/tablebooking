@@ -391,7 +391,10 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                   />
                   
                   <IconButton 
-                    onClick={(e) => handleMenuOpen(e, booking)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(e, booking);
+                    }}
                     size="small"
                   >
                     <MoreVert />
