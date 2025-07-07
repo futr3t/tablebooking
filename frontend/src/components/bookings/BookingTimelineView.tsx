@@ -286,8 +286,26 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
         Timeline View - {formatDate(selectedDate, 'long')}
       </Typography>
 
-      {/* Timeline Container */}
-      <Paper elevation={1} sx={{ overflow: 'hidden' }}>
+      {/* No Bookings Message */}
+      {bookings.length === 0 ? (
+        <Alert 
+          severity="info" 
+          sx={{ 
+            textAlign: 'center',
+            py: 4
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            No bookings found
+          </Typography>
+          <Typography variant="body2">
+            No bookings scheduled for {formatDate(selectedDate, 'long')}
+          </Typography>
+        </Alert>
+      ) : (
+        <>
+          {/* Timeline Container */}
+          <Paper elevation={1} sx={{ overflow: 'hidden' }}>
         {/* Time Header */}
         <Box sx={{ 
           display: 'flex',
@@ -516,6 +534,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           </Box>
         </CardContent>
       </Card>
+        </>
+      )}
 
       {/* Action Menu */}
       <Menu
