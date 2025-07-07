@@ -2,11 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { enGB } from 'date-fns/locale';
 import { AuthProvider } from './contexts/AuthContext';
 import { DateFormatProvider } from './contexts/DateFormatContext';
+import { DynamicLocalizationProvider } from './components/common/DynamicLocalizationProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
@@ -257,9 +255,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
-        <AuthProvider>
-          <DateFormatProvider>
+      <AuthProvider>
+        <DateFormatProvider>
+          <DynamicLocalizationProvider>
             <Router>
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -281,9 +279,9 @@ function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Router>
-          </DateFormatProvider>
-        </AuthProvider>
-      </LocalizationProvider>
+          </DynamicLocalizationProvider>
+        </DateFormatProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
