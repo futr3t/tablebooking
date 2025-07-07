@@ -11,6 +11,7 @@ import widgetEmbeddedRoutes from './widget-embedded';
 import diagnosticRoutes from './diagnostic';
 import staffBookingRoutes from './staffBooking';
 import dietaryRequirementsRoutes from './dietaryRequirements';
+import debugRoutes from './debug';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/widget/public', publicWidgetRoutes); // Public widget API routes
 router.use('/', widgetEmbeddedRoutes); // Root level widget routes
 router.use('/diagnostic', diagnosticRoutes);
 router.use('/dietary-requirements', dietaryRequirementsRoutes);
+router.use('/debug', debugRoutes);
 
 router.get('/health', async (req, res) => {
   try {
