@@ -100,13 +100,17 @@ export class RestaurantModel {
         'defaultSlotDuration': 'default_slot_duration',
         'timeZone': 'time_zone',
         'openingHours': 'opening_hours',
-        'bookingSettings': 'booking_settings',
-        'staggerMinutes': 'stagger_minutes'
+        'bookingSettings': 'booking_settings'
+        // Note: stagger_minutes was removed from schema
       };
 
+      // List of fields that should be integers and need empty string sanitization
+      const integerFields = ['maxCovers', 'turnTimeMinutes', 'defaultSlotDuration'];
+      
       for (const [key, value] of Object.entries(updates)) {
         if (value !== undefined && key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
           let dbFieldName: string;
+          let sanitizedValue = value;
           
           // Use field mapping if available, otherwise convert to snake_case
           if (fieldMapping[key]) {
@@ -115,12 +119,49 @@ export class RestaurantModel {
             dbFieldName = this.camelToSnake(key);
           }
           
+          // Sanitize empty strings to null for integer fields
+          if (integerFields.includes(key) && value === '') {
+            sanitizedValue = null;
+            console.log(`Sanitized empty string to null for field: ${key}`);
+          }
+          
+          // Also sanitize empty strings and fix type conversion in bookingSettings
+          if (key === 'bookingSettings' && typeof value === 'object' && value !== null) {
+            const numericBookingFields = ['maxConcurrentTables', 'maxConcurrentCovers', 'maxPartySize', 'maxAdvanceBookingDays', 'minAdvanceBookingHours', 'reminderHours'];
+            const booleanBookingFields = ['enableWaitlist', 'requirePhone', 'requireEmail', 'autoConfirm', 'sendConfirmationEmail', 'sendConfirmationSMS', 'sendReminderEmail', 'sendReminderSMS'];
+            const sanitizedBookingSettings = { ...value };
+            
+            // Handle numeric fields
+            for (const bookingKey of numericBookingFields) {
+              if (sanitizedBookingSettings[bookingKey] === '') {
+                sanitizedBookingSettings[bookingKey] = null;
+                console.log(`Sanitized empty string to null for bookingSettings.${bookingKey}`);
+              } else if (typeof sanitizedBookingSettings[bookingKey] === 'string' && sanitizedBookingSettings[bookingKey] !== null) {
+                const numVal = parseInt(sanitizedBookingSettings[bookingKey]);
+                if (!isNaN(numVal)) {
+                  sanitizedBookingSettings[bookingKey] = numVal;
+                  console.log(`Converted string '${sanitizedBookingSettings[bookingKey]}' to number ${numVal} for bookingSettings.${bookingKey}`);
+                }
+              }
+            }
+            
+            // Handle boolean fields
+            for (const bookingKey of booleanBookingFields) {
+              if (typeof sanitizedBookingSettings[bookingKey] === 'string') {
+                sanitizedBookingSettings[bookingKey] = sanitizedBookingSettings[bookingKey] === 'true';
+                console.log(`Converted string to boolean for bookingSettings.${bookingKey}`);
+              }
+            }
+            
+            sanitizedValue = sanitizedBookingSettings;
+          }
+          
           if (key === 'openingHours' || key === 'bookingSettings') {
             fields.push(`${dbFieldName} = $${paramCount}`);
-            values.push(JSON.stringify(value));
+            values.push(JSON.stringify(sanitizedValue));
           } else {
             fields.push(`${dbFieldName} = $${paramCount}`);
-            values.push(value);
+            values.push(sanitizedValue);
           }
           paramCount++;
         }

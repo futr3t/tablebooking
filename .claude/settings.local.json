@@ -34,7 +34,8 @@
       "Bash(rm test-customer-search.js create-test-customers.sql)",
       "Bash(rm:*)",
       "Bash(kill:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }

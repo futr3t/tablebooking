@@ -169,6 +169,14 @@ const RestaurantSettingsPanel: React.FC = () => {
   }, [user?.restaurantId, loadSettings]);
 
   const handleSettingChange = (field: string, value: any, nested?: string) => {
+    // Sanitize numeric values to ensure proper types
+    let sanitizedValue = value;
+    
+    // Handle NaN from parseInt
+    if (typeof value === 'number' && isNaN(value)) {
+      sanitizedValue = nested ? null : undefined;
+    }
+    
     setSettings(prev => {
       if (nested) {
         const nestedObj = prev[nested as keyof RestaurantSettings] as any;
@@ -176,13 +184,13 @@ const RestaurantSettingsPanel: React.FC = () => {
           ...prev,
           [nested]: {
             ...nestedObj,
-            [field]: value
+            [field]: sanitizedValue
           }
         };
       }
       return {
         ...prev,
-        [field]: value
+        [field]: sanitizedValue
       };
     });
   };
@@ -508,7 +516,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Maximum Covers"
                     type="number"
                     value={settings.maxCovers || ''}
-                    onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : undefined)}
+                    onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : null)}
                     helperText="Leave empty for unlimited capacity"
                     inputProps={{ min: 0 }}
                   />
@@ -520,7 +528,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Turn Time (minutes)"
                     type="number"
                     value={settings.turnTimeMinutes}
-                    onChange={(e) => handleSettingChange('turnTimeMinutes', parseInt(e.target.value))}
+                    onChange={(e) => handleSettingChange('turnTimeMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
                     helperText="How long each booking lasts (includes cleanup)"
                     inputProps={{ min: 30, max: 480 }}
                     required
@@ -533,7 +541,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Time Slot Duration (minutes)"
                     type="number"
                     value={settings.defaultSlotDuration}
-                    onChange={(e) => handleSettingChange('defaultSlotDuration', parseInt(e.target.value))}
+                    onChange={(e) => handleSettingChange('defaultSlotDuration', e.target.value ? parseInt(e.target.value) : undefined)}
                     helperText="How often booking slots are offered"
                     inputProps={{ min: 15, max: 120 }}
                     required
@@ -563,7 +571,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Concurrent Tables"
                     type="number"
                     value={settings.bookingSettings.maxConcurrentTables || ''}
-                    onChange={(e) => handleSettingChange('maxConcurrentTables', e.target.value ? parseInt(e.target.value) : undefined, 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('maxConcurrentTables', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
                     helperText="Max tables starting at same time"
                     inputProps={{ min: 0 }}
                   />
@@ -575,7 +583,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Concurrent Covers"
                     type="number"
                     value={settings.bookingSettings.maxConcurrentCovers || ''}
-                    onChange={(e) => handleSettingChange('maxConcurrentCovers', e.target.value ? parseInt(e.target.value) : undefined, 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('maxConcurrentCovers', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
                     helperText="Max people starting at same time"
                     inputProps={{ min: 0 }}
                   />
@@ -610,7 +618,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Advance Booking Days"
                     type="number"
                     value={settings.bookingSettings.maxAdvanceBookingDays}
-                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', parseInt(e.target.value), 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', e.target.value ? parseInt(e.target.value) : 90, 'bookingSettings'))
                     inputProps={{ min: 1, max: 365 }}
                     required
                   />
@@ -622,7 +630,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Min Advance Booking Hours"
                     type="number"
                     value={settings.bookingSettings.minAdvanceBookingHours}
-                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', parseInt(e.target.value), 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings'))
                     inputProps={{ min: 0, max: 168 }}
                     required
                   />
@@ -634,7 +642,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Max Party Size"
                     type="number"
                     value={settings.bookingSettings.maxPartySize}
-                    onChange={(e) => handleSettingChange('maxPartySize', parseInt(e.target.value), 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings'))
                     inputProps={{ min: 1, max: 50 }}
                     required
                   />
@@ -646,7 +654,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                     label="Reminder Hours"
                     type="number"
                     value={settings.bookingSettings.reminderHours}
-                    onChange={(e) => handleSettingChange('reminderHours', parseInt(e.target.value), 'bookingSettings')}
+                    onChange={(e) => handleSettingChange('reminderHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings'))
                     helperText="Hours before booking to send reminders"
                     inputProps={{ min: 0, max: 72 }}
                   />
@@ -899,7 +907,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                                 label="Slot Duration (minutes)"
                                 type="number"
                                 value={period.slotDurationMinutes || ''}
-                                onChange={(e) => updateServicePeriod(day.key, periodIndex, 'slotDurationMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
+                                onChange={(e) => updateServicePeriod(day.key, periodIndex, 'slotDurationMinutes', e.target.value ? parseInt(e.target.value) : 30)}
                                 placeholder={`Default: ${settings.defaultSlotDuration} min`}
                                 inputProps={{ min: 15, max: 120 }}
                                 helperText="Leave empty to use restaurant default"
