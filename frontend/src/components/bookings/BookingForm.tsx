@@ -18,8 +18,6 @@ import {
   Chip,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, parseISO } from 'date-fns';
 import { bookingService } from '../../services/api';
 import { Booking, TimeSlot } from '../../types';
@@ -183,14 +181,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DateTimePicker
                   label="Booking Date & Time"
                   value={formData.bookingTime}
                   onChange={(value) => value && handleChange('bookingTime', value)}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
-              </LocalizationProvider>
             </Grid>
             
             {editMode && (

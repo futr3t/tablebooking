@@ -42,8 +42,6 @@ import {
   EventSeat
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, addDays, parseISO } from 'date-fns';
 import { Booking, BookingTemplate, DietaryRequirement, EnhancedAvailability, EnhancedTimeSlot, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -323,7 +321,6 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
           🚀 {editMode ? 'Edit Booking (Enhanced Form)' : 'Enhanced Booking Form'}
@@ -842,6 +839,5 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           </Grid>
         </Grid>
       </Box>
-    </LocalizationProvider>
   );
 };

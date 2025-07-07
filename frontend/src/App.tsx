@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { enGB } from 'date-fns/locale';
 import { AuthProvider } from './contexts/AuthContext';
 import { DateFormatProvider } from './contexts/DateFormatContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -256,7 +257,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
         <AuthProvider>
           <DateFormatProvider>
             <Router>
