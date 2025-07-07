@@ -12,6 +12,13 @@ import {
   CardContent,
   Menu,
   MenuItem,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  Snackbar,
 } from '@mui/material';
 import {
   People,
@@ -20,11 +27,14 @@ import {
   Edit,
   Visibility,
   TableBar,
+  Delete,
+  Cancel,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Booking, Table } from '../../types';
 import { parseBookingDateTime, formatBookingTime } from '../../utils/dateHelpers';
 import { useDateFormat } from '../../contexts/DateFormatContext';
+import { bookingService } from '../../services/api';
 import BookingDetails from './BookingDetails';
 import { QuickBookingDialog } from './QuickBookingDialog';
 
@@ -60,6 +70,10 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   const [editOpen, setEditOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuBooking, setMenuBooking] = useState<Booking | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Calculate dynamic start time based on first service period
   const calculateFirstServiceHour = () => {
@@ -182,6 +196,12 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
 
   const handleBookingClick = (booking: Booking, event: React.MouseEvent) => {
     event.stopPropagation();
+    // Default action: view booking details
+    handleViewDetails(booking);
+  };
+
+  const handleMenuClick = (booking: Booking, event: React.MouseEvent) => {
+    event.stopPropagation();
     setMenuAnchor(event.currentTarget as HTMLElement);
     setMenuBooking(booking);
   };
@@ -207,6 +227,41 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     onBookingUpdate();
     setEditOpen(false);
     setSelectedBooking(null);
+  };
+
+  const handleDeleteBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setDeleteConfirmOpen(true);
+    handleMenuClose();
+  };
+
+  const handleCancelBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setDeleteConfirmOpen(true);
+    handleMenuClose();
+  };
+
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+
+    try {
+      await bookingService.cancelBooking(bookingToDelete.id);
+      setSnackbarMessage(`Booking for ${bookingToDelete.customerName} has been cancelled`);
+      setSnackbarOpen(true);
+      onBookingUpdate(); // Refresh the bookings list
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      setSnackbarMessage('Failed to cancel booking. Please try again.');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleteConfirmOpen(false);
+      setBookingToDelete(null);
+    }
+  };
+
+  const cancelDeleteBooking = () => {
+    setDeleteConfirmOpen(false);
+    setBookingToDelete(null);
   };
 
   if (sortedTables.length === 0) {
@@ -421,7 +476,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
                           sx={{ color: 'inherit', opacity: 0.8 }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleBookingClick(booking, e);
+                            handleMenuClick(booking, e);
                           }}
                         >
                           <MoreVert fontSize="small" />
@@ -476,6 +531,22 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           <Edit fontSize="small" sx={{ mr: 1 }} />
           Edit Booking
         </MenuItem>
+        {menuBooking && menuBooking.status !== 'cancelled' && menuBooking.status !== 'completed' && (
+          <MenuItem 
+            onClick={() => menuBooking && handleCancelBooking(menuBooking)}
+            sx={{ color: 'warning.main' }}
+          >
+            <Cancel fontSize="small" sx={{ mr: 1 }} />
+            Cancel Booking
+          </MenuItem>
+        )}
+        <MenuItem 
+          onClick={() => menuBooking && handleDeleteBooking(menuBooking)}
+          sx={{ color: 'error.main' }}
+        >
+          <Delete fontSize="small" sx={{ mr: 1 }} />
+          Delete Booking
+        </MenuItem>
       </Menu>
 
       {/* Booking Details Dialog */}
@@ -504,6 +575,43 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           onSuccess={handleBookingUpdated}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={cancelDeleteBooking}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Confirm Booking Deletion
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete the booking for{' '}
+            <strong>{bookingToDelete?.customerName}</strong> on{' '}
+            <strong>{bookingToDelete && formatBookingTime(bookingToDelete)}</strong>?
+            <br /><br />
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteBooking} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDeleteBooking} color="error" variant="contained">
+            Delete Booking
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Box>
   );
 };
