@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { BookingLockService } from '../services/booking-lock';
+import { RestaurantModel } from '../models/Restaurant';
+import { TableModel } from '../models/Table';
+import { AvailabilityService } from '../services/availability';
 
 const router = Router();
 
@@ -73,82 +76,45 @@ router.get('/test-lock-error', async (req, res) => {
 });
 
 /**
- * Debug endpoint to trace actual booking creation process
+ * Debug endpoint to check actual bookings table schema
  */
-router.post('/trace-booking', async (req, res) => {
+router.get('/check-bookings-schema', async (req, res) => {
   try {
-    const { restaurantId, date, time, partySize } = req.body;
+    const { db } = await import('../config/database');
     
-    const trace = {
-      step: '',
-      timestamp: new Date().toISOString(),
-      success: false,
-      data: {} as any,
-      errors: [] as string[]
-    };
+    // Check what columns exist in the bookings table
+    const columnsResult = await db.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'bookings' 
+      ORDER BY ordinal_position;
+    `);
     
-    // Import services for testing
-    const { default: RestaurantModel } = await import('../models/Restaurant');
-    const { default: TableModel } = await import('../models/Table');
-    const { AvailabilityService } = await import('../services/availability');
+    // Check for the specific columns BookingModel.create expects
+    const requiredColumns = [
+      'dietary_requirements', 'occasion', 'preferred_seating', 'marketing_consent',
+      'source', 'created_by', 'is_vip', 'internal_notes', 'metadata'
+    ];
     
-    trace.step = '1. Loading restaurant';
-    const restaurant = await RestaurantModel.findById(restaurantId);
-    if (!restaurant) {
-      trace.errors.push('Restaurant not found');
-      return res.json(trace);
-    }
-    trace.data.restaurant = { id: restaurant.id, name: restaurant.name };
+    const existingColumns = columnsResult.rows.map(row => row.column_name);
+    const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
     
-    trace.step = '2. Getting available tables';
-    const availableTables = await TableModel.findAvailableTablesForPartySize(restaurantId, partySize);
-    trace.data.availableTablesCount = availableTables.length;
+    // Count existing bookings
+    const bookingCount = await db.query('SELECT COUNT(*) as count FROM bookings');
     
-    trace.step = '3. Testing findBestTable';
-    const bestTable = await AvailabilityService.findBestTable(
-      restaurantId,
-      date,
-      time,
-      partySize,
-      120,
-      false // guest booking
-    );
-    trace.data.bestTable = bestTable ? { id: bestTable.id, number: bestTable.number } : null;
-    
-    if (!bestTable) {
-      trace.errors.push('No available table found');
-      return res.json(trace);
-    }
-    
-    trace.step = '4. Testing withLock wrapper';
-    let lockError = null;
-    try {
-      await BookingLockService.withLock(
-        restaurantId,
-        date,
-        time,
-        async () => {
-          trace.data.lockAcquired = true;
-          // Don't actually create booking, just test the lock
-          return { test: 'success' };
-        }
-      );
-      trace.data.lockTest = 'passed';
-    } catch (error: any) {
-      lockError = error;
-      trace.errors.push(`Lock failed: ${error.message}`);
-      trace.data.lockError = {
-        message: error.message,
-        hasOriginalError: !!(error as any).originalError,
-        isNonRetryable: typeof (BookingLockService as any).isNonRetryableError === 'function' ? 
-          (BookingLockService as any).isNonRetryableError(error) : 'method not found'
-      };
-    }
-    
-    trace.success = !lockError;
-    trace.step = trace.success ? '5. All tests passed' : '5. Lock test failed';
-    
-    res.json(trace);
+    res.json({
+      success: true,
+      data: {
+        timestamp: new Date().toISOString(),
+        totalColumns: columnsResult.rows.length,
+        allColumns: columnsResult.rows,
+        requiredColumns,
+        existingRequiredColumns: requiredColumns.filter(col => existingColumns.includes(col)),
+        missingColumns,
+        schemaValid: missingColumns.length === 0,
+        existingBookings: parseInt(bookingCount.rows[0].count)
+      }
+    });
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -158,5 +124,6 @@ router.post('/trace-booking', async (req, res) => {
     });
   }
 });
+
 
 export default router;
