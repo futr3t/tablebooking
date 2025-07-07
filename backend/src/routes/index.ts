@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { db } from '../config/database';
 import authRoutes from './auth';
 import bookingRoutes from './booking';
 import tableRoutes from './table';
@@ -25,16 +26,70 @@ router.use('/', widgetEmbeddedRoutes); // Root level widget routes
 router.use('/diagnostic', diagnosticRoutes);
 router.use('/dietary-requirements', dietaryRequirementsRoutes);
 
-router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
+router.get('/health', async (req, res) => {
+  try {
+    const health = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      database: {
+        connected: false,
+        schema: {
+          valid: false,
+          missingColumns: [] as string[]
+        }
+      }
+    };
+
+    // Test database connection
+    await db.query('SELECT NOW()');
+    health.database.connected = true;
+
+    // Check for required columns in restaurants table
+    const requiredColumns = ['max_covers', 'turn_time_minutes', 'stagger_minutes', 'default_slot_duration'];
+    const columnCheck = await db.query(`
+      SELECT column_name
+      FROM information_schema.columns 
+      WHERE table_name = 'restaurants' 
+      AND column_name = ANY($1)
+    `, [requiredColumns]);
+
+    const existingColumns = columnCheck.rows.map(row => row.column_name);
+    const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
+    
+    health.database.schema.missingColumns = missingColumns;
+    health.database.schema.valid = missingColumns.length === 0;
+    
+    // Overall health status
+    if (!health.database.connected || !health.database.schema.valid) {
+      health.status = 'degraded';
     }
-  });
+
+    res.json({
+      success: true,
+      data: health
+    });
+  } catch (error: any) {
+    console.error('Health check failed:', error);
+    res.status(500).json({
+      success: false,
+      data: {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        error: error.message,
+        database: {
+          connected: false,
+          schema: {
+            valid: false,
+            missingColumns: []
+          }
+        }
+      }
+    });
+  }
 });
 
 export default router;

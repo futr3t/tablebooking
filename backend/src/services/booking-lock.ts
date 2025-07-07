@@ -118,11 +118,18 @@ export class BookingLockService {
     // This reduces consistency but allows the system to continue functioning
     if (!redis) {
       console.warn('Redis not available, running operation without distributed locking');
-      return await operation();
+      try {
+        return await operation();
+      } catch (error: any) {
+        // Preserve the original error when Redis is unavailable
+        console.error('Operation failed without locking:', error);
+        throw error;
+      }
     }
 
     const maxRetries = 3;
     const retryDelay = 1000; // 1 second
+    let lastOperationError: any = null;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const lockValue = await this.acquireLock(restaurantId, date, time, tableId);
@@ -131,14 +138,37 @@ export class BookingLockService {
         try {
           const result = await operation();
           return result;
+        } catch (error: any) {
+          // Store the operation error - this might be the actual issue
+          lastOperationError = error;
+          console.error('Operation failed within lock:', error);
+          
+          // If it's a database error or other non-lock related error, throw it immediately
+          if (this.isNonRetryableError(error)) {
+            throw error;
+          }
+          
+          // For other errors, log and retry
+          console.log(`Operation failed, will retry. Error: ${error.message}`);
         } finally {
           await this.releaseLock(restaurantId, date, time, lockValue, tableId);
         }
       }
       
-      // If this is the last attempt, throw error
+      // If this is the last attempt, decide what error to throw
       if (attempt === maxRetries) {
-        throw new Error('Unable to acquire booking lock - system is busy, please try again');
+        if (lastOperationError && this.isNonRetryableError(lastOperationError)) {
+          // Throw the actual operation error if it's non-retryable
+          throw lastOperationError;
+        } else if (lastOperationError) {
+          // Wrap the operation error with lock context
+          const lockError = new Error(`Booking operation failed after ${maxRetries} attempts: ${lastOperationError.message}`);
+          (lockError as any).originalError = lastOperationError;
+          throw lockError;
+        } else {
+          // Only throw generic lock error if we never got a lock
+          throw new Error('Unable to acquire booking lock - system is busy, please try again');
+        }
       }
       
       // Wait before retrying
@@ -148,6 +178,40 @@ export class BookingLockService {
     
     // This should never be reached due to the throw above, but TypeScript requires it
     throw new Error('Unable to acquire booking lock - maximum retries exceeded');
+  }
+
+  /**
+   * Determines if an error should not be retried (e.g., database schema errors, validation errors)
+   */
+  private static isNonRetryableError(error: any): boolean {
+    const message = error.message?.toLowerCase() || '';
+    
+    // Database schema/column errors should not be retried
+    if (message.includes('column') && message.includes('does not exist')) {
+      return true;
+    }
+    
+    // SQL syntax errors should not be retried
+    if (message.includes('syntax error')) {
+      return true;
+    }
+    
+    // Validation errors should not be retried
+    if (message.includes('validation') || message.includes('invalid')) {
+      return true;
+    }
+    
+    // Not found errors should not be retried
+    if (message.includes('not found')) {
+      return true;
+    }
+    
+    // Authentication/authorization errors should not be retried
+    if (message.includes('unauthorized') || message.includes('forbidden')) {
+      return true;
+    }
+    
+    return false;
   }
 
   static async acquireTableLock(tableId: string): Promise<string | null> {
