@@ -65,7 +65,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
   selectedDate,
   onBookingUpdate
 }) => {
-  const { formatDate, formatBookingTime } = useDateFormat();
+  const { formatDate, formatBookingTime, restaurantSettings } = useDateFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -201,7 +201,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
     <Box sx={{ p: 3 }}>
       {/* Day Statistics */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
             background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
             color: 'white'
@@ -217,7 +217,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
           </Card>
         </Grid>
         
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
             background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
             color: 'white'
@@ -233,7 +233,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
           </Card>
         </Grid>
         
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
             background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
             color: 'white'
@@ -249,21 +249,23 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
           </Card>
         </Grid>
         
-        <Grid item xs={6} sm={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #d97706 0%, #92400e 100%)',
-            color: 'white'
-          }}>
-            <CardContent sx={{ pb: '16px !important' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {stats.pending}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Pending
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {!restaurantSettings?.bookingSettings?.autoConfirm && (
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #d97706 0%, #92400e 100%)',
+              color: 'white'
+            }}>
+              <CardContent sx={{ pb: '16px !important' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  {stats.pending}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Pending
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
       {/* Search */}
