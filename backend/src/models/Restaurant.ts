@@ -349,7 +349,7 @@ export class RestaurantModel {
       description: dbRestaurant.description,
       maxCovers: dbRestaurant.max_covers, // Fixed: use max_covers from DB
       timeZone: dbRestaurant.time_zone,
-      dateFormat: dbRestaurant.date_format,
+      dateFormat: dbRestaurant.date_format, // Map date_format column to dateFormat field
       turnTimeMinutes: dbRestaurant.turn_time_minutes || 120,
       defaultSlotDuration: dbRestaurant.default_slot_duration || 30,
       openingHours: dbRestaurant.opening_hours || {},
