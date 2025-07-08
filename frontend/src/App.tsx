@@ -296,6 +296,9 @@ const theme = createTheme({
             borderRadius: 0, // Square corners
             backgroundColor: '#334155', // bg-slate-700
             color: '#ffffff', // White text
+            minHeight: '40px', // Consistent height for proper alignment
+            display: 'flex',
+            alignItems: 'center', // Center content vertically
             '& fieldset': {
               borderColor: '#475569', // border-slate-600
             },
@@ -305,6 +308,18 @@ const theme = createTheme({
             '&.Mui-focused fieldset': {
               borderColor: 'transparent', // Transparent border on focus
               boxShadow: '0 0 0 2px #3b82f6', // ring-2 ring-blue-500
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '8px 14px', // Consistent padding for all sizes
+              lineHeight: '1.4375em', // MUI default line height
+              height: '1.4375em', // Match line height for proper centering
+            },
+            '&.MuiInputBase-sizeSmall': {
+              minHeight: '32px', // Smaller height for small variant
+              '& .MuiOutlinedInput-input': {
+                padding: '6px 8px', // Smaller padding for small size
+                height: '1.4375em', // Same height for consistent alignment
+              },
             },
           },
         },
@@ -316,6 +331,9 @@ const theme = createTheme({
           borderRadius: 0, // Square corners
           backgroundColor: '#334155', // bg-slate-700
           color: '#ffffff', // White text
+          minHeight: '40px', // Consistent height for proper alignment
+          display: 'flex',
+          alignItems: 'center', // Center content vertically
           '& fieldset': {
             borderColor: '#475569', // border-slate-600
           },
@@ -326,6 +344,16 @@ const theme = createTheme({
             borderColor: 'transparent', // Transparent border on focus
             boxShadow: '0 0 0 2px #3b82f6', // ring-2 ring-blue-500
           },
+          '&.MuiInputBase-sizeSmall': {
+            minHeight: '32px', // Smaller height for small variant
+          },
+        },
+        select: {
+          padding: '8px 14px', // Consistent padding
+          lineHeight: '1.4375em', // MUI default line height
+          height: '1.4375em', // Match line height for proper centering
+          display: 'flex',
+          alignItems: 'center',
         },
         icon: {
           color: '#cbd5e1', // Slate-300 dropdown arrow
@@ -357,13 +385,20 @@ const theme = createTheme({
           borderRadius: 0, // Square corners
           backgroundColor: '#334155', // bg-slate-700
           color: '#ffffff', // White text
+          minHeight: '40px', // Consistent height for proper alignment
+          display: 'flex',
+          alignItems: 'center', // Center content vertically
           '&.Mui-focused': {
             boxShadow: '0 0 0 2px #3b82f6', // ring-2 ring-blue-500
           },
+          '&.MuiInputBase-sizeSmall': {
+            minHeight: '32px', // Smaller height for small variant
+          },
         },
         input: {
-          padding: '8px 14px', // Reduced padding for better vertical centering
-          lineHeight: '1.5', // Proper line height for vertical alignment
+          padding: '8px 14px', // Consistent padding
+          lineHeight: '1.4375em', // MUI default line height
+          height: '1.4375em', // Match line height for proper centering
           '&::placeholder': {
             color: '#94a3b8', // Slate-400 placeholder
             opacity: 1,
@@ -376,6 +411,9 @@ const theme = createTheme({
         root: {
           borderRadius: 0, // Square corners
           backgroundColor: '#334155', // bg-slate-700
+          minHeight: '40px', // Consistent height for proper alignment
+          display: 'flex',
+          alignItems: 'center', // Center content vertically
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: '#475569', // border-slate-600
           },
@@ -389,10 +427,14 @@ const theme = createTheme({
           '&.Mui-focused': {
             boxShadow: '0 0 0 2px #3b82f6', // ring-2 ring-blue-500
           },
+          '&.MuiInputBase-sizeSmall': {
+            minHeight: '32px', // Smaller height for small variant
+          },
         },
         input: {
-          padding: '8px 14px', // Reduced padding for better vertical centering
-          lineHeight: '1.5', // Proper line height for vertical alignment
+          padding: '8px 14px', // Consistent padding
+          lineHeight: '1.4375em', // MUI default line height
+          height: '1.4375em', // Match line height for proper centering
           color: '#ffffff', // White text
           '&::placeholder': {
             color: '#94a3b8', // Slate-400 placeholder
