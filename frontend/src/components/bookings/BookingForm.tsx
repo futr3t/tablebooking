@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { format, parseISO } from 'date-fns';
-import { bookingService } from '../../services/api';
+import { bookingService, restaurantService } from '../../services/api';
 import { Booking, TimeSlot } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -52,6 +52,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
 
   useEffect(() => {
     if (booking && editMode) {
@@ -79,10 +80,28 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   }, [booking, editMode, open]);
 
+  useEffect(() => {
+    if (user?.restaurantId && open) {
+      loadRestaurantSettings();
+    }
+  }, [user?.restaurantId, open]);
+
+  const loadRestaurantSettings = async () => {
+    if (!user?.restaurantId) return;
+    
+    try {
+      const response = await restaurantService.getRestaurantSettings(user.restaurantId);
+      setRestaurantSettings(response.data);
+    } catch (error) {
+      console.error('Failed to load restaurant settings:', error);
+    }
+  };
+
   const checkAvailability = async () => {
     if (!user?.restaurantId) return;
     
     setCheckingAvailability(true);
+    setError('');
     try {
       const date = format(formData.bookingTime, 'yyyy-MM-dd');
       const slots = await bookingService.getAvailability(
@@ -91,8 +110,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
         formData.partySize
       );
       setAvailableSlots(slots);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to check availability:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      
+      if (errorMessage && (
+        errorMessage.includes('Restaurant is closed') || 
+        errorMessage.includes('closed on') ||
+        errorMessage.includes('outside service hours')
+      )) {
+        setError(errorMessage);
+      } else {
+        setError('Failed to check availability. Please try again.');
+      }
     } finally {
       setCheckingAvailability(false);
     }
@@ -106,6 +136,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setError('');
 
     try {
+      // Validate required fields based on restaurant settings
+      if (restaurantSettings?.bookingSettings?.requirePhone && !formData.customerPhone) {
+        throw new Error('Phone number is required');
+      }
+      
+      if (restaurantSettings?.bookingSettings?.requireEmail && !formData.customerEmail) {
+        throw new Error('Email address is required');
+      }
+
       const data = {
         ...formData,
         restaurantId: user.restaurantId,
@@ -174,11 +213,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   fontWeight: 500
                 }}
               >
-                Email
+                Email{restaurantSettings?.bookingSettings?.requireEmail ? ' *' : ''}
               </Typography>
               <TextField
                 fullWidth
                 type="email"
+                required={restaurantSettings?.bookingSettings?.requireEmail}
                 value={formData.customerEmail}
                 onChange={(e) => handleChange('customerEmail', e.target.value)}
                 sx={{
@@ -199,10 +239,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   fontWeight: 500
                 }}
               >
-                Phone
+                Phone{restaurantSettings?.bookingSettings?.requirePhone ? ' *' : ''}
               </Typography>
               <TextField
                 fullWidth
+                required={restaurantSettings?.bookingSettings?.requirePhone}
                 value={formData.customerPhone}
                 onChange={(e) => handleChange('customerPhone', e.target.value)}
                 sx={{

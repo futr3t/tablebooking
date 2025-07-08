@@ -45,7 +45,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format, addDays, parseISO } from 'date-fns';
 import { Booking, BookingTemplate, DietaryRequirement, EnhancedAvailability, EnhancedTimeSlot, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
+import api, { restaurantService } from '../../services/api';
 
 interface OptimizedBookingFormProps {
   restaurantId: string;
@@ -120,11 +120,22 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const [selectedSlot, setSelectedSlot] = useState<EnhancedTimeSlot | null>(null);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
 
-  // Load dietary requirements on mount
+  // Load dietary requirements and restaurant settings on mount
   useEffect(() => {
     loadDietaryRequirements();
+    loadRestaurantSettings();
   }, []);
+
+  const loadRestaurantSettings = async () => {
+    try {
+      const response = await restaurantService.getRestaurantSettings(restaurantId);
+      setRestaurantSettings(response.data);
+    } catch (error) {
+      console.error('Failed to load restaurant settings:', error);
+    }
+  };
 
   // Populate form data when editing
   useEffect(() => {
@@ -180,6 +191,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const loadAvailability = async () => {
     setLoadingAvailability(true);
+    setAvailability(null);
+    setError(null);
+    
     try {
       const response = await api.get('/bookings/staff/availability', {
         params: {
@@ -190,8 +204,21 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         }
       });
       setAvailability(response.data.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load availability:', error);
+      
+      // Check if it's a restaurant closed error
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+      
+      if (errorMessage && (
+        errorMessage.includes('Restaurant is closed') || 
+        errorMessage.includes('closed on') ||
+        errorMessage.includes('outside service hours')
+      )) {
+        setError(errorMessage);
+      } else {
+        setError('Failed to load availability. Please try again.');
+      }
     } finally {
       setLoadingAvailability(false);
     }
@@ -277,6 +304,15 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     setError(null);
 
     try {
+      // Validate required fields based on restaurant settings
+      if (restaurantSettings?.bookingSettings?.requirePhone && !formData.customerPhone) {
+        throw new Error('Phone number is required');
+      }
+      
+      if (restaurantSettings?.bookingSettings?.requireEmail && !formData.customerEmail) {
+        throw new Error('Email address is required');
+      }
+
       // Combine dietary requirements
       const allDietary = [
         ...formData.dietaryRequirements,
@@ -427,10 +463,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       fontWeight: 500
                     }}
                   >
-                    Phone Number
+                    Phone Number{restaurantSettings?.bookingSettings?.requirePhone ? ' *' : ''}
                   </Typography>
                   <TextField
                     fullWidth
+                    required={restaurantSettings?.bookingSettings?.requirePhone}
                     value={formData.customerPhone}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
                     InputProps={{
@@ -454,11 +491,12 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       fontWeight: 500
                     }}
                   >
-                    Email
+                    Email{restaurantSettings?.bookingSettings?.requireEmail ? ' *' : ''}
                   </Typography>
                   <TextField
                     fullWidth
                     type="email"
+                    required={restaurantSettings?.bookingSettings?.requireEmail}
                     value={formData.customerEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
                     InputProps={{
@@ -643,6 +681,15 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     <CircularProgress />
                     <Typography sx={{ ml: 2 }}>Loading available times...</Typography>
                   </Box>
+                ) : error ? (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
+                      {error}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Please select a different date when the restaurant is open.
+                    </Typography>
+                  </Alert>
                 ) : availability ? (
                   <Box>
                     <Typography variant="subtitle1" gutterBottom>
@@ -1029,7 +1076,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={loading || !formData.customerName || !formData.bookingTime}
+                disabled={loading || !formData.customerName || !formData.bookingTime || 
+                  (restaurantSettings?.bookingSettings?.requirePhone && !formData.customerPhone) ||
+                  (restaurantSettings?.bookingSettings?.requireEmail && !formData.customerEmail)
+                }
                 startIcon={loading && <CircularProgress size={20} />}
               >
                 {editMode ? 'Update Booking' : 'Create Booking'}
