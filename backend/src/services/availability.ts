@@ -605,9 +605,8 @@ export class AvailabilityService {
         return result.rows[0].turn_time;
       }
 
-      // Fallback to restaurant default
-      const restaurant = await RestaurantModel.findById(restaurantId);
-      return restaurant?.turnTimeMinutes || 120;
+      // Fallback to default when no turn time rule is found
+      return 120;
     } catch (error) {
       console.error('Error getting turn time for party:', error);
       // Default to 120 minutes on error

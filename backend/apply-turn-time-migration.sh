@@ -1,44 +1,28 @@
 #!/bin/bash
 
-# Script to apply party-size-specific turn times migration
+# Script to apply the turn time minutes removal migration
 
-echo "=== Applying Party-Size Turn Times Migration ==="
-echo ""
-
-# Check if PostgreSQL environment variables are set
-if [ -z "$DATABASE_URL" ]; then
-    # Try to load from .env file
-    if [ -f .env ]; then
-        export $(cat .env | grep -E '^DATABASE_URL=' | xargs)
-    fi
+# Load environment variables
+if [ -f .env ]; then
+    export $(cat .env | xargs)
 fi
 
+# Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
-    echo "ERROR: DATABASE_URL environment variable is not set"
-    echo "Please set DATABASE_URL or ensure it's in your .env file"
+    echo "Error: DATABASE_URL not found in .env file"
     exit 1
 fi
 
+echo "Applying turn time minutes removal migration..."
+
 # Apply the migration
-echo "Applying migration to add party-size turn time rules..."
-psql "$DATABASE_URL" -f src/config/add-party-size-turn-times.sql
+psql "$DATABASE_URL" -f remove-turn-time-minutes.sql
 
 if [ $? -eq 0 ]; then
-    echo ""
     echo "✅ Migration applied successfully!"
-    echo ""
-    echo "New features added:"
-    echo "- turn_time_rules table for party-size-specific turn times"
-    echo "- get_turn_time_for_party() function for intelligent turn time selection"
-    echo "- Sample turn time rules for demo restaurant:"
-    echo "  • 1-2 guests: 90 minutes"
-    echo "  • 3-4 guests: 120 minutes (standard)"
-    echo "  • 5-8 guests: 150 minutes"
-    echo "  • 9-20 guests: 180 minutes"
-    echo ""
-    echo "You can now configure different turn times based on party size!"
+    echo "The turn_time_minutes column has been removed from the restaurants table."
+    echo "The system will now use turn time rules for all booking duration calculations."
 else
-    echo ""
-    echo "❌ Migration failed. Please check your database connection and try again."
+    echo "❌ Migration failed. Please check the error messages above."
     exit 1
 fi

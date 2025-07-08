@@ -54,7 +54,6 @@ interface RestaurantSettings {
   maxCovers?: number;
   timeZone?: string;
   dateFormat?: 'us' | 'uk';  // NEW: Date format preference
-  turnTimeMinutes: number;
   defaultSlotDuration: number;
   openingHours: {
     [key: string]: {
@@ -99,7 +98,6 @@ const RestaurantSettingsPanel: React.FC = () => {
   const { updateDateFormat, refreshSettings } = useDateFormat();
   const [settings, setSettings] = useState<RestaurantSettings>({
     dateFormat: 'uk', // Default to UK format
-    turnTimeMinutes: 120,
     defaultSlotDuration: 30,
     openingHours: {},
     bookingSettings: {
@@ -330,9 +328,6 @@ const RestaurantSettingsPanel: React.FC = () => {
       setSuccess(false);
 
       // Client-side validation
-      if (settings.turnTimeMinutes < 30) {
-        throw new Error('Turn time must be at least 30 minutes');
-      }
       if (settings.defaultSlotDuration < 15) {
         throw new Error('Slot duration must be at least 15 minutes');
       }
@@ -357,7 +352,6 @@ const RestaurantSettingsPanel: React.FC = () => {
         maxCovers: settings.maxCovers,
         timeZone: settings.timeZone,
         dateFormat: settings.dateFormat,
-        turnTimeMinutes: settings.turnTimeMinutes,
         defaultSlotDuration: settings.defaultSlotDuration,
         openingHours: settings.openingHours,
         bookingSettings: settings.bookingSettings
@@ -399,11 +393,10 @@ const RestaurantSettingsPanel: React.FC = () => {
 
   const getOperationalSummary = () => {
     const openDays = Object.values(settings.openingHours).filter(day => day.isOpen).length;
-    const avgTurnTime = settings.turnTimeMinutes / 60;
-    return { openDays, avgTurnTime };
+    return { openDays };
   };
 
-  const { openDays, avgTurnTime } = getOperationalSummary();
+  const { openDays } = getOperationalSummary();
 
   if (!user?.restaurantId) {
     return (
@@ -503,12 +496,6 @@ const RestaurantSettingsPanel: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={4}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">Average Turn Time:</Typography>
-                <Chip label={`${avgTurnTime} hours`} size="small" color="secondary" />
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography variant="body2" color="text.secondary">Time Slots:</Typography>
                 <Chip label={`${settings.bookingSettings.slotDuration} min intervals`} size="small" color="info" />
               </Box>
@@ -548,36 +535,6 @@ const RestaurantSettingsPanel: React.FC = () => {
                       onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : null)}
                       helperText="Leave empty for unlimited capacity"
                       inputProps={{ min: 0 }}
-                      sx={{
-                        '& .MuiInputLabel-root': {
-                          display: 'none', // Hide floating label
-                        }
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Box>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#cbd5e1', 
-                        mb: 0.5, 
-                        fontSize: '0.875rem',
-                        fontWeight: 500
-                      }}
-                    >
-                      Turn Time (minutes) *
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      value={settings.turnTimeMinutes}
-                      onChange={(e) => handleSettingChange('turnTimeMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
-                      helperText="Default duration for bookings (can be overridden by party size rules)"
-                      inputProps={{ min: 30, max: 480 }}
-                      required
                       sx={{
                         '& .MuiInputLabel-root': {
                           display: 'none', // Hide floating label

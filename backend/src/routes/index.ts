@@ -51,7 +51,7 @@ router.get('/health', async (req, res) => {
     health.database.connected = true;
 
     // Check for required columns in restaurants table
-    const requiredColumns = ['max_covers', 'turn_time_minutes', 'stagger_minutes', 'default_slot_duration'];
+    const requiredColumns = ['max_covers', 'stagger_minutes', 'default_slot_duration'];
     const columnCheck = await db.query(`
       SELECT column_name
       FROM information_schema.columns 

@@ -194,7 +194,6 @@ export interface TableSummary {
 
 export interface RestaurantSettings {
   maxCovers?: number;
-  turnTimeMinutes: number;
   staggerMinutes: number;
   defaultSlotDuration: number;
 }

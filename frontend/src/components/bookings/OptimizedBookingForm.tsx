@@ -183,9 +183,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         if (matchingRule) {
           setDynamicDuration(matchingRule.turnTimeMinutes);
           setFormData(prev => ({ ...prev, duration: matchingRule.turnTimeMinutes }));
-        } else if (restaurantSettings?.turnTimeMinutes) {
-          setDynamicDuration(restaurantSettings.turnTimeMinutes);
-          setFormData(prev => ({ ...prev, duration: restaurantSettings.turnTimeMinutes }));
+        } else {
+          // Default to 120 minutes when no turn time rule is found
+          setDynamicDuration(120);
+          setFormData(prev => ({ ...prev, duration: 120 }));
         }
       }
     }

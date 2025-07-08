@@ -96,7 +96,6 @@ export class RestaurantModel {
       // Map field names to actual database columns
       const fieldMapping: { [key: string]: string } = {
         'maxCovers': 'max_covers',
-        'turnTimeMinutes': 'turn_time_minutes',
         'defaultSlotDuration': 'default_slot_duration',
         'timeZone': 'time_zone',
         'dateFormat': 'date_format',
@@ -106,7 +105,7 @@ export class RestaurantModel {
       };
 
       // List of fields that should be integers and need empty string sanitization
-      const integerFields = ['maxCovers', 'turnTimeMinutes', 'defaultSlotDuration'];
+      const integerFields = ['maxCovers', 'defaultSlotDuration'];
       
       for (const [key, value] of Object.entries(updates)) {
         if (value !== undefined && key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
@@ -350,7 +349,6 @@ export class RestaurantModel {
       maxCovers: dbRestaurant.max_covers, // Fixed: use max_covers from DB
       timeZone: dbRestaurant.time_zone,
       dateFormat: dbRestaurant.date_format, // Map date_format column to dateFormat field
-      turnTimeMinutes: dbRestaurant.turn_time_minutes || 120,
       defaultSlotDuration: dbRestaurant.default_slot_duration || 30,
       openingHours: dbRestaurant.opening_hours || {},
       bookingSettings: dbRestaurant.booking_settings || {},

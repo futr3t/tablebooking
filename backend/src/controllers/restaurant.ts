@@ -34,7 +34,6 @@ export const getRestaurantSettings = asyncHandler(async (req: AuthRequest, res: 
       maxCovers: restaurant.maxCovers,
       timeZone: restaurant.timeZone,
       dateFormat: restaurant.dateFormat,
-      turnTimeMinutes: restaurant.turnTimeMinutes || 120,
       defaultSlotDuration: restaurant.defaultSlotDuration || 30,
       openingHours: restaurant.openingHours,
       bookingSettings: restaurant.bookingSettings
@@ -75,9 +74,6 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
     throw createError('Maximum covers must be non-negative', 400);
   }
 
-  if (updates.turnTimeMinutes !== undefined && (updates.turnTimeMinutes < 30 || updates.turnTimeMinutes > 480)) {
-    throw createError('Turn time must be between 30 and 480 minutes', 400);
-  }
 
   if (updates.defaultSlotDuration !== undefined && (updates.defaultSlotDuration < 15 || updates.defaultSlotDuration > 120)) {
     throw createError('Slot duration must be between 15 and 120 minutes', 400);
@@ -182,7 +178,6 @@ export const updateRestaurantSettings = asyncHandler(async (req: AuthRequest, re
       maxCovers: updatedRestaurant.maxCovers,
       timeZone: updatedRestaurant.timeZone,
       dateFormat: updatedRestaurant.dateFormat,
-      turnTimeMinutes: updatedRestaurant.turnTimeMinutes,
       defaultSlotDuration: updatedRestaurant.defaultSlotDuration,
       openingHours: updatedRestaurant.openingHours,
       bookingSettings: updatedRestaurant.bookingSettings

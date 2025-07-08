@@ -527,7 +527,17 @@ const TableManagementDashboard: React.FC = () => {
                 </TableRow>
               ) : (
                 tables.map((table) => (
-                  <TableRow key={table.id}>
+                  <TableRow 
+                    key={table.id}
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        '& .MuiTableCell-root': {
+                          color: 'inherit'
+                        }
+                      }
+                    }}
+                  >
                     <TableCell>
                       <Typography variant="subtitle2">
                         {table.number || 'Unnamed Table'}

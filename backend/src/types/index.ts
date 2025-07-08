@@ -34,7 +34,6 @@ export interface Restaurant {
   maxCovers?: number; // NULL = unlimited, replaces old capacity limit
   timeZone: string;
   dateFormat?: 'uk' | 'us'; // Date format preference
-  turnTimeMinutes: number; // Default time each booking lasts (includes cleanup time)
   // Removed staggerMinutes - no longer using buffer/stagger system
   defaultSlotDuration: number; // Default time slot duration
   openingHours: OpeningHours;
