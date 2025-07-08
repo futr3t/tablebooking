@@ -197,11 +197,15 @@ const WidgetManager: React.FC = () => {
                 variant="body2"
                 sx={{
                   fontFamily: 'monospace',
-                  backgroundColor: 'grey.100',
+                  backgroundColor: '#374151',
+                  color: '#e5e7eb',
                   p: 1,
                   borderRadius: 1,
                   wordBreak: 'break-all',
                   mb: 1,
+                  border: '1px solid #4b5563',
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.5px',
                 }}
               >
                 {config.apiKey}

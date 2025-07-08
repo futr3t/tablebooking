@@ -310,7 +310,8 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderLeft: '3px solid #6366f1',
           },
         },
       },
@@ -320,6 +321,10 @@ const darkTheme = createTheme({
         root: {
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           color: '#ffffff',
+          '.MuiTableRow-root:hover &': {
+            color: '#ffffff',
+            fontWeight: 500,
+          },
         },
       },
     },
