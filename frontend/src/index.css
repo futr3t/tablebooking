@@ -1,13 +1,102 @@
+:root {
+  /* Sophisticated Dark Theme Color Palette */
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-orange-600: #ea580c;
+  --color-orange-700: #c2410c;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-purple-400: #a855f7;
+  --color-purple-500: #9333ea;
+  
+  /* Background Colors */
+  --color-gray-900: #111827;
+  --color-slate-900: #0f172a;
+  --color-slate-800: #1e293b;
+  --color-slate-700: #334155;
+  --color-slate-600: #475569;
+  
+  /* Text Colors */
+  --color-white: #ffffff;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  
+  /* Gradient Definitions */
+  --gradient-primary: linear-gradient(to right, var(--color-primary-600), var(--color-indigo-600));
+  --gradient-primary-hover: linear-gradient(to right, var(--color-primary-700), var(--color-indigo-700));
+  --gradient-background: linear-gradient(to bottom right, var(--color-gray-900), var(--color-slate-900));
+  --gradient-sidebar: linear-gradient(to bottom, var(--color-slate-800), var(--color-slate-900));
+  
+  /* Card & Component Backgrounds */
+  --bg-card: rgba(51, 65, 85, 0.5); /* slate-700/50 */
+  --bg-card-hover: rgba(71, 85, 105, 0.6); /* slate-600/60 */
+  --border-color: var(--color-slate-700);
+  
+  /* Shadows */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-blue: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border Radius - All Square */
+  --border-radius-none: 0;
+  --border-radius-sm: 0;
+  --border-radius-md: 0;
+  --border-radius-lg: 0;
+  --border-radius-xl: 0;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--gradient-background);
+  color: var(--color-white);
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Global utility classes for consistent theming */
+.gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.gradient-primary-hover:hover {
+  background: var(--gradient-primary-hover);
+}
+
+.bg-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
+}
+
+.text-primary {
+  color: var(--color-white);
+}
+
+.text-secondary {
+  color: var(--color-slate-300);
+}
+
+.text-muted {
+  color: var(--color-slate-400);
 }

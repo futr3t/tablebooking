@@ -139,12 +139,12 @@ const Dashboard: React.FC = () => {
         <Box>
           <Typography variant="h4" sx={{ 
             fontWeight: 700, 
-            color: 'text.primary',
+            color: 'white',
             mb: 0.5
           }}>
             Dashboard
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: 'rgb(203, 213, 225)' }}>
             {formatDate(new Date(), 'long')} • Today's bookings and activity
           </Typography>
         </Box>
@@ -154,32 +154,60 @@ const Dashboard: React.FC = () => {
           startIcon={<AddIcon />}
           onClick={() => setQuickBookingOpen(true)}
           sx={{
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
+            borderRadius: 0,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
-            }
+              background: 'linear-gradient(to bottom right, #1d4ed8, #1e40af)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            },
+            transition: 'all 0.2s ease-in-out'
           }}
         >
           Quick Booking
         </Button>
       </Box>
       
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            backgroundColor: 'rgba(30, 41, 59, 0.5)',
+            borderColor: '#334155',
+            borderRadius: 0,
+            color: 'white',
+            '& .MuiAlert-icon': {
+              color: '#ef4444'
+            }
+          }}
+        >
+          {error}
+        </Alert>
+      )}
       
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
             color: 'white',
-            border: 'none'
+            border: 'none',
+            borderRadius: 0,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }
           }}>
             <CardContent sx={{ pb: '16px !important' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
                     {stats.totalToday}
                   </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                     Total Bookings Today
                   </Typography>
                 </Box>
@@ -190,17 +218,24 @@ const Dashboard: React.FC = () => {
         
         <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+            background: 'linear-gradient(to bottom right, #059669, #047857)',
             color: 'white',
-            border: 'none'
+            border: 'none',
+            borderRadius: 0,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }
           }}>
             <CardContent sx={{ pb: '16px !important' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
                     {stats.totalGuests}
                   </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                     Total Guests
                   </Typography>
                 </Box>
@@ -211,17 +246,24 @@ const Dashboard: React.FC = () => {
         
         <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            background: 'linear-gradient(to bottom right, #0891b2, #0e7490)',
             color: 'white',
-            border: 'none'
+            border: 'none',
+            borderRadius: 0,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }
           }}>
             <CardContent sx={{ pb: '16px !important' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
                     {stats.confirmed}
                   </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                     Confirmed
                   </Typography>
                 </Box>
@@ -233,17 +275,24 @@ const Dashboard: React.FC = () => {
         {!restaurantSettings?.bookingSettings?.autoConfirm && (
           <Grid item xs={12} sm={6} md={3}>
             <Card sx={{ 
-              background: 'linear-gradient(135deg, #d97706 0%, #92400e 100%)',
+              background: 'linear-gradient(to bottom right, #ea580c, #c2410c)',
               color: 'white',
-              border: 'none'
+              border: 'none',
+              borderRadius: 0,
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              transition: 'transform 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              }
             }}>
               <CardContent sx={{ pb: '16px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
                       {stats.pending}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                       Pending
                     </Typography>
                   </Box>
@@ -254,16 +303,22 @@ const Dashboard: React.FC = () => {
         )}
       </Grid>
       
-      <Card sx={{ p: 0 }}>
+      <Card sx={{ 
+        p: 0,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderColor: '#334155',
+        borderRadius: 0,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+      }}>
         <Box sx={{ 
           p: 3, 
-          borderBottom: '1px solid #e2e8f0',
-          background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%)'
+          borderBottom: '1px solid #334155',
+          backgroundColor: 'rgba(30, 41, 59, 0.3)'
         }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'white' }}>
             Today's Bookings Timeline
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'rgb(203, 213, 225)' }}>
             Real-time view of all bookings scheduled for today
           </Typography>
         </Box>
@@ -298,10 +353,15 @@ const Dashboard: React.FC = () => {
           color="primary"
           onClick={() => setQuickBookingOpen(true)}
           sx={{
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
+            borderRadius: 0,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
-            }
+              background: 'linear-gradient(to bottom right, #1d4ed8, #1e40af)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            },
+            transition: 'all 0.2s ease-in-out'
           }}
         >
           <AddIcon />

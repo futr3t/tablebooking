@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
-const drawerWidth = 240;
+const drawerWidth = 256;
 
 const Layout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,27 +65,34 @@ const Layout: React.FC = () => {
   ];
 
   const drawer = (
-    <div>
+    <Box sx={{
+      height: '100%',
+      background: 'linear-gradient(to bottom, #1e293b, #0f172a)', // slate-800 to slate-900
+      borderRight: '1px solid #334155' // slate-700
+    }}>
       <Toolbar sx={{ 
-        background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-        color: 'white',
+        background: 'transparent',
+        color: '#ffffff',
         minHeight: '80px !important',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        borderBottom: '1px solid #334155' // slate-700
       }}>
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="h5" noWrap component="div" sx={{ 
             fontWeight: 700,
             letterSpacing: '-0.025em',
-            mb: 0.5
+            mb: 0.5,
+            color: '#ffffff'
           }}>
             TableBooking
           </Typography>
           <Typography variant="caption" sx={{ 
             opacity: 0.9,
             fontSize: '0.75rem',
-            fontWeight: 500
+            fontWeight: 500,
+            color: '#cbd5e1' // slate-300
           }}>
             Restaurant Management
           </Typography>
@@ -94,32 +101,26 @@ const Layout: React.FC = () => {
       <Box sx={{ p: 2 }}>
         <List sx={{ px: 0 }}>
           {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
               <ListItemButton
                 onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
-                  borderRadius: 2,
                   minHeight: 48,
                   px: 2,
-                  '&.Mui-selected': {
-                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                    color: 'white',
-                    '& .MuiListItemIcon-root': {
-                      color: 'white',
-                    },
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1d4ed8 0%, #5b21b6 100%)',
-                    },
-                  },
+                  color: location.pathname === item.path ? '#ffffff' : '#cbd5e1', // white or slate-300
+                  backgroundColor: location.pathname === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  border: location.pathname === item.path ? '1px solid #334155' : '1px solid transparent', // slate-700
                   '&:hover': {
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#ffffff',
                   },
+                  transition: 'all 0.2s ease-in-out'
                 }}
               >
                 <ListItemIcon sx={{ 
                   minWidth: 40,
-                  color: location.pathname === item.path ? 'white' : 'inherit'
+                  color: location.pathname === item.path ? '#ffffff' : '#cbd5e1' // white or slate-300
                 }}>
                   {item.icon}
                 </ListItemIcon>
@@ -127,7 +128,8 @@ const Layout: React.FC = () => {
                   primary={item.text} 
                   primaryTypographyProps={{
                     fontWeight: location.pathname === item.path ? 600 : 500,
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    color: 'inherit'
                   }}
                 />
               </ListItemButton>
@@ -135,7 +137,7 @@ const Layout: React.FC = () => {
           ))}
         </List>
       </Box>
-    </div>
+    </Box>
   );
 
   return (
@@ -147,10 +149,9 @@ const Layout: React.FC = () => {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid #e2e8f0',
-          color: 'text.primary',
+          backgroundColor: '#111827', // gray-900
+          borderBottom: '1px solid #334155', // slate-700
+          color: '#ffffff',
         }}
       >
         <Toolbar sx={{ minHeight: '72px !important' }}>
@@ -166,13 +167,13 @@ const Layout: React.FC = () => {
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h4" noWrap component="div" sx={{ 
               fontWeight: 700,
-              color: 'text.primary',
+              color: '#ffffff',
               letterSpacing: '-0.025em'
             }}>
               {menuItems.find(item => item.path === location.pathname)?.text || 'Dashboard'}
             </Typography>
             <Typography variant="body2" sx={{ 
-              color: 'text.secondary',
+              color: '#cbd5e1', // slate-300
               mt: 0.5
             }}>
               {location.pathname === '/' && 'Overview of today\'s bookings and activity'}
@@ -190,13 +191,12 @@ const Layout: React.FC = () => {
               gap: 1.5,
               px: 2, 
               py: 1, 
-              borderRadius: 3,
-              backgroundColor: 'rgba(37, 99, 235, 0.05)',
-              border: '1px solid rgba(37, 99, 235, 0.1)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid #334155', // slate-700
               cursor: 'pointer',
               transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
               }
             }} onClick={handleMenu}>
               <Avatar sx={{ 
@@ -212,12 +212,12 @@ const Layout: React.FC = () => {
                 <Typography variant="subtitle2" sx={{ 
                   fontWeight: 600,
                   lineHeight: 1,
-                  color: 'text.primary'
+                  color: '#ffffff'
                 }}>
                   {user?.firstName} {user?.lastName}
                 </Typography>
                 <Typography variant="caption" sx={{ 
-                  color: 'text.secondary',
+                  color: '#cbd5e1', // slate-300
                   textTransform: 'capitalize'
                 }}>
                   {user?.role?.replace('_', ' ')}
@@ -240,15 +240,15 @@ const Layout: React.FC = () => {
               onClose={handleClose}
               sx={{
                 '& .MuiPaper-root': {
-                  borderRadius: 2,
                   minWidth: 200,
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-                  border: '1px solid #e2e8f0',
-                  mt: 1
+                  backgroundColor: '#1e293b', // slate-800
+                  border: '1px solid #334155', // slate-700
+                  mt: 1,
+                  color: '#ffffff'
                 }
               }}
             >
-              <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #e2e8f0' }}>
+              <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #334155' }}> {/* slate-700 */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <Avatar sx={{ 
                     width: 40, 
@@ -260,20 +260,27 @@ const Layout: React.FC = () => {
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </Avatar>
                   <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#ffffff' }}>
                       {user?.firstName} {user?.lastName}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: '#cbd5e1' }}> {/* slate-300 */}
                       {user?.email}
                     </Typography>
                   </Box>
                 </Box>
               </Box>
-              <MenuItem onClick={handleLogout} sx={{ py: 1.5, px: 2 }}>
-                <ListItemIcon>
+              <MenuItem onClick={handleLogout} sx={{ 
+                py: 1.5, 
+                px: 2,
+                color: '#ffffff',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                }
+              }}>
+                <ListItemIcon sx={{ color: '#cbd5e1' }}> {/* slate-300 */}
                   <ExitToApp fontSize="small" />
                 </ListItemIcon>
-                <Typography variant="body2">Sign Out</Typography>
+                <Typography variant="body2" sx={{ color: '#ffffff' }}>Sign Out</Typography>
               </MenuItem>
             </Menu>
           </Box>
@@ -293,7 +300,11 @@ const Layout: React.FC = () => {
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'transparent'
+            },
           }}
         >
           {drawer}
@@ -302,7 +313,11 @@ const Layout: React.FC = () => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'transparent'
+            },
           }}
           open
         >
@@ -315,7 +330,7 @@ const Layout: React.FC = () => {
           flexGrow: 1,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           minHeight: '100vh',
-          backgroundColor: 'background.default',
+          background: 'linear-gradient(to bottom right, #111827, #0f172a)', // gray-900 to slate-900
         }}
       >
         <Toolbar sx={{ minHeight: '72px !important' }} />
