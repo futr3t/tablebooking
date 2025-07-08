@@ -74,10 +74,24 @@ export const createTable = asyncHandler(async (req: AuthRequest, res: Response):
   if (!tableData.number || !tableData.capacity) {
     throw createError('Table number and capacity are required', 400);
   }
+  
+  // Trim and validate table number
+  const trimmedNumber = String(tableData.number).trim();
+  if (!trimmedNumber || trimmedNumber.length === 0) {
+    throw createError('Table number cannot be empty', 400);
+  }
+  
+  // Validate capacity
+  if (typeof tableData.capacity !== 'number' || tableData.capacity < 1) {
+    throw createError('Capacity must be a positive number', 400);
+  }
 
   const table = await TableModel.create({
     restaurantId,
     ...tableData,
+    number: trimmedNumber,
+    notes: tableData.notes ? String(tableData.notes).trim() : '',
+    locationNotes: tableData.locationNotes ? String(tableData.locationNotes).trim() : '',
     minCapacity: tableData.minCapacity || Math.max(1, tableData.capacity - 2),
     maxCapacity: tableData.maxCapacity || tableData.capacity + 2
   });
@@ -105,6 +119,30 @@ export const updateTable = asyncHandler(async (req: AuthRequest, res: Response):
   // Check access permissions
   if (req.user.role !== 'super_admin' && req.user.restaurantId !== existingTable.restaurantId) {
     throw createError('Access denied to this table', 403);
+  }
+
+  // Validate updates if provided
+  if (updates.number !== undefined) {
+    const trimmedNumber = String(updates.number).trim();
+    if (!trimmedNumber || trimmedNumber.length === 0) {
+      throw createError('Table number cannot be empty', 400);
+    }
+    updates.number = trimmedNumber;
+  }
+  
+  if (updates.capacity !== undefined) {
+    if (typeof updates.capacity !== 'number' || updates.capacity < 1) {
+      throw createError('Capacity must be a positive number', 400);
+    }
+  }
+  
+  // Trim string fields
+  if (updates.notes) {
+    updates.notes = String(updates.notes).trim();
+  }
+  
+  if (updates.locationNotes) {
+    updates.locationNotes = String(updates.locationNotes).trim();
   }
 
   const updatedTable = await TableModel.update(id, updates);

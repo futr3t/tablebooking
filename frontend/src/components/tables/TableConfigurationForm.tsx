@@ -104,9 +104,12 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
     setError(null);
 
     try {
-      // Validation
-      if (!formData.number.trim()) {
+      // Enhanced validation
+      if (!formData.number || !formData.number.trim()) {
         throw new Error('Table number is required');
+      }
+      if (formData.number.trim().length < 1) {
+        throw new Error('Table number cannot be empty');
       }
       if (formData.capacity < 1) {
         throw new Error('Capacity must be at least 1');
@@ -117,9 +120,15 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
       if (formData.maxCapacity < formData.capacity) {
         throw new Error('Maximum capacity cannot be less than main capacity');
       }
+      if (formData.minCapacity < 1) {
+        throw new Error('Minimum capacity must be at least 1');
+      }
 
       const tableData = {
         ...formData,
+        number: formData.number.trim(),
+        notes: formData.notes.trim(),
+        locationNotes: formData.locationNotes.trim(),
         position: { x: 0, y: 0, width: 80, height: 80 } // Default position
       };
 

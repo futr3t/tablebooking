@@ -530,7 +530,7 @@ const TableManagementDashboard: React.FC = () => {
                   <TableRow key={table.id}>
                     <TableCell>
                       <Typography variant="subtitle2">
-                        {table.number}
+                        {table.number || 'Unnamed Table'}
                       </Typography>
                       {table.notes && (
                         <Typography variant="caption" color="textSecondary">
