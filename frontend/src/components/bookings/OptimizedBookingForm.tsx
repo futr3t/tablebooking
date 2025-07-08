@@ -747,6 +747,17 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Dietary Requirements
+                  </Typography>
                   <Autocomplete
                     multiple
                     options={dietaryOptions}
@@ -770,24 +781,54 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Dietary Requirements"
                         placeholder="Select or type..."
+                        sx={{
+                          '& .MuiInputLabel-root': {
+                            display: 'none',
+                          }
+                        }}
                       />
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Additional Dietary Notes
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Additional Dietary Notes"
                     value={formData.customDietary}
                     onChange={(e) => setFormData(prev => ({ ...prev, customDietary: e.target.value }))}
                     placeholder="Any other allergies or requirements..."
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      }
+                    }}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Seating Preference
+                  </Typography>
                   <Autocomplete
                     options={SEATING_PREFERENCES}
                     value={formData.preferredSeating}
@@ -798,10 +839,14 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Seating Preference"
                         InputProps={{
                           ...params.InputProps,
                           startAdornment: <EventSeat sx={{ mr: 1, color: 'action.active' }} />
+                        }}
+                        sx={{
+                          '& .MuiInputLabel-root': {
+                            display: 'none',
+                          }
                         }}
                       />
                     )}
@@ -809,13 +854,28 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Special Requests
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Special Requests"
                     multiline
                     rows={2}
                     value={formData.specialRequests}
                     onChange={(e) => setFormData(prev => ({ ...prev, specialRequests: e.target.value }))}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      }
+                    }}
                   />
                 </Grid>
               </Grid>
@@ -846,14 +906,29 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 <Divider sx={{ my: 2 }} />
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Internal Notes (Staff Only)
+                    </Typography>
                     <TextField
                       fullWidth
-                      label="Internal Notes (Staff Only)"
                       multiline
                       rows={2}
                       value={formData.internalNotes}
                       onChange={(e) => setFormData(prev => ({ ...prev, internalNotes: e.target.value }))}
                       helperText="These notes are only visible to staff"
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        }
+                      }}
                     />
                   </Grid>
 
@@ -902,18 +977,35 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                           />
                           
                           {formData.overridePacing && (
-                            <TextField
-                              fullWidth
-                              label="Override Reason"
-                              required
-                              value={formData.overrideReason}
-                              onChange={(e) => setFormData(prev => ({ 
-                                ...prev, 
-                                overrideReason: e.target.value 
-                              }))}
-                              helperText="Please provide a reason for overriding"
-                              color="warning"
-                            />
+                            <>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  color: '#cbd5e1', 
+                                  mb: 0.5, 
+                                  fontSize: '0.875rem',
+                                  fontWeight: 500
+                                }}
+                              >
+                                Override Reason *
+                              </Typography>
+                              <TextField
+                                fullWidth
+                                required
+                                value={formData.overrideReason}
+                                onChange={(e) => setFormData(prev => ({ 
+                                  ...prev, 
+                                  overrideReason: e.target.value 
+                                }))}
+                                helperText="Please provide a reason for overriding"
+                                color="warning"
+                                sx={{
+                                  '& .MuiInputLabel-root': {
+                                    display: 'none',
+                                  }
+                                }}
+                              />
+                            </>
                           )}
                         </>
                       )}

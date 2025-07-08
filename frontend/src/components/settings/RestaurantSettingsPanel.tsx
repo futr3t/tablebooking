@@ -1063,14 +1063,31 @@ const RestaurantSettingsPanel: React.FC = () => {
                               '&:last-child': { mb: 0 }
                             }}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                <TextField
-                                  size="small"
-                                  label="Period Name"
-                                  value={period.name}
-                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'name', e.target.value)}
-                                  placeholder="e.g., Lunch, Dinner, Brunch"
-                                  sx={{ flex: 1, mr: 1 }}
-                                />
+                                <Box sx={{ flex: 1, mr: 1 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: '#cbd5e1', 
+                                      mb: 0.5, 
+                                      fontSize: '0.875rem',
+                                      fontWeight: 500
+                                    }}
+                                  >
+                                    Period Name
+                                  </Typography>
+                                  <TextField
+                                    size="small"
+                                    value={period.name}
+                                    onChange={(e) => updateServicePeriod(day.key, periodIndex, 'name', e.target.value)}
+                                    placeholder="e.g., Lunch, Dinner, Brunch"
+                                    fullWidth
+                                    sx={{
+                                      '& .MuiInputLabel-root': {
+                                        display: 'none',
+                                      }
+                                    }}
+                                  />
+                                </Box>
                                 <IconButton
                                   size="small"
                                   color="error"
@@ -1082,29 +1099,71 @@ const RestaurantSettingsPanel: React.FC = () => {
                               </Box>
                               
                               <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                                <TextField
-                                  size="small"
-                                  label="Start Time"
-                                  type="time"
-                                  value={period.startTime}
-                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'startTime', e.target.value)}
-                                  InputLabelProps={{ shrink: true }}
-                                  sx={{ flex: 1 }}
-                                />
-                                <TextField
-                                  size="small"
-                                  label="End Time"
-                                  type="time"
-                                  value={period.endTime}
-                                  onChange={(e) => updateServicePeriod(day.key, periodIndex, 'endTime', e.target.value)}
-                                  InputLabelProps={{ shrink: true }}
-                                  sx={{ flex: 1 }}
-                                />
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: '#cbd5e1', 
+                                      mb: 0.5, 
+                                      fontSize: '0.875rem',
+                                      fontWeight: 500
+                                    }}
+                                  >
+                                    Start Time
+                                  </Typography>
+                                  <TextField
+                                    size="small"
+                                    type="time"
+                                    value={period.startTime}
+                                    onChange={(e) => updateServicePeriod(day.key, periodIndex, 'startTime', e.target.value)}
+                                    fullWidth
+                                    sx={{
+                                      '& .MuiInputLabel-root': {
+                                        display: 'none',
+                                      }
+                                    }}
+                                  />
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: '#cbd5e1', 
+                                      mb: 0.5, 
+                                      fontSize: '0.875rem',
+                                      fontWeight: 500
+                                    }}
+                                  >
+                                    End Time
+                                  </Typography>
+                                  <TextField
+                                    size="small"
+                                    type="time"
+                                    value={period.endTime}
+                                    onChange={(e) => updateServicePeriod(day.key, periodIndex, 'endTime', e.target.value)}
+                                    fullWidth
+                                    sx={{
+                                      '& .MuiInputLabel-root': {
+                                        display: 'none',
+                                      }
+                                    }}
+                                  />
+                                </Box>
                               </Box>
                               
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  color: '#cbd5e1', 
+                                  mb: 0.5, 
+                                  fontSize: '0.875rem',
+                                  fontWeight: 500
+                                }}
+                              >
+                                Slot Duration (minutes)
+                              </Typography>
                               <TextField
                                 size="small"
-                                label="Slot Duration (minutes)"
                                 type="number"
                                 value={period.slotDurationMinutes || ''}
                                 onChange={(e) => updateServicePeriod(day.key, periodIndex, 'slotDurationMinutes', e.target.value ? parseInt(e.target.value) : 30)}
@@ -1112,6 +1171,11 @@ const RestaurantSettingsPanel: React.FC = () => {
                                 inputProps={{ min: 15, max: 120 }}
                                 helperText="Leave empty to use restaurant default"
                                 fullWidth
+                                sx={{
+                                  '& .MuiInputLabel-root': {
+                                    display: 'none',
+                                  }
+                                }}
                               />
                             </Box>
                           ))}
