@@ -19,19 +19,19 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2563eb', // Modern blue
-      light: '#60a5fa',
-      dark: '#1d4ed8',
+      main: '#2196F3', // Bright blue to match screenshot
+      light: '#64b5f6',
+      dark: '#1976d2',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#7c3aed', // Purple accent
-      light: '#a78bfa',
-      dark: '#5b21b6',
+      main: '#00bcd4', // Complementary cyan
+      light: '#4dd0e1',
+      dark: '#00838f',
       contrastText: '#ffffff',
     },
     background: {
-      default: '#f8fafc',
+      default: '#fafbfc',
       paper: '#ffffff',
     },
     text: {
@@ -175,13 +175,27 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 500,
           boxShadow: 'none',
+          fontSize: '0.875rem',
+          padding: '8px 16px',
           '&:hover': {
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            boxShadow: '0 2px 4px 0 rgb(0 0 0 / 0.1)',
           },
         },
         contained: {
+          background: '#2196F3',
+          color: '#ffffff',
           '&:hover': {
-            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+            background: '#1976d2',
+            boxShadow: '0 4px 8px 0 rgb(33 150 243 / 0.3)',
+          },
+        },
+        outlined: {
+          borderColor: '#2196F3',
+          color: '#2196F3',
+          '&:hover': {
+            borderColor: '#1976d2',
+            color: '#1976d2',
+            backgroundColor: 'rgba(33, 150, 243, 0.04)',
           },
         },
       },
@@ -189,12 +203,13 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          borderRadius: 12,
+          border: '1px solid #e1e5e9',
+          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.05)',
+          backgroundColor: '#ffffff',
           '&:hover': {
-            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-            transform: 'translateY(-2px)',
+            boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.1)',
+            transform: 'translateY(-1px)',
             transition: 'all 0.2s ease-in-out',
           },
         },
@@ -253,8 +268,8 @@ const theme = createTheme({
 });
 
 function App() {
-  // Theme switching state - hardcoded to dark for now
-  const [isDarkMode] = useState(true);
+  // Theme switching state - using light theme to match screenshot
+  const [isDarkMode] = useState(false);
   const currentTheme = isDarkMode ? darkTheme : theme;
 
   return (
