@@ -47,10 +47,7 @@ export class AvailabilityService {
       const daySchedule = openingHours[dayOfWeekString];
       
       if (!daySchedule || !daySchedule.isOpen) {
-        return {
-          date,
-          timeSlots: []
-        };
+        throw new Error(`Restaurant is closed on ${this.getDayOfWeek(requestDate).charAt(0).toUpperCase() + this.getDayOfWeek(requestDate).slice(1)}s`);
       }
 
       // Generate time slots using enhanced opening hours (supports multiple periods)
@@ -381,6 +378,44 @@ export class AvailabilityService {
       const restaurant = await RestaurantModel.findById(restaurantId);
       if (!restaurant) {
         return null;
+      }
+
+      // Validate opening hours before attempting to find tables
+      const requestDate = new Date(date);
+      const dayOfWeekString = this.getDayOfWeek(requestDate);
+      const daySchedule = restaurant.openingHours[dayOfWeekString];
+      
+      if (!daySchedule || !daySchedule.isOpen) {
+        throw new Error(`Restaurant is closed on ${dayOfWeekString.charAt(0).toUpperCase() + dayOfWeekString.slice(1)}s`);
+      }
+
+      // Check if the booking time falls within service hours
+      const bookingTimeMinutes = this.timeToMinutes(startTime);
+      let isWithinServicePeriod = false;
+
+      if (daySchedule.periods && daySchedule.periods.length > 0) {
+        // New format with multiple service periods
+        for (const period of daySchedule.periods) {
+          const startMinutes = this.timeToMinutes(period.startTime);
+          const endMinutes = this.timeToMinutes(period.endTime);
+          
+          if (bookingTimeMinutes >= startMinutes && bookingTimeMinutes <= endMinutes) {
+            isWithinServicePeriod = true;
+            break;
+          }
+        }
+      } else if (daySchedule.openTime && daySchedule.closeTime) {
+        // Legacy format with single period
+        const openMinutes = this.timeToMinutes(daySchedule.openTime);
+        const closeMinutes = this.timeToMinutes(daySchedule.closeTime);
+        
+        if (bookingTimeMinutes >= openMinutes && bookingTimeMinutes <= closeMinutes) {
+          isWithinServicePeriod = true;
+        }
+      }
+
+      if (!isWithinServicePeriod) {
+        throw new Error('Booking time is outside restaurant service hours');
       }
 
       // Get available tables for party size

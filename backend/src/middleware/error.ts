@@ -91,6 +91,7 @@ export const asyncHandler = (fn: Function) => {
 export class AppError extends Error {
   statusCode: number;
   isOperational: boolean;
+  code?: string;
 
   constructor(message: string, statusCode: number = 500) {
     super(message);

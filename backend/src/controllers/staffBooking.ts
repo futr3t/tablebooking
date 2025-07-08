@@ -5,6 +5,7 @@ import { TableModel } from '../models/Table';
 import { EnhancedAvailabilityService } from '../services/enhanced-availability';
 import { AvailabilityService } from '../services/availability';
 import { BookingLockService } from '../services/booking-lock';
+import { BusinessRulesService } from '../services/businessRules';
 import { AuthRequest, ApiResponse, BookingStatus, BookingSource } from '../types';
 import { createError, asyncHandler } from '../middleware/error';
 import { body, validationResult } from 'express-validator';
@@ -79,7 +80,32 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     throw createError('Access denied to this restaurant', 403);
   }
 
-  // Check if override is requested and validate
+  // Validate business rules - staff bookings can override pacing but not basic rules
+  const businessRulesError = await BusinessRulesService.validateBookingRequest(
+    restaurantId,
+    bookingDate,
+    bookingTime,
+    partySize,
+    true, // isStaffBooking
+    overridePacing
+  );
+
+  if (businessRulesError) {
+    // If it's a pacing override requirement and staff wants to override, allow it
+    if (businessRulesError.code === 'PACING_OVERRIDE_REQUIRED' && overridePacing) {
+      if (!overrideReason || overrideReason.trim().length < 10) {
+        throw createError('Override reason must be at least 10 characters', 400);
+      }
+      // Log the override for audit trail
+      console.log(`Pacing override by ${req.user.email} for ${bookingDate} ${bookingTime}: ${overrideReason}`);
+    } else {
+      const error = createError(businessRulesError.message, 400);
+      error.code = businessRulesError.code;
+      throw error;
+    }
+  }
+
+  // Check if override is requested and validate (legacy check)
   if (overridePacing) {
     const overrideCheck = await EnhancedAvailabilityService.canOverridePacing(
       restaurantId,

@@ -3,6 +3,7 @@ import { BookingModel } from '../models/Booking';
 import { AvailabilityService } from '../services/availability';
 import { WaitlistService } from '../services/waitlist';
 import { BookingLockService } from '../services/booking-lock';
+import { BusinessRulesService } from '../services/businessRules';
 import { AuthRequest, ApiResponse, BookingStatus } from '../types';
 import { createError, asyncHandler } from '../middleware/error';
 
@@ -58,14 +59,31 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     throw createError('Missing required booking information', 400);
   }
 
+  // Determine if this is a staff booking (authenticated user) or guest booking
+  const isStaffBooking = !!req.user;
+
+  // Validate business rules before attempting to create booking
+  const businessRulesError = await BusinessRulesService.validateBookingRequest(
+    restaurantId,
+    bookingDate,
+    bookingTime,
+    partySize,
+    isStaffBooking,
+    false // overridePacing - regular bookings don't override
+  );
+
+  if (businessRulesError) {
+    const error = createError(businessRulesError.message, 400);
+    error.code = businessRulesError.code;
+    throw error;
+  }
+
   // Use distributed locking to prevent double bookings
   const booking = await BookingLockService.withLock(
     restaurantId,
     bookingDate,
     bookingTime,
     async () => {
-      // Determine if this is a staff booking (authenticated user) or guest booking
-      const isStaffBooking = !!req.user;
       
       // Re-check availability within the lock
       const bestTable = await AvailabilityService.findBestTable(
