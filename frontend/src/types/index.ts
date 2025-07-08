@@ -266,6 +266,9 @@ export interface EnhancedTimeSlot extends TimeSlot {
   tablesAvailable: number;
   suggestedTables?: Table[];
   alternativeTimes?: string[];
+  overrideRisk?: 'low' | 'medium' | 'high';
+  currentBookings?: number;
+  utilizationPercent?: number;
 }
 
 export interface EnhancedAvailability {

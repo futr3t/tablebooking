@@ -39,13 +39,15 @@ import {
   ExpandMore,
   ExpandLess,
   LocalDining,
-  EventSeat
+  EventSeat,
+  Close
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format, addDays, parseISO } from 'date-fns';
 import { Booking, BookingTemplate, DietaryRequirement, EnhancedAvailability, EnhancedTimeSlot, Table } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { restaurantService } from '../../services/api';
+import OverrideDialog from './OverrideDialog';
 
 interface OptimizedBookingFormProps {
   restaurantId: string;
@@ -122,6 +124,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
   const [dynamicDuration, setDynamicDuration] = useState<number | null>(null);
+  const [overrideDialog, setOverrideDialog] = useState<{
+    open: boolean;
+    slot: EnhancedTimeSlot | null;
+  }>({ open: false, slot: null });
 
   // Load dietary requirements and restaurant settings on mount
   useEffect(() => {
@@ -309,13 +315,37 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   const handleTimeSlotSelect = (slot: EnhancedTimeSlot) => {
-    setSelectedSlot(slot);
-    setFormData(prev => ({ ...prev, bookingTime: slot.time }));
-    
-    // Show warning if slot is busy
-    if (slot.pacingStatus === 'busy' || slot.pacingStatus === 'full') {
+    // If slot is available, select it directly
+    if (slot.available) {
+      setSelectedSlot(slot);
+      setFormData(prev => ({ ...prev, bookingTime: slot.time }));
+      
+      // Show warning if slot is busy but available
+      if (slot.pacingStatus === 'busy' || slot.pacingStatus === 'moderate') {
+        setShowAdvanced(true);
+      }
+    } else {
+      // If slot is unavailable, show override dialog
+      setOverrideDialog({ open: true, slot });
+    }
+  };
+
+  const handleOverrideConfirm = (reason: string) => {
+    if (overrideDialog.slot) {
+      setSelectedSlot(overrideDialog.slot);
+      setFormData(prev => ({ 
+        ...prev, 
+        bookingTime: overrideDialog.slot!.time,
+        overridePacing: true,
+        overrideReason: reason
+      }));
       setShowAdvanced(true);
     }
+    setOverrideDialog({ open: false, slot: null });
+  };
+
+  const handleOverrideCancel = () => {
+    setOverrideDialog({ open: false, slot: null });
   };
 
   const handleSubmit = async () => {
@@ -376,6 +406,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   return (
+    <>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
           🚀 {editMode ? 'Edit Booking (Enhanced Form)' : 'Enhanced Booking Form'}
@@ -733,25 +764,41 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {availability.timeSlots.map((slot) => (
-                      <Chip
+                      <Tooltip 
                         key={slot.time}
-                        label={slot.time}
-                        color={getPacingColor(slot.pacingStatus)}
-                        variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
-                        onClick={() => handleTimeSlotSelect(slot)}
-                        disabled={!slot.available && !formData.overridePacing}
-                        icon={
-                          slot.pacingStatus === 'full' ? <Warning /> :
-                          slot.pacingStatus === 'busy' ? <AccessTime /> :
-                          <CheckCircle />
+                        title={
+                          !slot.available 
+                            ? `${slot.pacingStatus.toUpperCase()} - Click to override` 
+                            : slot.pacingStatus === 'busy' 
+                              ? 'Busy period - booking may impact service'
+                              : slot.pacingStatus === 'moderate'
+                                ? 'Moderate activity - good availability'
+                                : 'Available - optimal booking time'
                         }
-                        sx={{ 
-                          cursor: slot.available || formData.overridePacing ? 'pointer' : 'not-allowed',
-                          '&:hover': {
-                            backgroundColor: slot.available || formData.overridePacing ? undefined : 'transparent'
+                        placement="top"
+                      >
+                        <Chip
+                          label={slot.time}
+                          color={getPacingColor(slot.pacingStatus)}
+                          variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
+                          onClick={() => handleTimeSlotSelect(slot)}
+                          icon={
+                            !slot.available ? <Close /> :
+                            slot.pacingStatus === 'full' ? <Warning /> :
+                            slot.pacingStatus === 'busy' ? <AccessTime /> :
+                            <CheckCircle />
                           }
-                        }}
-                      />
+                          sx={{ 
+                            cursor: 'pointer',
+                            opacity: !slot.available ? 0.8 : 1,
+                            '&:hover': {
+                              opacity: 1,
+                              transform: 'scale(1.02)'
+                            },
+                            transition: 'all 0.2s ease'
+                          }}
+                        />
+                      </Tooltip>
                     ))}
                   </Box>
 
@@ -1117,5 +1164,21 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           </Grid>
         </Grid>
       </Box>
+
+      {/* Override Dialog */}
+      <OverrideDialog
+        open={overrideDialog.open}
+        onClose={handleOverrideCancel}
+        onConfirm={handleOverrideConfirm}
+        slot={overrideDialog.slot || {
+          time: '',
+          pacingStatus: 'available',
+          available: true,
+          tablesAvailable: 0,
+          alternativeTimes: []
+        }}
+        loading={loading}
+      />
+    </>
   );
 };

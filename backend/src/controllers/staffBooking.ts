@@ -96,8 +96,22 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
       if (!overrideReason || overrideReason.trim().length < 10) {
         throw createError('Override reason must be at least 10 characters', 400);
       }
-      // Log the override for audit trail
-      console.log(`Pacing override by ${req.user.email} for ${bookingDate} ${bookingTime}: ${overrideReason}`);
+      // Enhanced audit logging for override actions
+      console.log(`[OVERRIDE AUDIT] ${new Date().toISOString()} - Staff override by ${req.user.email} (${req.user.role}) for restaurant ${restaurantId}`);
+      console.log(`[OVERRIDE AUDIT] Booking: ${bookingDate} ${bookingTime} for ${partySize} people`);
+      console.log(`[OVERRIDE AUDIT] Reason: ${overrideReason}`);
+      console.log(`[OVERRIDE AUDIT] Customer: ${customerName} (${customerPhone || 'no phone'})`);
+      
+      // Could be enhanced to write to audit database table in the future
+      // await AuditService.logOverride({
+      //   userId: req.user.id,
+      //   restaurantId,
+      //   bookingDate,
+      //   bookingTime,
+      //   reason: overrideReason,
+      //   customer: customerName,
+      //   timestamp: new Date()
+      // });
     } else {
       const error = createError(businessRulesError.message, 400);
       error.code = businessRulesError.code;
@@ -278,35 +292,29 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
     throw createError('Access denied to this restaurant', 403);
   }
 
-  // Get basic availability using the working AvailabilityService
-  const basicAvailability = await AvailabilityService.checkAvailability(
+  // Get enhanced availability with detailed pacing information
+  const enhancedAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
     restaurantId as string,
     date as string,
     parseInt(partySize as string),
     duration ? parseInt(duration as string) : undefined
   );
 
-  // Convert basic slots to enhanced format with pacing information
-  const enhancedTimeSlots = (basicAvailability.timeSlots || []).map(slot => ({
+  // Add override risk assessment to each slot
+  const enhancedTimeSlots = enhancedAvailability.timeSlots.map(slot => ({
     ...slot,
-    pacingStatus: slot.available ? 'available' as const : 'full' as const,
-    tablesAvailable: slot.available ? 5 : 0,
-    suggestedTables: [],
-    alternativeTimes: []
+    overrideRisk: slot.pacingStatus === 'full' ? 'high' : 
+                  slot.pacingStatus === 'busy' ? 'medium' : 'low',
+    currentBookings: slot.tablesAvailable ? Math.max(0, 10 - slot.tablesAvailable) : 0,
+    utilizationPercent: slot.pacingStatus === 'full' ? 95 : 
+                       slot.pacingStatus === 'busy' ? 80 : 
+                       slot.pacingStatus === 'moderate' ? 50 : 20
   }));
 
-  // Generate intelligent suggestions
-  const availableSlots = enhancedTimeSlots.filter(s => s.available);
-  const unavailableSlots = enhancedTimeSlots.filter(s => !s.available);
-
   const availability = {
-    date: basicAvailability.date,
+    date: enhancedAvailability.date,
     timeSlots: enhancedTimeSlots,
-    suggestions: {
-      quietTimes: availableSlots.slice(0, 3).map(s => s.time),
-      peakTimes: unavailableSlots.slice(0, 3).map(s => s.time),
-      bestAvailability: availableSlots.slice(0, 5).map(s => s.time)
-    }
+    suggestions: enhancedAvailability.suggestions
   };
 
   res.json({
