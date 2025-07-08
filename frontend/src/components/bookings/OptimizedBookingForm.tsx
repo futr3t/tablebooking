@@ -342,6 +342,17 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Customer Name *
+                  </Typography>
                   <Autocomplete
                     freeSolo
                     options={customerSuggestions}
@@ -390,12 +401,16 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Customer Name"
                         required
                         autoFocus
                         InputProps={{
                           ...params.InputProps,
                           startAdornment: <Person sx={{ mr: 1, color: 'action.active' }} />
+                        }}
+                        sx={{
+                          '& .MuiInputLabel-root': {
+                            display: 'none', // Hide floating label
+                          }
                         }}
                       />
                     )}
@@ -403,26 +418,56 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={4}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Phone Number
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Phone Number"
                     value={formData.customerPhone}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
                     InputProps={{
                       startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />
                     }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none', // Hide floating label
+                      }
+                    }}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={4}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Email
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Email"
                     type="email"
                     value={formData.customerEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
                     InputProps={{
                       startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />
+                    }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none', // Hide floating label
+                      }
                     }}
                   />
                 </Grid>
@@ -498,9 +543,19 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={3}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Party Size *
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Party Size"
                     type="number"
                     required
                     value={formData.partySize}
@@ -511,6 +566,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     InputProps={{
                       inputProps: { min: 1, max: 50 },
                       startAdornment: <Person sx={{ mr: 1, color: 'action.active' }} />
+                    }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none', // Hide floating label
+                      }
                     }}
                   />
                 </Grid>
@@ -537,9 +597,19 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={3}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Duration (minutes)
+                  </Typography>
                   <TextField
                     fullWidth
-                    label="Duration (minutes)"
                     type="number"
                     value={formData.duration}
                     onChange={(e) => setFormData(prev => ({ 
@@ -548,6 +618,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     }))}
                     InputProps={{
                       inputProps: { min: 30, max: 480, step: 30 }
+                    }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none', // Hide floating label
+                      }
                     }}
                   />
                 </Grid>

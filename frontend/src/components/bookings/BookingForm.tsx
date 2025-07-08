@@ -140,63 +140,156 @@ const BookingForm: React.FC<BookingFormProps> = ({
           
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Guest Name *
+              </Typography>
               <TextField
                 fullWidth
-                label="Guest Name"
                 value={formData.customerName}
                 onChange={(e) => handleChange('customerName', e.target.value)}
                 required
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Email
+              </Typography>
               <TextField
                 fullWidth
-                label="Email"
                 type="email"
                 value={formData.customerEmail}
                 onChange={(e) => handleChange('customerEmail', e.target.value)}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Phone
+              </Typography>
               <TextField
                 fullWidth
-                label="Phone"
                 value={formData.customerPhone}
                 onChange={(e) => handleChange('customerPhone', e.target.value)}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Party Size *
+              </Typography>
               <TextField
                 fullWidth
-                label="Party Size"
                 type="number"
                 value={formData.partySize}
                 onChange={(e) => handleChange('partySize', parseInt(e.target.value))}
                 inputProps={{ min: 1, max: 20 }}
                 required
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
-                <DateTimePicker
-                  label="Booking Date & Time"
-                  value={formData.bookingTime}
-                  onChange={(value) => value && handleChange('bookingTime', value)}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Booking Date & Time
+              </Typography>
+              <DateTimePicker
+                value={formData.bookingTime}
+                onChange={(value) => value && handleChange('bookingTime', value)}
+                slotProps={{ 
+                  textField: { 
+                    fullWidth: true,
+                    sx: {
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      }
+                    }
+                  } 
+                }}
+              />
             </Grid>
             
             {editMode && (
               <Grid item xs={12}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#cbd5e1', 
+                    mb: 0.5, 
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  Status
+                </Typography>
                 <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
                   <Select
                     value={formData.status}
                     onChange={(e) => handleChange('status', e.target.value)}
-                    label="Status"
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      }
+                    }}
                   >
                     <MenuItem value="pending">Pending</MenuItem>
                     <MenuItem value="confirmed">Confirmed</MenuItem>
@@ -209,13 +302,28 @@ const BookingForm: React.FC<BookingFormProps> = ({
             )}
             
             <Grid item xs={12}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Special Requests
+              </Typography>
               <TextField
                 fullWidth
-                label="Special Requests"
                 multiline
                 rows={3}
                 value={formData.specialRequests}
                 onChange={(e) => handleChange('specialRequests', e.target.value)}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
             

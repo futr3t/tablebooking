@@ -617,17 +617,33 @@ const RestaurantSettingsPanel: React.FC = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Date Format</InputLabel>
-                    <Select
-                      value={settings.dateFormat || 'uk'}
-                      onChange={(e) => handleSettingChange('dateFormat', e.target.value as 'us' | 'uk')}
-                      label="Date Format"
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
                     >
-                      <MenuItem value="uk">UK Format (dd/MM/yyyy)</MenuItem>
-                      <MenuItem value="us">US Format (MM/dd/yyyy)</MenuItem>
-                    </Select>
-                  </FormControl>
+                      Date Format
+                    </Typography>
+                    <FormControl fullWidth>
+                      <Select
+                        value={settings.dateFormat || 'uk'}
+                        onChange={(e) => handleSettingChange('dateFormat', e.target.value as 'us' | 'uk')}
+                        sx={{
+                          '& .MuiInputLabel-root': {
+                            display: 'none',
+                          }
+                        }}
+                      >
+                        <MenuItem value="uk">UK Format (dd/MM/yyyy)</MenuItem>
+                        <MenuItem value="us">US Format (MM/dd/yyyy)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
                 </Grid>
               </Grid>
             </CardContent>
@@ -648,27 +664,61 @@ const RestaurantSettingsPanel: React.FC = () => {
               
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Concurrent Tables"
-                    type="number"
-                    value={settings.bookingSettings.maxConcurrentTables || ''}
-                    onChange={(e) => handleSettingChange('maxConcurrentTables', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
-                    helperText="Max tables starting at same time"
-                    inputProps={{ min: 0 }}
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Max Concurrent Tables
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.maxConcurrentTables || ''}
+                      onChange={(e) => handleSettingChange('maxConcurrentTables', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
+                      helperText="Max tables starting at same time"
+                      inputProps={{ min: 0 }}
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Concurrent Covers"
-                    type="number"
-                    value={settings.bookingSettings.maxConcurrentCovers || ''}
-                    onChange={(e) => handleSettingChange('maxConcurrentCovers', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
-                    helperText="Max people starting at same time"
-                    inputProps={{ min: 0 }}
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Max Concurrent Covers
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.maxConcurrentCovers || ''}
+                      onChange={(e) => handleSettingChange('maxConcurrentCovers', e.target.value ? parseInt(e.target.value) : null, 'bookingSettings')}
+                      helperText="Max people starting at same time"
+                      inputProps={{ min: 0 }}
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12}>
@@ -724,15 +774,32 @@ const RestaurantSettingsPanel: React.FC = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Min Advance Booking Hours"
-                    type="number"
-                    value={settings.bookingSettings.minAdvanceBookingHours}
-                    onChange={(e) => handleSettingChange('minAdvanceBookingHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
-                    inputProps={{ min: 0, max: 168 }}
-                    required
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Min Advance Booking Hours *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.minAdvanceBookingHours}
+                      onChange={(e) => handleSettingChange('minAdvanceBookingHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
+                      inputProps={{ min: 0, max: 168 }}
+                      required
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
@@ -765,15 +832,32 @@ const RestaurantSettingsPanel: React.FC = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Reminder Hours"
-                    type="number"
-                    value={settings.bookingSettings.reminderHours}
-                    onChange={(e) => handleSettingChange('reminderHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
-                    helperText="Hours before booking to send reminders"
-                    inputProps={{ min: 0, max: 72 }}
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Reminder Hours
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.reminderHours}
+                      onChange={(e) => handleSettingChange('reminderHours', e.target.value ? parseInt(e.target.value) : 2, 'bookingSettings')}
+                      helperText="Hours before booking to send reminders"
+                      inputProps={{ min: 0, max: 72 }}
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12}>

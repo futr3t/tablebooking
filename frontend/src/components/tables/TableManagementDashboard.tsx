@@ -339,6 +339,17 @@ const TableManagementDashboard: React.FC = () => {
         <CardContent>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Search Tables
+              </Typography>
               <TextField
                 fullWidth
                 placeholder="Search tables..."
@@ -351,6 +362,11 @@ const TableManagementDashboard: React.FC = () => {
                       <SearchIcon />
                     </IconButton>
                   )
+                }}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
                 }}
               />
             </Grid>
@@ -389,12 +405,26 @@ const TableManagementDashboard: React.FC = () => {
           {showFilters && (
             <Grid container spacing={2} sx={{ mt: 2 }}>
               <Grid item xs={12} sm={6} md={3}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#cbd5e1', 
+                    mb: 0.5, 
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  Table Type
+                </Typography>
                 <FormControl fullWidth>
-                  <InputLabel>Table Type</InputLabel>
                   <Select
                     value={filters.tableType}
                     onChange={(e) => handleFilterChange('tableType', e.target.value)}
-                    label="Table Type"
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      }
+                    }}
                   >
                     <MenuItem value="">All Types</MenuItem>
                     {TABLE_TYPES.map(type => (
@@ -406,21 +436,51 @@ const TableManagementDashboard: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#cbd5e1', 
+                    mb: 0.5, 
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  Min Capacity
+                </Typography>
                 <TextField
                   fullWidth
-                  label="Min Capacity"
                   type="number"
                   value={filters.minCapacity}
                   onChange={(e) => handleFilterChange('minCapacity', e.target.value)}
+                  sx={{
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    }
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#cbd5e1', 
+                    mb: 0.5, 
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  Max Capacity
+                </Typography>
                 <TextField
                   fullWidth
-                  label="Max Capacity"
                   type="number"
                   value={filters.maxCapacity}
                   onChange={(e) => handleFilterChange('maxCapacity', e.target.value)}
+                  sx={{
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    }
+                  }}
                 />
               </Grid>
             </Grid>

@@ -139,36 +139,78 @@ const WidgetConfigForm: React.FC<WidgetConfigFormProps> = ({
           
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Primary Color
+              </Typography>
               <TextField
                 fullWidth
-                label="Primary Color"
                 type="color"
                 value={formData.theme.primaryColor}
                 onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
-                InputLabelProps={{ shrink: true }}
                 helperText="Main color for buttons and highlights"
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Secondary Color
+              </Typography>
               <TextField
                 fullWidth
-                label="Secondary Color"
                 type="color"
                 value={formData.theme.secondaryColor}
                 onChange={(e) => handleThemeChange('secondaryColor', e.target.value)}
-                InputLabelProps={{ shrink: true }}
                 helperText="Background and secondary elements"
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Font Family
+              </Typography>
               <FormControl fullWidth>
-                <InputLabel>Font Family</InputLabel>
                 <Select
                   value={formData.theme.fontFamily}
-                  label="Font Family"
                   onChange={(e) => handleThemeChange('fontFamily', e.target.value)}
+                  sx={{
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    }
+                  }}
                 >
                   {fontOptions.map((font) => (
                     <MenuItem key={font} value={font}>
@@ -180,13 +222,28 @@ const WidgetConfigForm: React.FC<WidgetConfigFormProps> = ({
             </Grid>
 
             <Grid item xs={12} sm={6}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Border Radius
+              </Typography>
               <TextField
                 fullWidth
-                label="Border Radius"
                 value={formData.theme.borderRadius}
                 onChange={(e) => handleThemeChange('borderRadius', e.target.value)}
                 placeholder="4px"
                 helperText="Rounded corners (e.g., 4px, 8px, 12px)"
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
           </Grid>
@@ -335,15 +392,30 @@ const WidgetConfigForm: React.FC<WidgetConfigFormProps> = ({
 
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Confirmation Message
+              </Typography>
               <TextField
                 fullWidth
                 multiline
                 rows={3}
-                label="Confirmation Message"
                 value={formData.settings.confirmationMessage}
                 onChange={(e) => handleSettingsChange('confirmationMessage', e.target.value)}
                 helperText="Message shown to customers after successful booking"
                 placeholder="Thank you for your reservation! We look forward to serving you."
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  }
+                }}
               />
             </Grid>
           </Grid>

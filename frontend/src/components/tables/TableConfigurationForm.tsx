@@ -164,23 +164,52 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         </Grid>
 
         <Grid item xs={12} md={6}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Table Number *
+          </Typography>
           <TextField
             fullWidth
-            label="Table Number"
             value={formData.number}
             onChange={(e) => handleChange('number', e.target.value)}
             required
             helperText="Unique identifier for this table (e.g., T1, Table-A, 101)"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
         <Grid item xs={12} md={6}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Table Type *
+          </Typography>
           <FormControl fullWidth required>
-            <InputLabel>Table Type</InputLabel>
             <Select
               value={formData.tableType}
               onChange={(e) => handleChange('tableType', e.target.value)}
-              label="Table Type"
+              sx={{
+                '& .MuiInputLabel-root': {
+                  display: 'none',
+                }
+              }}
             >
               {TABLE_TYPES.map(type => (
                 <MenuItem key={type.value} value={type.value}>
@@ -219,41 +248,86 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         </Grid>
 
         <Grid item xs={12} md={4}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Main Capacity *
+          </Typography>
           <TextField
             fullWidth
-            label="Main Capacity"
             type="number"
             value={formData.capacity}
             onChange={(e) => handleChange('capacity', e.target.value)}
             required
             inputProps={{ min: 1, max: 50 }}
             helperText="Primary seating capacity"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
         <Grid item xs={12} md={4}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Minimum Capacity *
+          </Typography>
           <TextField
             fullWidth
-            label="Minimum Capacity"
             type="number"
             value={formData.minCapacity}
             onChange={(e) => handleChange('minCapacity', e.target.value)}
             required
             inputProps={{ min: 1, max: formData.capacity }}
             helperText="Smallest party size"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
         <Grid item xs={12} md={4}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Maximum Capacity *
+          </Typography>
           <TextField
             fullWidth
-            label="Maximum Capacity"
             type="number"
             value={formData.maxCapacity}
             onChange={(e) => handleChange('maxCapacity', e.target.value)}
             required
             inputProps={{ min: formData.capacity, max: 50 }}
             helperText="Largest party size"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
@@ -295,14 +369,29 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
 
 
         <Grid item xs={12} md={6}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Priority
+          </Typography>
           <TextField
             fullWidth
-            label="Priority"
             type="number"
             value={formData.priority}
             onChange={(e) => handleChange('priority', e.target.value)}
             inputProps={{ min: 0, max: 10 }}
             helperText="Higher priority tables are preferred (0-10)"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
@@ -346,26 +435,56 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
         </Grid>
 
         <Grid item xs={12} md={6}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Table Notes
+          </Typography>
           <TextField
             fullWidth
-            label="Table Notes"
             value={formData.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
             multiline
             rows={3}
             helperText="Internal notes about this table"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
         <Grid item xs={12} md={6}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#cbd5e1', 
+              mb: 0.5, 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            Location Notes
+          </Typography>
           <TextField
             fullWidth
-            label="Location Notes"
             value={formData.locationNotes}
             onChange={(e) => handleChange('locationNotes', e.target.value)}
             multiline
             rows={3}
             helperText="Location description (e.g., 'Near window', 'Private corner')"
+            sx={{
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              }
+            }}
           />
         </Grid>
 
