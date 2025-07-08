@@ -284,11 +284,21 @@ const darkTheme = createTheme({
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.15)',
           },
+          '.MuiTableRow-root:hover &': {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            color: '#ffffff !important',
+            fontWeight: 600,
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+          },
         },
         filled: {
           '&.MuiChip-colorDefault': {
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
             color: '#ffffff',
+          },
+          '.MuiTableRow-root:hover &': {
+            backgroundColor: 'rgba(255, 255, 255, 0.25) !important',
+            color: '#ffffff !important',
           },
         },
       },
@@ -310,8 +320,9 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '&:hover': {
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            backgroundColor: 'rgba(99, 102, 241, 0.15)',
             borderLeft: '3px solid #6366f1',
+            transition: 'all 0.2s ease-in-out',
           },
         },
       },
@@ -322,8 +333,9 @@ const darkTheme = createTheme({
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           color: '#ffffff',
           '.MuiTableRow-root:hover &': {
-            color: '#ffffff',
-            fontWeight: 500,
+            color: '#ffffff !important',
+            fontWeight: 600,
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
           },
         },
       },
@@ -412,6 +424,14 @@ const darkTheme = createTheme({
         root: {
           '&.MuiTypography-caption': {
             color: '#9ca3af',
+          },
+          '.MuiTableRow-root:hover &': {
+            color: '#ffffff !important',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+          },
+          '.MuiTableRow-root:hover &.MuiTypography-caption': {
+            color: '#e5e7eb !important',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
           },
         },
       },
