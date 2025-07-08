@@ -2,17 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-// Extend Material-UI theme to include custom purple color
-declare module '@mui/material/styles' {
-  interface Palette {
-    purple: Palette['primary'];
-  }
-
-  interface PaletteOptions {
-    purple?: PaletteOptions['primary'];
-  }
-}
 import { AuthProvider } from './contexts/AuthContext';
 import { DateFormatProvider } from './contexts/DateFormatContext';
 import { DynamicLocalizationProvider } from './components/common/DynamicLocalizationProvider';
@@ -25,6 +14,17 @@ import TableManagementDashboard from './components/tables/TableManagementDashboa
 import RestaurantSettingsPanel from './components/settings/RestaurantSettingsPanel';
 import WidgetManager from './components/widget/WidgetManager';
 import darkTheme from './themes/darkTheme';
+
+// Extend Material-UI theme to include custom purple color
+declare module '@mui/material/styles' {
+  interface Palette {
+    purple: Palette['primary'];
+  }
+
+  interface PaletteOptions {
+    purple?: PaletteOptions['primary'];
+  }
+}
 
 const theme = createTheme({
   palette: {
