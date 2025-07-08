@@ -12,6 +12,7 @@ import diagnosticRoutes from './diagnostic';
 import staffBookingRoutes from './staffBooking';
 import dietaryRequirementsRoutes from './dietaryRequirements';
 import debugRoutes from './debug';
+import turnTimeRulesRoutes from './turnTimeRules';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/', widgetEmbeddedRoutes); // Root level widget routes
 router.use('/diagnostic', diagnosticRoutes);
 router.use('/dietary-requirements', dietaryRequirementsRoutes);
 router.use('/debug', debugRoutes);
+router.use('/turn-time-rules', turnTimeRulesRoutes);
 
 router.get('/health', async (req, res) => {
   try {

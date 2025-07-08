@@ -1,7 +1,7 @@
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
-import { redis } from '../config/database';
+import { db, redis } from '../config/database';
 import { BookingAvailability, TimeSlot, Table, Booking } from '../types';
 
 export class AvailabilityService {
@@ -9,7 +9,7 @@ export class AvailabilityService {
     restaurantId: string,
     date: string,
     partySize: number,
-    duration: number = 120
+    duration?: number
   ): Promise<BookingAvailability> {
     try {
       // Get restaurant settings
@@ -48,6 +48,11 @@ export class AvailabilityService {
       
       if (!daySchedule || !daySchedule.isOpen) {
         throw new Error(`Restaurant is closed on ${this.getDayOfWeek(requestDate).charAt(0).toUpperCase() + this.getDayOfWeek(requestDate).slice(1)}s`);
+      }
+
+      // Get appropriate turn time for this party size if duration not specified
+      if (!duration) {
+        duration = await this.getTurnTimeForParty(restaurantId, partySize, requestDate);
       }
 
       // Generate time slots using enhanced opening hours (supports multiple periods)
@@ -371,7 +376,7 @@ export class AvailabilityService {
     date: string,
     startTime: string,
     partySize: number,
-    duration: number = 120,
+    duration?: number,
     isStaffBooking: boolean = false
   ): Promise<Table | null> {
     try {
@@ -441,6 +446,11 @@ export class AvailabilityService {
         if (concurrentLimitExceeded) {
           return null;
         }
+      }
+
+      // Get appropriate turn time if not specified
+      if (!duration) {
+        duration = await this.getTurnTimeForParty(restaurantId, partySize, requestDate, startTime);
       }
 
       const startMinutes = this.timeToMinutes(startTime);
@@ -563,5 +573,45 @@ export class AvailabilityService {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Get the appropriate turn time for a party size
+   * Checks party-size rules, then time slot rules, then restaurant default
+   */
+  static async getTurnTimeForParty(
+    restaurantId: string,
+    partySize: number,
+    bookingDate: Date,
+    bookingTime?: string
+  ): Promise<number> {
+    try {
+      // First try to get from database function
+      const query = `
+        SELECT get_turn_time_for_party($1, $2, $3, $4) as turn_time
+      `;
+      
+      const dayOfWeek = bookingDate.getDay();
+      const timeParam = bookingTime ? bookingTime : null;
+      
+      const result = await db.query(query, [
+        restaurantId,
+        partySize,
+        timeParam,
+        dayOfWeek
+      ]);
+
+      if (result.rows[0]?.turn_time) {
+        return result.rows[0].turn_time;
+      }
+
+      // Fallback to restaurant default
+      const restaurant = await RestaurantModel.findById(restaurantId);
+      return restaurant?.turnTimeMinutes || 120;
+    } catch (error) {
+      console.error('Error getting turn time for party:', error);
+      // Default to 120 minutes on error
+      return 120;
+    }
   }
 }

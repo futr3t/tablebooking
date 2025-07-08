@@ -231,6 +231,27 @@ export const restaurantService = {
   },
 };
 
+export const turnTimeRulesService = {
+  getRules: async (restaurantId: string): Promise<any[]> => {
+    const response = await api.get(`/turn-time-rules/restaurant/${restaurantId}`);
+    return response.data.data || [];
+  },
+  
+  createRule: async (restaurantId: string, rule: any): Promise<any> => {
+    const response = await api.post(`/turn-time-rules/restaurant/${restaurantId}`, rule);
+    return response.data.data;
+  },
+  
+  updateRule: async (ruleId: string, updates: any): Promise<any> => {
+    const response = await api.put(`/turn-time-rules/${ruleId}`, updates);
+    return response.data.data;
+  },
+  
+  deleteRule: async (ruleId: string): Promise<void> => {
+    await api.delete(`/turn-time-rules/${ruleId}`);
+  }
+};
+
 export const tableService = {
   getTables: async (restaurantId: string, options?: {
     includeInactive?: boolean;

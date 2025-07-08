@@ -30,7 +30,7 @@ export const checkAvailability = asyncHandler(async (req: Request, res: Response
     restaurantId as string,
     date as string,
     parseInt(partySize as string),
-    duration ? parseInt(duration as string) : 120
+    duration ? parseInt(duration as string) : undefined
   );
 
   res.json({
@@ -48,7 +48,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     partySize,
     bookingDate,
     bookingTime,
-    duration = 120,
+    duration,
     notes,
     specialRequests,
     forceWaitlist = false
@@ -85,13 +85,21 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     bookingTime,
     async () => {
       
+      // Get dynamic turn time if not specified
+      const bookingDuration = duration || await AvailabilityService.getTurnTimeForParty(
+        restaurantId,
+        partySize,
+        new Date(bookingDate),
+        bookingTime
+      );
+
       // Re-check availability within the lock
       const bestTable = await AvailabilityService.findBestTable(
         restaurantId,
         bookingDate,
         bookingTime,
         partySize,
-        duration,
+        bookingDuration,
         isStaffBooking
       );
 
@@ -107,7 +115,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
             partySize,
             bookingDate,
             bookingTime,
-            duration,
+            duration: bookingDuration,
             notes,
             specialRequests,
             isWaitlisted: false
@@ -128,7 +136,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
           partySize,
           bookingDate,
           bookingTime,
-          duration,
+          duration: bookingDuration,
           notes,
           specialRequests
         });
@@ -358,7 +366,7 @@ export const addToWaitlist = asyncHandler(async (req: Request, res: Response): P
     partySize,
     bookingDate,
     bookingTime,
-    duration = 120,
+    duration,
     notes,
     specialRequests
   } = req.body;
@@ -368,6 +376,14 @@ export const addToWaitlist = asyncHandler(async (req: Request, res: Response): P
     throw createError('Missing required booking information', 400);
   }
 
+  // Get dynamic turn time if not specified
+  const bookingDuration = duration || await AvailabilityService.getTurnTimeForParty(
+    restaurantId,
+    partySize,
+    new Date(bookingDate),
+    bookingTime
+  );
+
   const booking = await WaitlistService.addToWaitlist({
     restaurantId,
     customerName,
@@ -376,7 +392,7 @@ export const addToWaitlist = asyncHandler(async (req: Request, res: Response): P
     partySize,
     bookingDate,
     bookingTime,
-    duration,
+    duration: bookingDuration,
     notes,
     specialRequests
   });

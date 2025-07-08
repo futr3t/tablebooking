@@ -34,6 +34,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
 import { useDateFormat } from '../../contexts/DateFormatContext';
+import { TurnTimeRules } from './TurnTimeRules';
 
 interface ServicePeriod {
   name: string;
@@ -574,7 +575,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                       type="number"
                       value={settings.turnTimeMinutes}
                       onChange={(e) => handleSettingChange('turnTimeMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
-                      helperText="How long each booking lasts (includes cleanup)"
+                      helperText="Default duration for bookings (can be overridden by party size rules)"
                       inputProps={{ min: 30, max: 480 }}
                       required
                       sx={{
@@ -1198,6 +1199,11 @@ const RestaurantSettingsPanel: React.FC = () => {
         </Grid>
 
       </Grid>
+
+      {/* Turn Time Rules Section */}
+      <Box sx={{ mt: 4 }}>
+        <TurnTimeRules restaurantId={settings.id || user?.restaurantId || ''} />
+      </Box>
     </Box>
   );
 };

@@ -55,7 +55,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     partySize,
     bookingDate,
     bookingTime,
-    duration = 120,
+    duration,
     notes,
     specialRequests,
     dietaryRequirements,
@@ -123,6 +123,14 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     console.log(`Pacing override by ${req.user.email} for ${bookingDate} ${bookingTime}: ${overrideReason}`);
   }
 
+  // Get dynamic turn time if not specified
+  const bookingDuration = duration || await AvailabilityService.getTurnTimeForParty(
+    restaurantId,
+    partySize,
+    new Date(bookingDate),
+    bookingTime
+  );
+
   // Use distributed locking to prevent double bookings
   const booking = await BookingLockService.withLock(
     restaurantId,
@@ -138,7 +146,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           // Check if table is available at the requested time
           const existingBookings = await BookingModel.findByDateRange(restaurantId, bookingDate, bookingDate);
           const startMinutes = AvailabilityService.timeToMinutes(bookingTime);
-          const endMinutes = startMinutes + duration;
+          const endMinutes = startMinutes + bookingDuration;
           
           const isAvailable = !existingBookings.some(booking => {
             if (booking.status === 'cancelled' || booking.status === 'no_show') {
@@ -165,7 +173,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           bookingDate,
           bookingTime,
           partySize,
-          duration,
+          bookingDuration,
           true // isStaffBooking = true
         );
       }
@@ -180,7 +188,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           partySize,
           bookingDate,
           bookingTime,
-          duration,
+          duration: bookingDuration,
           notes,
           specialRequests,
           dietaryRequirements,
@@ -275,7 +283,7 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
     restaurantId as string,
     date as string,
     parseInt(partySize as string),
-    duration ? parseInt(duration as string) : 120
+    duration ? parseInt(duration as string) : undefined
   );
 
   // Convert basic slots to enhanced format with pacing information
@@ -341,10 +349,17 @@ export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Res
     date as string
   );
 
+  // Get dynamic turn time for the party size
+  const turnTime = await AvailabilityService.getTurnTimeForParty(
+    restaurantId as string,
+    Number(partySize),
+    new Date(date as string),
+    time as string
+  );
+  
   // Check which tables are available at the specified time
   const startMinutes = AvailabilityService.timeToMinutes(time as string);
-  const duration = 90; // Standard 90 minute booking
-  const endMinutes = startMinutes + duration;
+  const endMinutes = startMinutes + turnTime;
 
   // Filter tables by capacity
   const suitableTables = allTablesResult.tables.filter(table => 
@@ -390,7 +405,7 @@ export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Res
 });
 
 export const bulkCheckAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  const { restaurantId, dates, partySize, duration = 120 } = req.body;
+  const { restaurantId, dates, partySize, duration } = req.body;
 
   if (!req.user) {
     throw createError('Authentication required', 401);

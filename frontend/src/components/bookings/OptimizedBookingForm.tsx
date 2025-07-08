@@ -121,6 +121,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [restaurantSettings, setRestaurantSettings] = useState<any>(null);
+  const [dynamicDuration, setDynamicDuration] = useState<number | null>(null);
 
   // Load dietary requirements and restaurant settings on mount
   useEffect(() => {
@@ -170,8 +171,25 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   useEffect(() => {
     if (formData.bookingDate && formData.partySize) {
       loadAvailability();
+      // Update duration based on party size
+      if (availability && availability.timeSlots.length > 0) {
+        // The availability response might include duration info in future
+        // For now, use the restaurant settings or defaults
+        const turnTimeRules = restaurantSettings?.turnTimeRules || [];
+        const matchingRule = turnTimeRules.find((rule: any) => 
+          formData.partySize >= rule.minPartySize && formData.partySize <= rule.maxPartySize
+        );
+        
+        if (matchingRule) {
+          setDynamicDuration(matchingRule.turnTimeMinutes);
+          setFormData(prev => ({ ...prev, duration: matchingRule.turnTimeMinutes }));
+        } else if (restaurantSettings?.turnTimeMinutes) {
+          setDynamicDuration(restaurantSettings.turnTimeMinutes);
+          setFormData(prev => ({ ...prev, duration: restaurantSettings.turnTimeMinutes }));
+        }
+      }
     }
-  }, [formData.bookingDate, formData.partySize]);
+  }, [formData.bookingDate, formData.partySize, restaurantSettings]);
 
   // Load available tables when time is selected
   useEffect(() => {
@@ -644,7 +662,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       fontWeight: 500
                     }}
                   >
-                    Duration (minutes)
+                    Duration
                   </Typography>
                   <TextField
                     fullWidth
@@ -655,8 +673,18 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       duration: parseInt(e.target.value) || 120 
                     }))}
                     InputProps={{
-                      inputProps: { min: 30, max: 480, step: 30 }
+                      inputProps: { min: 30, max: 480, step: 30 },
+                      endAdornment: (
+                        <Typography variant="caption" color="text.secondary">
+                          min
+                        </Typography>
+                      )
                     }}
+                    helperText={
+                      dynamicDuration && dynamicDuration !== formData.duration
+                        ? `Default for ${formData.partySize} ${formData.partySize === 1 ? 'person' : 'people'}: ${dynamicDuration} min`
+                        : `${Math.floor(formData.duration / 60)}h ${formData.duration % 60}m`
+                    }
                     sx={{
                       '& .MuiInputLabel-root': {
                         display: 'none', // Hide floating label
