@@ -130,8 +130,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const loadRestaurantSettings = async () => {
     try {
-      const response = await restaurantService.getRestaurantSettings(restaurantId);
-      setRestaurantSettings(response.data);
+      const response = await restaurantService.getSettings(restaurantId);
+      setRestaurantSettings(response);
     } catch (error) {
       console.error('Failed to load restaurant settings:', error);
     }

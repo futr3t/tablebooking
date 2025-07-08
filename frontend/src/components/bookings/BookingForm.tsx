@@ -90,8 +90,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
     if (!user?.restaurantId) return;
     
     try {
-      const response = await restaurantService.getRestaurantSettings(user.restaurantId);
-      setRestaurantSettings(response.data);
+      const response = await restaurantService.getSettings(user.restaurantId);
+      setRestaurantSettings(response);
     } catch (error) {
       console.error('Failed to load restaurant settings:', error);
     }
