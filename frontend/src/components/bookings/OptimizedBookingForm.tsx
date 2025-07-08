@@ -447,8 +447,18 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#cbd5e1', 
+                      mb: 0.5, 
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    Date *
+                  </Typography>
                   <DatePicker
-                    label="Date"
                     value={parseISO(formData.bookingDate)}
                     onChange={(date) => date && setFormData(prev => ({ 
                       ...prev, 
@@ -460,16 +470,26 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       textField: {
                         fullWidth: true,
                         required: true,
+                        placeholder: 'dd/MM/yyyy',
                         sx: {
                           '& .MuiInputBase-root': {
-                            minHeight: '40px !important',
-                            display: 'flex !important',
-                            alignItems: 'center !important',
+                            height: '40px',
+                            minHeight: '40px',
+                            backgroundColor: '#334155',
+                            borderRadius: 0,
                           },
                           '& .MuiInputBase-input': {
-                            padding: '8px 14px !important',
-                            lineHeight: '1.4375em !important',
-                            height: '1.4375em !important',
+                            padding: '8px 14px',
+                            lineHeight: '24px',
+                            height: '24px',
+                            color: '#ffffff',
+                            fontSize: '1rem',
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#475569',
+                          },
+                          '& .MuiInputLabel-root': {
+                            display: 'none', // Hide the floating label completely
                           }
                         }
                       }

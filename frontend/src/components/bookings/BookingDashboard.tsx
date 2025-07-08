@@ -209,41 +209,51 @@ const BookingDashboard: React.FC = () => {
             flexWrap: 'wrap'
           }}>
             {/* Date Picker */}
-            <DatePicker
-              label="Select Date"
-              value={selectedDate}
-              onChange={handleDateChange}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  sx: { 
-                    minWidth: { xs: '100%', sm: 160 },
-                    '& .MuiInputBase-root': {
-                      height: '32px !important',
-                      minHeight: '32px !important',
-                      display: 'flex !important',
-                      alignItems: 'center !important',
-                      paddingTop: '0 !important',
-                      paddingBottom: '0 !important',
-                    },
-                    '& .MuiInputBase-input': {
-                      padding: '0 8px !important',
-                      lineHeight: '32px !important',
-                      height: '32px !important',
-                      boxSizing: 'border-box !important',
-                      margin: '0 !important',
-                      verticalAlign: 'middle !important',
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      top: '0 !important',
-                    },
-                    '& .MuiInputLabel-outlined.MuiInputLabel-shrink': {
-                      transform: 'translate(14px, -6px) scale(0.75) !important',
+            <Box sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#cbd5e1', 
+                  mb: 0.5, 
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Select Date
+              </Typography>
+              <DatePicker
+                value={selectedDate}
+                onChange={handleDateChange}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    placeholder: 'dd/MM/yyyy',
+                    sx: { 
+                      width: '100%',
+                      '& .MuiInputBase-root': {
+                        height: '32px',
+                        minHeight: '32px',
+                        backgroundColor: '#334155',
+                        borderRadius: 0,
+                      },
+                      '& .MuiInputBase-input': {
+                        padding: '6px 8px',
+                        lineHeight: '20px',
+                        height: '20px',
+                        color: '#ffffff',
+                        fontSize: '0.875rem',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#475569',
+                      },
+                      '& .MuiInputLabel-root': {
+                        display: 'none', // Hide the floating label completely
+                      }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            </Box>
 
             {/* Navigation Arrows */}
             <Box sx={{ 

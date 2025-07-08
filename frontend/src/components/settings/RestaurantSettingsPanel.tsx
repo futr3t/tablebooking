@@ -528,41 +528,92 @@ const RestaurantSettingsPanel: React.FC = () => {
               
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Maximum Covers"
-                    type="number"
-                    value={settings.maxCovers || ''}
-                    onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : null)}
-                    helperText="Leave empty for unlimited capacity"
-                    inputProps={{ min: 0 }}
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Maximum Covers
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.maxCovers || ''}
+                      onChange={(e) => handleSettingChange('maxCovers', e.target.value ? parseInt(e.target.value) : null)}
+                      helperText="Leave empty for unlimited capacity"
+                      inputProps={{ min: 0 }}
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none', // Hide floating label
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Turn Time (minutes)"
-                    type="number"
-                    value={settings.turnTimeMinutes}
-                    onChange={(e) => handleSettingChange('turnTimeMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
-                    helperText="How long each booking lasts (includes cleanup)"
-                    inputProps={{ min: 30, max: 480 }}
-                    required
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Turn Time (minutes) *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.turnTimeMinutes}
+                      onChange={(e) => handleSettingChange('turnTimeMinutes', e.target.value ? parseInt(e.target.value) : undefined)}
+                      helperText="How long each booking lasts (includes cleanup)"
+                      inputProps={{ min: 30, max: 480 }}
+                      required
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none', // Hide floating label
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Time Slot Duration (minutes)"
-                    type="number"
-                    value={settings.defaultSlotDuration}
-                    onChange={(e) => handleSettingChange('defaultSlotDuration', e.target.value ? parseInt(e.target.value) : undefined)}
-                    helperText="How often booking slots are offered"
-                    inputProps={{ min: 15, max: 120 }}
-                    required
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Time Slot Duration (minutes) *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.defaultSlotDuration}
+                      onChange={(e) => handleSettingChange('defaultSlotDuration', e.target.value ? parseInt(e.target.value) : undefined)}
+                      helperText="How often booking slots are offered"
+                      inputProps={{ min: 15, max: 120 }}
+                      required
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none', // Hide floating label
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
@@ -644,15 +695,32 @@ const RestaurantSettingsPanel: React.FC = () => {
               
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Advance Booking Days"
-                    type="number"
-                    value={settings.bookingSettings.maxAdvanceBookingDays}
-                    onChange={(e) => handleSettingChange('maxAdvanceBookingDays', e.target.value ? parseInt(e.target.value) : 90, 'bookingSettings')}
-                    inputProps={{ min: 1, max: 365 }}
-                    required
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Max Advance Booking Days *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.maxAdvanceBookingDays}
+                      onChange={(e) => handleSettingChange('maxAdvanceBookingDays', e.target.value ? parseInt(e.target.value) : 90, 'bookingSettings')}
+                      inputProps={{ min: 1, max: 365 }}
+                      required
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none', // Hide floating label
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
@@ -668,15 +736,32 @@ const RestaurantSettingsPanel: React.FC = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Party Size"
-                    type="number"
-                    value={settings.bookingSettings.maxPartySize}
-                    onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings')}
-                    inputProps={{ min: 1, max: 50 }}
-                    required
-                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#cbd5e1', 
+                        mb: 0.5, 
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      Max Party Size *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={settings.bookingSettings.maxPartySize}
+                      onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings')}
+                      inputProps={{ min: 1, max: 50 }}
+                      required
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          display: 'none', // Hide floating label
+                        }
+                      }}
+                    />
+                  </Box>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
