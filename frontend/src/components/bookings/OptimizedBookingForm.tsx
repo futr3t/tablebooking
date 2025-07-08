@@ -315,17 +315,23 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   };
 
   const handleTimeSlotSelect = (slot: EnhancedTimeSlot) => {
-    // If slot is available, select it directly
-    if (slot.available) {
+    // Check if physically full - should not be clickable but just in case
+    if (slot.pacingStatus === 'physically_full') {
+      setError('This time slot has no available tables. Please select a different time or contact the restaurant for large group bookings.');
+      return;
+    }
+
+    // If slot is available or moderately busy, select it directly
+    if (slot.available || slot.pacingStatus === 'available' || slot.pacingStatus === 'moderate') {
       setSelectedSlot(slot);
       setFormData(prev => ({ ...prev, bookingTime: slot.time }));
       
-      // Show warning if slot is busy but available
-      if (slot.pacingStatus === 'busy' || slot.pacingStatus === 'moderate') {
+      // Show warning if slot is moderate
+      if (slot.pacingStatus === 'moderate') {
         setShowAdvanced(true);
       }
     } else {
-      // If slot is unavailable, show override dialog
+      // If slot needs override (busy, full, pacing_full), show override dialog
       setOverrideDialog({ open: true, slot });
     }
   };
@@ -397,10 +403,12 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const getPacingColor = (status: string) => {
     switch (status) {
-      case 'available': return 'success';
-      case 'moderate': return 'warning';
-      case 'busy': return 'error';
-      case 'full': return 'error';
+      case 'available': return 'success';        // Green
+      case 'moderate': return 'warning';         // Yellow/Amber
+      case 'busy': return 'warning';             // Amber/Orange (changed from error)
+      case 'full': return 'error';               // Red (legacy full)
+      case 'pacing_full': return 'error';        // Red (pacing limits, can override)
+      case 'physically_full': return 'error';    // Red (no tables, cannot override)
       default: return 'default';
     }
   };
@@ -767,13 +775,17 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       <Tooltip 
                         key={slot.time}
                         title={
-                          !slot.available 
-                            ? `${slot.pacingStatus.toUpperCase()} - Click to override` 
-                            : slot.pacingStatus === 'busy' 
-                              ? 'Busy period - booking may impact service'
-                              : slot.pacingStatus === 'moderate'
-                                ? 'Moderate activity - good availability'
-                                : 'Available - optimal booking time'
+                          slot.pacingStatus === 'physically_full' 
+                            ? 'No tables available - Cannot override (all tables booked or party too large)'
+                            : slot.pacingStatus === 'pacing_full'
+                              ? 'Full (pacing limit) - Click to override with reason'
+                              : slot.pacingStatus === 'full'
+                                ? 'Full - Click to override with reason'
+                                : slot.pacingStatus === 'busy' 
+                                  ? 'Busy period - Click to override or book directly'
+                                  : slot.pacingStatus === 'moderate'
+                                    ? 'Moderate activity - Good availability'
+                                    : 'Available - Optimal booking time'
                         }
                         placement="top"
                       >
@@ -781,19 +793,21 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                           label={slot.time}
                           color={getPacingColor(slot.pacingStatus)}
                           variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
-                          onClick={() => handleTimeSlotSelect(slot)}
+                          onClick={slot.pacingStatus === 'physically_full' ? undefined : () => handleTimeSlotSelect(slot)}
                           icon={
-                            !slot.available ? <Close /> :
+                            slot.pacingStatus === 'physically_full' ? <Close /> :
+                            slot.pacingStatus === 'pacing_full' ? <Warning /> :
                             slot.pacingStatus === 'full' ? <Warning /> :
                             slot.pacingStatus === 'busy' ? <AccessTime /> :
+                            slot.pacingStatus === 'moderate' ? <Warning /> :
                             <CheckCircle />
                           }
                           sx={{ 
-                            cursor: 'pointer',
-                            opacity: !slot.available ? 0.8 : 1,
+                            cursor: slot.pacingStatus === 'physically_full' ? 'not-allowed' : 'pointer',
+                            opacity: slot.pacingStatus === 'physically_full' ? 0.6 : 1,
                             '&:hover': {
-                              opacity: 1,
-                              transform: 'scale(1.02)'
+                              opacity: slot.pacingStatus === 'physically_full' ? 0.6 : 1,
+                              transform: slot.pacingStatus === 'physically_full' ? 'none' : 'scale(1.02)'
                             },
                             transition: 'all 0.2s ease'
                           }}

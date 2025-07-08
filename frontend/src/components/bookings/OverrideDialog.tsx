@@ -28,13 +28,15 @@ interface OverrideDialogProps {
   onConfirm: (reason: string) => void;
   slot: {
     time: string;
-    pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
+    pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
     available: boolean;
     tablesAvailable?: number;
     alternativeTimes?: string[];
     overrideRisk?: 'low' | 'medium' | 'high';
     currentBookings?: number;
     utilizationPercent?: number;
+    canOverride?: boolean;
+    totalTablesBooked?: number;
   };
   loading?: boolean;
 }
@@ -181,6 +183,12 @@ const OverrideDialog: React.FC<OverrideDialogProps> = ({
                 Override Risk Level: {risk.level}
               </Typography>
               <Typography variant="body2">
+                {slot.pacingStatus === 'physically_full' && 
+                  'This time slot has no available tables. Override is not possible.'
+                }
+                {slot.pacingStatus === 'pacing_full' && 
+                  'This time slot is at pacing capacity but tables are available. Booking may impact service quality.'
+                }
                 {slot.pacingStatus === 'full' && 
                   'This time slot is at full capacity. Booking may impact service quality.'
                 }
@@ -264,10 +272,15 @@ const OverrideDialog: React.FC<OverrideDialogProps> = ({
           onClick={handleConfirm}
           variant="contained"
           color="warning"
-          disabled={loading || !isReasonValid()}
+          disabled={loading || !isReasonValid() || slot.pacingStatus === 'physically_full'}
           startIcon={loading ? undefined : <Warning />}
         >
-          {loading ? 'Confirming...' : 'Confirm Override'}
+          {slot.pacingStatus === 'physically_full' 
+            ? 'Cannot Override - No Tables' 
+            : loading 
+              ? 'Confirming...' 
+              : 'Confirm Override'
+          }
         </Button>
       </DialogActions>
     </Dialog>

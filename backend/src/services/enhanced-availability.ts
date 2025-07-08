@@ -25,6 +25,27 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     };
   }> {
     try {
+      // Get restaurant settings first to validate party size
+      const restaurant = await RestaurantModel.findById(restaurantId);
+      if (!restaurant) {
+        throw new Error('Restaurant not found');
+      }
+
+      // Get all tables to check maximum capacity
+      const allTablesForValidation = await TableModel.findByRestaurant(restaurantId);
+      const activeTables = allTablesForValidation.tables.filter(t => t.isActive);
+      
+      // Check if party size can be accommodated by any table or combination
+      const maxSingleTableCapacity = Math.max(...activeTables.map(t => t.maxCapacity));
+      const maxCombinationCapacity = Math.min(
+        activeTables.reduce((sum, t) => sum + t.maxCapacity, 0),
+        30 // Reasonable limit for combined tables
+      );
+      
+      if (partySize > maxCombinationCapacity) {
+        throw new Error(`Party size of ${partySize} exceeds maximum capacity of ${maxCombinationCapacity}. Please contact the restaurant directly for large group bookings.`);
+      }
+
       // Get basic availability
       const basicAvailability = await EnhancedAvailabilityService.checkAvailability(
         restaurantId,
@@ -32,12 +53,6 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         partySize,
         duration
       );
-
-      // Get restaurant settings
-      const restaurant = await RestaurantModel.findById(restaurantId);
-      if (!restaurant) {
-        throw new Error('Restaurant not found');
-      }
 
       // Get all bookings for the date
       const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
@@ -65,7 +80,9 @@ export class EnhancedAvailabilityService extends AvailabilityService {
             pacingStatus: slotData.pacingStatus,
             tablesAvailable: slotData.tablesAvailable,
             suggestedTables: slotData.suggestedTables,
-            alternativeTimes: slotData.alternativeTimes
+            alternativeTimes: slotData.alternativeTimes,
+            canOverride: slotData.canOverride,
+            totalTablesBooked: slotData.totalTablesBooked
           };
         })
       );
@@ -95,10 +112,12 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     restaurant: Restaurant,
     partySize: number
   ): Promise<{
-    pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
+    pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
     tablesAvailable: number;
+    totalTablesBooked?: number;
     suggestedTables?: Table[];
     alternativeTimes: string[];
+    canOverride?: boolean;
   }> {
     const slotMinutes = AvailabilityService.timeToMinutes(slotTime);
     
@@ -137,9 +156,22 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       partySize
     );
 
+    // Check if there are physically available tables vs just pacing limits
+    const hasPhysicalTables = availableTables.length > 0;
+    
+    // Override pacing status if no physical tables are available
+    let finalPacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full' = pacingStatus;
+    if (!hasPhysicalTables) {
+      // No tables available - this is physically full, not just pacing full
+      finalPacingStatus = 'physically_full';
+    } else if (pacingStatus === 'full' && hasPhysicalTables) {
+      // Tables available but pacing is full - this can be overridden
+      finalPacingStatus = 'pacing_full';
+    }
+
     // Generate alternative times if slot is busy/full
     const alternativeTimes: string[] = [];
-    if (pacingStatus === 'busy' || pacingStatus === 'full') {
+    if (finalPacingStatus === 'busy' || finalPacingStatus === 'full' || finalPacingStatus === 'pacing_full' || finalPacingStatus === 'physically_full') {
       // Look for quieter times within 1 hour
       const searchTimes = [-60, -30, 30, 60]; // minutes relative to requested time
       for (const offset of searchTimes) {
@@ -159,10 +191,12 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     }
 
     return {
-      pacingStatus,
-      tablesAvailable: totalTables - tablesBooked,
+      pacingStatus: finalPacingStatus,
+      tablesAvailable: availableTables.length, // Actual available tables for this party size
+      totalTablesBooked: tablesBooked,
       suggestedTables: availableTables.slice(0, 3), // Top 3 suggestions
-      alternativeTimes: alternativeTimes.slice(0, 4) // Up to 4 alternatives
+      alternativeTimes: alternativeTimes.slice(0, 4), // Up to 4 alternatives
+      canOverride: hasPhysicalTables // Can only override if tables exist
     };
   }
 
