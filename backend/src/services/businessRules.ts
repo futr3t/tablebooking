@@ -47,10 +47,11 @@ export class BusinessRulesService {
         return advanceBookingError;
       }
 
-      // 3. Check party size limits
+      // 3. Check party size limits (staff can override)
       const partySizeError = this.validatePartySize(
         partySize,
-        restaurant.bookingSettings
+        restaurant.bookingSettings,
+        isStaffBooking
       );
       if (partySizeError) {
         return partySizeError;
@@ -176,7 +177,8 @@ export class BusinessRulesService {
    */
   private static validatePartySize(
     partySize: number,
-    bookingSettings: any
+    bookingSettings: any,
+    isStaffBooking: boolean = false
   ): BusinessRulesError | null {
     if (partySize < 1) {
       return {
@@ -185,10 +187,19 @@ export class BusinessRulesService {
       };
     }
 
-    if (partySize > bookingSettings.maxPartySize) {
+    // Staff bookings can exceed party size limits for special events/large groups
+    if (!isStaffBooking && bookingSettings.maxPartySize && partySize > bookingSettings.maxPartySize) {
       return {
         code: 'PARTY_TOO_LARGE',
-        message: `Maximum party size is ${bookingSettings.maxPartySize}`
+        message: `Maximum party size is ${bookingSettings.maxPartySize}. Staff can override this limit for special events.`
+      };
+    }
+
+    // Optional: Set a reasonable upper limit even for staff (e.g., 100 people)
+    if (partySize > 100) {
+      return {
+        code: 'PARTY_EXTREMELY_LARGE',
+        message: 'Party size exceeds reasonable limits. Please contact management for parties over 100 people.'
       };
     }
 

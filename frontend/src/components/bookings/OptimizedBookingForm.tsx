@@ -564,7 +564,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                       partySize: parseInt(e.target.value) || 1 
                     }))}
                     InputProps={{
-                      inputProps: { min: 1, max: 50 },
+                      inputProps: { min: 1, max: 100 },
                       startAdornment: <Person sx={{ mr: 1, color: 'action.active' }} />
                     }}
                     sx={{

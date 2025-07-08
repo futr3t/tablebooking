@@ -820,7 +820,7 @@ const RestaurantSettingsPanel: React.FC = () => {
                       type="number"
                       value={settings.bookingSettings.maxPartySize}
                       onChange={(e) => handleSettingChange('maxPartySize', e.target.value ? parseInt(e.target.value) : 12, 'bookingSettings')}
-                      inputProps={{ min: 1, max: 50 }}
+                      inputProps={{ min: 1, max: 100 }}
                       required
                       sx={{
                         '& .MuiInputLabel-root': {

@@ -230,7 +230,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 type="number"
                 value={formData.partySize}
                 onChange={(e) => handleChange('partySize', parseInt(e.target.value))}
-                inputProps={{ min: 1, max: 20 }}
+                inputProps={{ min: 1, max: 100 }}
                 required
                 sx={{
                   '& .MuiInputLabel-root': {

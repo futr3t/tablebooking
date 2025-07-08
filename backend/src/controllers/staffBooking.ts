@@ -18,7 +18,7 @@ export const staffBookingValidation = [
   body('customerName').trim().notEmpty().withMessage('Customer name is required'),
   body('customerPhone').optional().matches(/^[\d\s\-\+\(\)]+$/).withMessage('Invalid phone number'),
   body('customerEmail').optional().isEmail().withMessage('Invalid email address'),
-  body('partySize').isInt({ min: 1, max: 50 }).withMessage('Party size must be between 1 and 50'),
+  body('partySize').isInt({ min: 1, max: 100 }).withMessage('Party size must be between 1 and 100'),
   body('bookingDate').isISO8601().toDate().withMessage('Invalid booking date'),
   body('bookingTime').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid time format (HH:MM)'),
   body('duration').optional().isInt({ min: 30, max: 480 }).withMessage('Duration must be between 30 and 480 minutes'),

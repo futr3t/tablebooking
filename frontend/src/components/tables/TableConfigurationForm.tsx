@@ -265,7 +265,7 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
             value={formData.capacity}
             onChange={(e) => handleChange('capacity', e.target.value)}
             required
-            inputProps={{ min: 1, max: 50 }}
+            inputProps={{ min: 1, max: 100 }}
             helperText="Primary seating capacity"
             sx={{
               '& .MuiInputLabel-root': {
@@ -321,7 +321,7 @@ const TableConfigurationForm: React.FC<TableConfigurationFormProps> = ({
             value={formData.maxCapacity}
             onChange={(e) => handleChange('maxCapacity', e.target.value)}
             required
-            inputProps={{ min: formData.capacity, max: 50 }}
+            inputProps={{ min: formData.capacity, max: 100 }}
             helperText="Largest party size"
             sx={{
               '& .MuiInputLabel-root': {
