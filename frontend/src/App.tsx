@@ -362,7 +362,8 @@ const theme = createTheme({
           },
         },
         input: {
-          padding: '12px 14px', // Consistent padding
+          padding: '8px 14px', // Reduced padding for better vertical centering
+          lineHeight: '1.5', // Proper line height for vertical alignment
           '&::placeholder': {
             color: '#94a3b8', // Slate-400 placeholder
             opacity: 1,
@@ -390,7 +391,8 @@ const theme = createTheme({
           },
         },
         input: {
-          padding: '12px 14px', // Consistent padding and sizing
+          padding: '8px 14px', // Reduced padding for better vertical centering
+          lineHeight: '1.5', // Proper line height for vertical alignment
           color: '#ffffff', // White text
           '&::placeholder': {
             color: '#94a3b8', // Slate-400 placeholder
