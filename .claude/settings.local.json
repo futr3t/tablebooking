@@ -36,7 +36,8 @@
       "Bash(kill:*)",
       "Bash(true)",
       "Bash(npm run:*)",
-      "WebFetch(domain:kind-benevolence-production.up.railway.app)"
+      "WebFetch(domain:kind-benevolence-production.up.railway.app)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
