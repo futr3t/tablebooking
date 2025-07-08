@@ -216,7 +216,31 @@ const BookingDashboard: React.FC = () => {
               slotProps={{
                 textField: {
                   size: 'small',
-                  sx: { minWidth: { xs: '100%', sm: 160 } }
+                  sx: { 
+                    minWidth: { xs: '100%', sm: 160 },
+                    '& .MuiInputBase-root': {
+                      height: '32px !important',
+                      minHeight: '32px !important',
+                      display: 'flex !important',
+                      alignItems: 'center !important',
+                      paddingTop: '0 !important',
+                      paddingBottom: '0 !important',
+                    },
+                    '& .MuiInputBase-input': {
+                      padding: '0 8px !important',
+                      lineHeight: '32px !important',
+                      height: '32px !important',
+                      boxSizing: 'border-box !important',
+                      margin: '0 !important',
+                      verticalAlign: 'middle !important',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      top: '0 !important',
+                    },
+                    '& .MuiInputLabel-outlined.MuiInputLabel-shrink': {
+                      transform: 'translate(14px, -6px) scale(0.75) !important',
+                    }
+                  }
                 }
               }}
             />

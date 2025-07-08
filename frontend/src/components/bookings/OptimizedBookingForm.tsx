@@ -459,7 +459,19 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        required: true
+                        required: true,
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            minHeight: '40px !important',
+                            display: 'flex !important',
+                            alignItems: 'center !important',
+                          },
+                          '& .MuiInputBase-input': {
+                            padding: '8px 14px !important',
+                            lineHeight: '1.4375em !important',
+                            height: '1.4375em !important',
+                          }
+                        }
                       }
                     }}
                   />
