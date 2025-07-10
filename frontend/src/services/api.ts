@@ -210,6 +210,7 @@ export const widgetService = {
 };
 
 export const restaurantService = {
+  // Existing settings methods
   getSettings: async (restaurantId: string): Promise<any> => {
     const response = await api.get(`/restaurants/${restaurantId}/settings`);
     return response.data.data || response.data;
@@ -229,6 +230,32 @@ export const restaurantService = {
     const response = await api.get(`/restaurants/${restaurantId}`);
     return response.data.data || response.data;
   },
+
+  // New admin methods for restaurant management
+  getAllRestaurants: async (query?: string): Promise<any> => {
+    const response = await api.get(`/restaurants?${query}`);
+    return response.data;
+  },
+
+  createRestaurant: async (restaurantData: any): Promise<any> => {
+    const response = await api.post('/restaurants', restaurantData);
+    return response.data;
+  },
+
+  updateRestaurant: async (id: string, restaurantData: any): Promise<any> => {
+    const response = await api.put(`/restaurants/${id}`, restaurantData);
+    return response.data;
+  },
+
+  deleteRestaurant: async (id: string): Promise<any> => {
+    const response = await api.delete(`/restaurants/${id}`);
+    return response.data;
+  },
+
+  switchRestaurant: async (restaurantId: string): Promise<any> => {
+    const response = await api.post('/restaurants/switch', { restaurantId });
+    return response.data;
+  }
 };
 
 export const turnTimeRulesService = {
@@ -340,36 +367,5 @@ export const userService = {
   }
 };
 
-export const restaurantService = {
-  getAllRestaurants: async (query?: string): Promise<any> => {
-    const response = await api.get(`/restaurants?${query}`);
-    return response.data;
-  },
-
-  getRestaurant: async (id: string): Promise<any> => {
-    const response = await api.get(`/restaurants/${id}`);
-    return response.data;
-  },
-
-  createRestaurant: async (restaurantData: any): Promise<any> => {
-    const response = await api.post('/restaurants', restaurantData);
-    return response.data;
-  },
-
-  updateRestaurant: async (id: string, restaurantData: any): Promise<any> => {
-    const response = await api.put(`/restaurants/${id}`, restaurantData);
-    return response.data;
-  },
-
-  deleteRestaurant: async (id: string): Promise<any> => {
-    const response = await api.delete(`/restaurants/${id}`);
-    return response.data;
-  },
-
-  switchRestaurant: async (restaurantId: string): Promise<any> => {
-    const response = await api.post('/restaurants/switch', { restaurantId });
-    return response.data;
-  }
-};
 
 export default api;

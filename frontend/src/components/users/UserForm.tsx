@@ -34,17 +34,12 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { userService, restaurantService } from '../../services/api';
+import { User } from '../../types';
 
-interface User {
-  id?: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: 'super_admin' | 'owner' | 'manager' | 'host' | 'server' | 'customer';
-  restaurantId?: string;
-  isActive: boolean;
+interface UserFormData extends User {
   password?: string;
+  isActive?: boolean;
+  phone?: string;
 }
 
 interface Restaurant {
@@ -55,15 +50,16 @@ interface Restaurant {
 }
 
 interface UserFormProps {
-  user?: User;
-  onSave: (user: User) => void;
+  user?: UserFormData;
+  onSave: (user: UserFormData) => void;
   onCancel: () => void;
   isEditing?: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel, isEditing = false }) => {
   const { user: currentUser } = useAuth();
-  const [formData, setFormData] = useState<User>({
+  const [formData, setFormData] = useState<UserFormData>({
+    id: '',
     email: '',
     firstName: '',
     lastName: '',
@@ -134,7 +130,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel, isEditing =
     }
   };
 
-  const handleInputChange = (field: keyof User, value: any) => {
+  const handleInputChange = (field: keyof UserFormData, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

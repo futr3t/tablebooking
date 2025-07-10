@@ -48,30 +48,23 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { userService } from '../../services/api';
+import { User } from '../../types';
 
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: 'super_admin' | 'owner' | 'manager' | 'host' | 'server' | 'customer';
-  restaurantId?: string;
+interface UserListItem extends User {
   restaurantName?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isActive?: boolean;
+  phone?: string;
 }
 
 interface UserListProps {
-  onUserSelect?: (user: User) => void;
+  onUserSelect?: (user: UserListItem) => void;
   onUserCreate?: () => void;
-  onUserEdit?: (user: User) => void;
+  onUserEdit?: (user: UserListItem) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserEdit }) => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -81,7 +74,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserE
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
 
@@ -142,7 +135,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserE
     setPage(0);
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, user: User) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, user: UserListItem) => {
     setAnchorEl(event.currentTarget);
     setSelectedUser(user);
   };
@@ -190,18 +183,19 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserE
     setPage(0);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
 
-  const canEditUser = (user: User) => {
+  const canEditUser = (user: UserListItem) => {
     if (currentUser?.role === 'super_admin') return true;
     if (currentUser?.role === 'owner' && user.role !== 'super_admin') return true;
     if (currentUser?.role === 'manager' && ['host', 'server', 'customer'].includes(user.role)) return true;
     return false;
   };
 
-  const canDeleteUser = (user: User) => {
+  const canDeleteUser = (user: UserListItem) => {
     if (user.id === currentUser?.id) return false; // Can't delete yourself
     if (currentUser?.role === 'super_admin') return true;
     if (currentUser?.role === 'owner' && user.role !== 'super_admin') return true;

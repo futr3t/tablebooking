@@ -11,21 +11,14 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
+import { User } from '../../types';
 import UserList from './UserList';
 import UserForm from './UserForm';
 
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: 'super_admin' | 'owner' | 'manager' | 'host' | 'server' | 'customer';
-  restaurantId?: string;
+interface UserListItem extends User {
   restaurantName?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isActive?: boolean;
+  phone?: string;
 }
 
 const Transition = React.forwardRef(function Transition(
@@ -38,37 +31,37 @@ const Transition = React.forwardRef(function Transition(
 });
 
 const UserManagement: React.FC = () => {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserListItem | undefined>(undefined);
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleUserCreate = () => {
-    setSelectedUser(null);
+    setSelectedUser(undefined);
     setIsEditing(false);
     setUserFormOpen(true);
   };
 
-  const handleUserEdit = (user: User) => {
+  const handleUserEdit = (user: UserListItem) => {
     setSelectedUser(user);
     setIsEditing(true);
     setUserFormOpen(true);
   };
 
-  const handleUserSelect = (user: User) => {
+  const handleUserSelect = (user: UserListItem) => {
     // For now, just edit the user when clicked
     // In the future, this could show a user detail view
     handleUserEdit(user);
   };
 
-  const handleFormSave = (user: User) => {
+  const handleFormSave = (user: any) => {
     setUserFormOpen(false);
-    setSelectedUser(null);
+    setSelectedUser(undefined);
     // The list will refresh automatically
   };
 
   const handleFormCancel = () => {
     setUserFormOpen(false);
-    setSelectedUser(null);
+    setSelectedUser(undefined);
   };
 
   return (
