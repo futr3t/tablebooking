@@ -185,3 +185,29 @@ export const validateTable = validate([
   { field: 'minCapacity', required: true, type: 'number', min: 1, max: 20 },
   { field: 'maxCapacity', required: true, type: 'number', min: 1, max: 20 }
 ]);
+
+export const validateUserCreate = validate([
+  { field: 'email', required: true, type: 'email' },
+  { field: 'password', required: true, type: 'string', minLength: 8 },
+  { field: 'firstName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+  { field: 'lastName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+  { field: 'phone', required: false, type: 'phone' },
+  { field: 'role', required: true, type: 'string', custom: (value) => {
+    const validRoles = ['super_admin', 'owner', 'manager', 'host', 'server', 'customer'];
+    return validRoles.includes(value) || 'must be a valid role';
+  }},
+  { field: 'restaurantId', required: false, type: 'uuid' }
+]);
+
+export const validateUserUpdate = validate([
+  { field: 'firstName', required: false, type: 'string', minLength: 1, maxLength: 100 },
+  { field: 'lastName', required: false, type: 'string', minLength: 1, maxLength: 100 },
+  { field: 'phone', required: false, type: 'phone' },
+  { field: 'password', required: false, type: 'string', minLength: 8 },
+  { field: 'role', required: false, type: 'string', custom: (value) => {
+    const validRoles = ['super_admin', 'owner', 'manager', 'host', 'server', 'customer'];
+    return validRoles.includes(value) || 'must be a valid role';
+  }},
+  { field: 'restaurantId', required: false, type: 'uuid' },
+  { field: 'isActive', required: false, type: 'boolean' }
+]);

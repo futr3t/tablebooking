@@ -13,6 +13,7 @@ import staffBookingRoutes from './staffBooking';
 import dietaryRequirementsRoutes from './dietaryRequirements';
 import debugRoutes from './debug';
 import turnTimeRulesRoutes from './turnTimeRules';
+import userRoutes from './user';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/bookings/staff', staffBookingRoutes);  // Must come before general 
 router.use('/bookings', bookingRoutes);
 router.use('/tables', tableRoutes);
 router.use('/restaurants', restaurantRoutes);
+router.use('/users', userRoutes); // User management routes
 router.use('/public', publicRoutes);
 router.use('/widget', widgetRoutes);
 router.use('/widget/public', publicWidgetRoutes); // Public widget API routes

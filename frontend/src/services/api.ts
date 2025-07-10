@@ -313,5 +313,63 @@ export const tableService = {
   },
 };
 
+export const userService = {
+  getUsers: async (query?: string): Promise<any> => {
+    const response = await api.get(`/users?${query}`);
+    return response.data;
+  },
+
+  getUser: async (id: string): Promise<any> => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  },
+
+  createUser: async (userData: any): Promise<any> => {
+    const response = await api.post('/users', userData);
+    return response.data;
+  },
+
+  updateUser: async (id: string, userData: any): Promise<any> => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  },
+
+  deleteUser: async (id: string): Promise<any> => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  }
+};
+
+export const restaurantService = {
+  getAllRestaurants: async (query?: string): Promise<any> => {
+    const response = await api.get(`/restaurants?${query}`);
+    return response.data;
+  },
+
+  getRestaurant: async (id: string): Promise<any> => {
+    const response = await api.get(`/restaurants/${id}`);
+    return response.data;
+  },
+
+  createRestaurant: async (restaurantData: any): Promise<any> => {
+    const response = await api.post('/restaurants', restaurantData);
+    return response.data;
+  },
+
+  updateRestaurant: async (id: string, restaurantData: any): Promise<any> => {
+    const response = await api.put(`/restaurants/${id}`, restaurantData);
+    return response.data;
+  },
+
+  deleteRestaurant: async (id: string): Promise<any> => {
+    const response = await api.delete(`/restaurants/${id}`);
+    return response.data;
+  },
+
+  switchRestaurant: async (restaurantId: string): Promise<any> => {
+    const response = await api.post('/restaurants/switch', { restaurantId });
+    return response.data;
+  }
+};
 
 export default api;

@@ -13,6 +13,7 @@ import BookingDashboard from './components/bookings/BookingDashboard';
 import TableManagementDashboard from './components/tables/TableManagementDashboard';
 import RestaurantSettingsPanel from './components/settings/RestaurantSettingsPanel';
 import WidgetManager from './components/widget/WidgetManager';
+import UserManagement from './components/users/UserManagement';
 import darkTheme from './themes/darkTheme';
 
 // Extend Material-UI theme to include custom purple color
@@ -559,7 +560,7 @@ function App() {
                   <Route path="bookings" element={<BookingDashboard />} />
                   <Route path="tables" element={<TableManagementDashboard />} />
                   <Route path="settings" element={<RestaurantSettingsPanel />} />
-                  <Route path="staff" element={<div>Staff Management (Coming Soon)</div>} />
+                  <Route path="staff" element={<UserManagement />} />
                   <Route path="widget" element={<WidgetManager />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

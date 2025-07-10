@@ -1,17 +1,31 @@
 import { Router } from 'express';
-import { authenticate, authorize, requireRestaurantAccess } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+import { authenticate, authorize, requireRestaurantAccess, requireAuth, requireSuperAdmin } from '../middleware/auth';
+import { validate, validateRestaurant } from '../middleware/validation';
 import { UserRole } from '../types';
 import {
   getRestaurant,
   getRestaurantSettings,
-  updateRestaurantSettings
+  updateRestaurantSettings,
+  getAllRestaurants,
+  createRestaurant,
+  updateRestaurant,
+  deleteRestaurant,
+  switchRestaurant
 } from '../controllers/restaurant';
 
 const router = Router();
 
 // All restaurant routes require authentication
 router.use(authenticate);
+
+// Get all restaurants (super admin only)
+router.get('/', requireSuperAdmin, getAllRestaurants);
+
+// Create new restaurant (super admin only)
+router.post('/', requireSuperAdmin, validateRestaurant, createRestaurant);
+
+// Switch restaurant context (super admin only for now)
+router.post('/switch', requireSuperAdmin, switchRestaurant);
 
 // Get restaurant details
 router.get('/:restaurantId',
@@ -20,6 +34,23 @@ router.get('/:restaurantId',
     { field: 'restaurantId', required: true, type: 'uuid' }
   ]),
   getRestaurant
+);
+
+// Update restaurant (super admin and owners)
+router.put('/:restaurantId',
+  validate([
+    { field: 'restaurantId', required: true, type: 'uuid' }
+  ]),
+  updateRestaurant
+);
+
+// Delete restaurant (super admin only)
+router.delete('/:restaurantId',
+  requireSuperAdmin,
+  validate([
+    { field: 'restaurantId', required: true, type: 'uuid' }
+  ]),
+  deleteRestaurant
 );
 
 // Get restaurant settings
