@@ -27,20 +27,22 @@ export class AvailabilityService {
       const maxAdvanceDays = bookingSettings.maxAdvanceBookingDays || 270; // 9 months default
       const minAdvanceHours = bookingSettings.minAdvanceBookingHours || 2;
 
-      if (requestDate < today) {
+      // Compare just the date part (not time) for past date check
+      const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const requestDateOnly = new Date(requestDate.getFullYear(), requestDate.getMonth(), requestDate.getDate());
+      
+      if (requestDateOnly < todayDateOnly) {
         throw new Error('Cannot book for past dates');
       }
 
-      const daysDiff = Math.ceil((requestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.ceil((requestDateOnly.getTime() - todayDateOnly.getTime()) / (1000 * 60 * 60 * 24));
       if (daysDiff > maxAdvanceDays) {
         throw new Error(`Cannot book more than ${maxAdvanceDays} days in advance`);
       }
 
-      // Check if booking is too soon
-      const hoursDiff = (requestDate.getTime() - today.getTime()) / (1000 * 60 * 60);
-      if (hoursDiff < minAdvanceHours) {
-        throw new Error(`Must book at least ${minAdvanceHours} hours in advance`);
-      }
+      // For same-day bookings, we'll check the minimum advance time per slot
+      // This allows checking availability even if current time doesn't meet minimum advance
+      // The actual time slots will enforce the minimum advance booking requirement
 
       // Get opening hours for this day
       const dayOfWeekString = this.getDayOfWeek(requestDate);
@@ -141,6 +143,16 @@ export class AvailabilityService {
         const slotTime = this.minutesToTime(minutes);
         const startMinutes = minutes;
         const endMinutes = minutes + duration;
+
+        // Check minimum advance booking requirement for this specific slot
+        const minAdvanceHours = bookingSettings.minAdvanceBookingHours || 2;
+        const slotDateTime = new Date(`${date}T${slotTime}`);
+        const now = new Date();
+        const hoursUntilSlot = (slotDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursUntilSlot < minAdvanceHours) {
+          continue; // Skip this slot as it doesn't meet minimum advance requirement
+        }
 
         // Check concurrent booking limits in-memory
         let concurrentLimitExceeded = false;
