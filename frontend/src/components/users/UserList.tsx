@@ -60,9 +60,10 @@ interface UserListProps {
   onUserSelect?: (user: UserListItem) => void;
   onUserCreate?: () => void;
   onUserEdit?: (user: UserListItem) => void;
+  onRefresh?: (refreshFn: () => void) => void;
 }
 
-const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserEdit }) => {
+const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserEdit, onRefresh }) => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +130,13 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, onUserCreate, onUserE
   useEffect(() => {
     fetchUsers();
   }, [page, rowsPerPage, searchTerm, roleFilter, statusFilter]);
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onRefresh) {
+      onRefresh(fetchUsers);
+    }
+  }, [onRefresh]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);

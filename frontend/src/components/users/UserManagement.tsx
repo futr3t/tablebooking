@@ -34,6 +34,7 @@ const UserManagement: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserListItem | undefined>(undefined);
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [refreshUserList, setRefreshUserList] = useState<(() => void) | null>(null);
 
   const handleUserCreate = () => {
     setSelectedUser(undefined);
@@ -56,12 +57,19 @@ const UserManagement: React.FC = () => {
   const handleFormSave = (user: any) => {
     setUserFormOpen(false);
     setSelectedUser(undefined);
-    // The list will refresh automatically
+    // Refresh the user list after successful save
+    if (refreshUserList) {
+      refreshUserList();
+    }
   };
 
   const handleFormCancel = () => {
     setUserFormOpen(false);
     setSelectedUser(undefined);
+  };
+
+  const handleRefreshCallback = (refreshFn: () => void) => {
+    setRefreshUserList(() => refreshFn);
   };
 
   return (
@@ -70,6 +78,7 @@ const UserManagement: React.FC = () => {
         onUserSelect={handleUserSelect}
         onUserCreate={handleUserCreate}
         onUserEdit={handleUserEdit}
+        onRefresh={handleRefreshCallback}
       />
 
       {/* User Form Dialog */}
