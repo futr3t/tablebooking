@@ -35,37 +35,37 @@ export const getAllUsers = asyncHandler(async (req: AuthRequest, res: Response):
     if (!user.restaurantId) {
       throw createError('User not assigned to a restaurant', 403);
     }
-    filters.push(`restaurant_id = $${paramIndex++}`);
+    filters.push(`u.restaurant_id = $${paramIndex++}`);
     params.push(user.restaurantId);
   } else if (query.restaurantId) {
     // Super admin can filter by restaurant
-    filters.push(`restaurant_id = $${paramIndex++}`);
+    filters.push(`u.restaurant_id = $${paramIndex++}`);
     params.push(query.restaurantId);
   }
 
   // Role filter
   if (query.role) {
-    filters.push(`role = $${paramIndex++}`);
+    filters.push(`u.role = $${paramIndex++}`);
     params.push(query.role);
   }
 
   // Active status filter
   if (query.isActive !== undefined) {
-    filters.push(`is_active = $${paramIndex++}`);
+    filters.push(`u.is_active = $${paramIndex++}`);
     params.push(query.isActive === 'true');
   } else {
     // Default to active users only
-    filters.push(`is_active = true`);
+    filters.push(`u.is_active = true`);
   }
 
   // Search filter (by email, name, or phone)
   if (query.search) {
     const searchParam = `%${query.search.toLowerCase()}%`;
     filters.push(`(
-      LOWER(email) LIKE $${paramIndex} OR 
-      LOWER(first_name) LIKE $${paramIndex} OR 
-      LOWER(last_name) LIKE $${paramIndex} OR
-      phone LIKE $${paramIndex}
+      LOWER(u.email) LIKE $${paramIndex} OR 
+      LOWER(u.first_name) LIKE $${paramIndex} OR 
+      LOWER(u.last_name) LIKE $${paramIndex} OR
+      u.phone LIKE $${paramIndex}
     )`);
     params.push(searchParam);
     paramIndex++;
@@ -74,10 +74,11 @@ export const getAllUsers = asyncHandler(async (req: AuthRequest, res: Response):
   // Build final query
   const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
   
-  // Get total count
+  // Get total count (use simpler query for count)
+  const countParams = params.slice(0, paramIndex - 1); // Remove limit/offset params
   const countResult = await db.query(
-    `SELECT COUNT(*) FROM users ${whereClause}`,
-    params
+    `SELECT COUNT(*) FROM users u ${whereClause}`,
+    countParams
   );
   const totalItems = parseInt(countResult.rows[0].count, 10);
 
@@ -86,7 +87,7 @@ export const getAllUsers = asyncHandler(async (req: AuthRequest, res: Response):
   const result = await db.query(
     `SELECT u.*, r.name as restaurant_name 
      FROM users u
-     LEFT JOIN restaurants r ON u.restaurant_id = r.id
+     LEFT JOIN restaurants r ON u.restaurant_id = r.id AND r.is_active = true
      ${whereClause}
      ORDER BY u.created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
