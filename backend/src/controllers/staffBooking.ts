@@ -151,13 +151,43 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     bookingDate,
     bookingTime,
     async () => {
+      // CRITICAL: Re-check availability within the lock to prevent race conditions
+      const currentAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
+        restaurantId,
+        bookingDate,
+        partySize,
+        bookingDuration
+      );
+
+      // Find the current slot status
+      const requestedSlot = currentAvailability.timeSlots.find(slot => slot.time === bookingTime);
+      
+      if (!requestedSlot) {
+        throw createError(`Time slot ${bookingTime} is not available for booking`, 400);
+      }
+
+      // Check if the slot is still available for booking
+      if (requestedSlot.pacingStatus === 'physically_full') {
+        throw createError('No tables available for this time slot. Please select a different time.', 409);
+      }
+
+      // If pacing override is required but not provided, reject the booking
+      if ((requestedSlot.pacingStatus === 'pacing_full' || requestedSlot.pacingStatus === 'full') && !overridePacing) {
+        throw createError('This time slot exceeds capacity limits. Override is required.', 409);
+      }
+
+      // If slot is busy but no override provided, still allow but log warning
+      if (requestedSlot.pacingStatus === 'busy' && !overridePacing) {
+        console.log(`[BOOKING WARNING] Creating booking in busy slot without override: ${bookingDate} ${bookingTime} for ${partySize} people`);
+      }
+
       let assignedTable = null;
       
-      // If tableId is provided, verify it's available
+      // If tableId is provided, verify it's still available
       if (tableId) {
         const table = await TableModel.findById(tableId);
         if (table && table.restaurantId === restaurantId && table.isActive) {
-          // Check if table is available at the requested time
+          // Check if table is available at the requested time (re-check within lock)
           const existingBookings = await BookingModel.findByDateRange(restaurantId, bookingDate, bookingDate);
           const startMinutes = AvailabilityService.timeToMinutes(bookingTime);
           const endMinutes = startMinutes + bookingDuration;
@@ -176,6 +206,8 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           
           if (isAvailable) {
             assignedTable = table;
+          } else {
+            throw createError(`Selected table ${table.number} is no longer available for this time slot`, 409);
           }
         }
       }
@@ -190,6 +222,13 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
           bookingDuration,
           true // isStaffBooking = true
         );
+
+        if (!assignedTable) {
+          // Double-check if we should force to waitlist or reject
+          if (requestedSlot.tablesAvailable === 0) {
+            throw createError('No tables available for this time slot. Please select a different time or add to waitlist.', 409);
+          }
+        }
       }
 
       if (assignedTable || forceWaitlist) {

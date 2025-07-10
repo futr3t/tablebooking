@@ -38,7 +38,8 @@
       "Bash(npm run:*)",
       "WebFetch(domain:kind-benevolence-production.up.railway.app)",
       "Bash(sed:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(source .env)"
     ],
     "deny": []
   }

@@ -121,7 +121,36 @@ export class EnhancedAvailabilityService extends AvailabilityService {
   }> {
     const slotMinutes = AvailabilityService.timeToMinutes(slotTime);
     
-    // Count bookings starting within 30 minutes of this slot
+    // CRITICAL: First check physical table availability for this specific party size and time
+    const availableTables = await TableModel.findAvailableTablesForTimeSlot(
+      restaurant.id,
+      slotTime,
+      partySize
+    );
+
+    const hasPhysicalTables = availableTables.length > 0;
+    
+    // If no physical tables are available, immediately mark as physically_full
+    if (!hasPhysicalTables) {
+      // Still calculate alternatives for suggestions
+      const alternativeTimes = await this.findAlternativeTimesForParty(
+        restaurant.id,
+        slotTime,
+        partySize,
+        existingBookings
+      );
+
+      return {
+        pacingStatus: 'physically_full',
+        tablesAvailable: 0,
+        totalTablesBooked: totalTables, // All tables effectively booked
+        suggestedTables: [],
+        alternativeTimes: alternativeTimes.slice(0, 4),
+        canOverride: false // Cannot override when no physical tables exist
+      };
+    }
+
+    // Count bookings starting within 30 minutes of this slot (for pacing calculations)
     const nearbyBookings = existingBookings.filter(booking => {
       if (booking.status === 'cancelled' || booking.status === 'no_show') {
         return false;
@@ -133,71 +162,97 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     const tablesBooked = nearbyBookings.length;
     const coversBooked = nearbyBookings.reduce((sum, b) => sum + b.partySize, 0);
     
-    // Calculate utilization percentages
+    // Calculate utilization percentages for pacing
     const tableUtilization = (tablesBooked / totalTables) * 100;
     const coverUtilization = (coversBooked / totalCapacity) * 100;
     
-    // Determine pacing status
-    let pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
-    if (tableUtilization >= 90 || coverUtilization >= 90) {
-      pacingStatus = 'full';
-    } else if (tableUtilization >= 70 || coverUtilization >= 70) {
+    // Determine base pacing status (when tables ARE physically available)
+    let pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full';
+    
+    // Enhanced pacing logic: consider both table count AND actual availability
+    const availabilityRatio = (availableTables.length / totalTables) * 100;
+    
+    if (tableUtilization >= 90 || coverUtilization >= 90 || availabilityRatio <= 10) {
+      // High utilization OR very few tables left - this is pacing_full (can override)
+      pacingStatus = 'pacing_full';
+    } else if (tableUtilization >= 70 || coverUtilization >= 70 || availabilityRatio <= 30) {
       pacingStatus = 'busy';
-    } else if (tableUtilization >= 40 || coverUtilization >= 40) {
+    } else if (tableUtilization >= 40 || coverUtilization >= 40 || availabilityRatio <= 60) {
       pacingStatus = 'moderate';
     } else {
       pacingStatus = 'available';
     }
 
-    // Get available tables for this slot
-    const availableTables = await TableModel.findAvailableTablesForTimeSlot(
+    // Generate alternative times if slot is busy/full
+    const alternativeTimes = await this.findAlternativeTimesForParty(
       restaurant.id,
       slotTime,
-      partySize
+      partySize,
+      existingBookings
     );
 
-    // Check if there are physically available tables vs just pacing limits
-    const hasPhysicalTables = availableTables.length > 0;
-    
-    // Override pacing status if no physical tables are available
-    let finalPacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full' = pacingStatus;
-    if (!hasPhysicalTables) {
-      // No tables available - this is physically full, not just pacing full
-      finalPacingStatus = 'physically_full';
-    } else if (pacingStatus === 'full' && hasPhysicalTables) {
-      // Tables available but pacing is full - this can be overridden
-      finalPacingStatus = 'pacing_full';
-    }
-
-    // Generate alternative times if slot is busy/full
-    const alternativeTimes: string[] = [];
-    if (finalPacingStatus === 'busy' || finalPacingStatus === 'full' || finalPacingStatus === 'pacing_full' || finalPacingStatus === 'physically_full') {
-      // Look for quieter times within 1 hour
-      const searchTimes = [-60, -30, 30, 60]; // minutes relative to requested time
-      for (const offset of searchTimes) {
-        const altMinutes = slotMinutes + offset;
-        if (altMinutes >= 0 && altMinutes <= 1440) { // Valid time range
-          const altTime = AvailabilityService.minutesToTime(altMinutes);
-          const altBookings = existingBookings.filter(booking => {
-            const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
-            return Math.abs(bookingMinutes - altMinutes) < 30;
-          });
-          
-          if (altBookings.length < tablesBooked * 0.7) { // At least 30% less busy
-            alternativeTimes.push(altTime);
-          }
-        }
-      }
-    }
-
     return {
-      pacingStatus: finalPacingStatus,
+      pacingStatus,
       tablesAvailable: availableTables.length, // Actual available tables for this party size
       totalTablesBooked: tablesBooked,
       suggestedTables: availableTables.slice(0, 3), // Top 3 suggestions
       alternativeTimes: alternativeTimes.slice(0, 4), // Up to 4 alternatives
-      canOverride: hasPhysicalTables // Can only override if tables exist
+      canOverride: true // Can override when physical tables exist (handled by pacing status)
     };
+  }
+
+  /**
+   * Find alternative times for a party when requested slot is busy/full
+   */
+  private static async findAlternativeTimesForParty(
+    restaurantId: string,
+    requestedTime: string,
+    partySize: number,
+    existingBookings: Booking[]
+  ): Promise<string[]> {
+    const requestedMinutes = AvailabilityService.timeToMinutes(requestedTime);
+    const alternativeTimes: string[] = [];
+    
+    // Look for quieter times within 1 hour (before and after)
+    const searchOffsets = [-60, -30, 30, 60]; // minutes relative to requested time
+    
+    for (const offset of searchOffsets) {
+      const altMinutes = requestedMinutes + offset;
+      
+      // Ensure the time is within valid operating hours (0-1440 minutes = 24 hours)
+      if (altMinutes >= 0 && altMinutes <= 1440) {
+        const altTime = AvailabilityService.minutesToTime(altMinutes);
+        
+        // Quick check: count bookings near this alternative time
+        const nearbyBookings = existingBookings.filter(booking => {
+          if (booking.status === 'cancelled' || booking.status === 'no_show') {
+            return false;
+          }
+          const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+          return Math.abs(bookingMinutes - altMinutes) < 30; // Within 30 minutes
+        });
+        
+        // Check if this time has available tables for the party size
+        try {
+          const availableTables = await TableModel.findAvailableTablesForTimeSlot(
+            restaurantId,
+            altTime,
+            partySize
+          );
+          
+          // If tables are available and it's less busy, suggest it
+          if (availableTables.length > 0 && nearbyBookings.length < 5) { // Arbitrary threshold
+            alternativeTimes.push(altTime);
+          }
+        } catch (error) {
+          // Skip this alternative if there's an error checking availability
+          console.warn(`Error checking alternative time ${altTime}:`, error);
+          continue;
+        }
+      }
+    }
+    
+    return alternativeTimes;
   }
 
   /**

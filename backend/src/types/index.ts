@@ -313,9 +313,11 @@ export interface BookingOccasion {
 }
 
 export interface EnhancedTimeSlot extends TimeSlot {
-  pacingStatus: 'available' | 'moderate' | 'busy' | 'full';
+  pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
   tablesAvailable: number;
+  totalTablesBooked?: number;
   suggestedTables?: Table[];
   alternativeTimes?: string[];
+  canOverride?: boolean;
 }
 

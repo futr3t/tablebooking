@@ -368,6 +368,59 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         throw new Error('Email address is required');
       }
 
+      // CRITICAL: Re-check availability before submission to prevent race conditions
+      if (!editMode) { // Only for new bookings, not edits
+        console.log('Re-checking availability before booking submission...');
+        
+        try {
+          const currentAvailability = await api.get('/bookings/staff/availability', {
+            params: {
+              restaurantId,
+              date: formData.bookingDate,
+              partySize: formData.partySize
+            }
+          });
+
+          const availableSlots = currentAvailability.data.data.timeSlots;
+          const requestedSlot = availableSlots.find((slot: any) => slot.time === formData.bookingTime);
+
+          if (!requestedSlot) {
+            throw new Error('Selected time slot is no longer available. Please refresh and select a different time.');
+          }
+
+          // Check if slot became physically unavailable
+          if (requestedSlot.pacingStatus === 'physically_full') {
+            throw new Error(`The ${formData.bookingTime} time slot is now fully booked. Please select a different time or add to waitlist.`);
+          }
+
+          // Check if slot requires override but none provided
+          if ((requestedSlot.pacingStatus === 'pacing_full' || requestedSlot.pacingStatus === 'full') 
+              && !formData.overridePacing) {
+            // Update availability state to show current status
+            setAvailability(currentAvailability.data.data);
+            throw new Error(`The ${formData.bookingTime} time slot now requires an override due to capacity limits. Please check "Override pacing limits" and provide a reason.`);
+          }
+
+          // Warn if slot became busy but allow booking
+          if (requestedSlot.pacingStatus === 'busy' && selectedSlot?.pacingStatus === 'available') {
+            console.log('Warning: Selected slot became busy since initial selection');
+            // Could show a warning but still allow booking
+          }
+
+          console.log(`✓ Availability confirmed for ${formData.bookingTime} (status: ${requestedSlot.pacingStatus})`);
+          
+        } catch (availabilityError: any) {
+          // If it's a validation error from our checks, throw it
+          if (availabilityError.message && !availabilityError.response) {
+            throw availabilityError;
+          }
+          
+          // If it's an API error, show generic message
+          console.error('Failed to re-check availability:', availabilityError);
+          throw new Error('Unable to verify availability. Please refresh the page and try again.');
+        }
+      }
+
       // Combine dietary requirements
       const allDietary = [
         ...formData.dietaryRequirements,
@@ -394,7 +447,29 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       onSuccess(response.data.data);
     } catch (error: any) {
       console.error('Booking creation/update error:', error.response?.data || error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || `Failed to ${editMode ? 'update' : 'create'} booking`;
+      
+      // Enhanced error handling for concurrent booking conflicts
+      const errorResponse = error.response?.data;
+      let errorMessage = error.message;
+
+      if (errorResponse) {
+        // Backend returned specific error
+        errorMessage = errorResponse.error || errorResponse.message;
+        
+        // Handle specific concurrent booking error codes
+        if (errorResponse.code === 'BOOKING_CONFLICT' || errorResponse.code === 'TABLE_UNAVAILABLE') {
+          errorMessage = `${errorMessage} Please refresh availability and select a different time.`;
+          // Trigger availability refresh
+          if (formData.bookingDate && formData.partySize) {
+            loadAvailability();
+          }
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = `Failed to ${editMode ? 'update' : 'create'} booking`;
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -403,13 +478,45 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const getPacingColor = (status: string) => {
     switch (status) {
-      case 'available': return 'success';        // Green
-      case 'moderate': return 'warning';         // Yellow/Amber
-      case 'busy': return 'warning';             // Amber/Orange (changed from error)
-      case 'full': return 'error';               // Red (legacy full)
-      case 'pacing_full': return 'error';        // Red (pacing limits, can override)
-      case 'physically_full': return 'error';    // Red (no tables, cannot override)
+      case 'available': return 'success';        // Green - optimal booking time
+      case 'moderate': return 'warning';         // Yellow - good availability
+      case 'busy': return 'warning';             // Orange - busy but bookable
+      case 'full': return 'error';               // Red (legacy full status)
+      case 'pacing_full': return 'error';        // Red - can override with reason
+      case 'physically_full': return 'error';    // Red - cannot override, no tables
       default: return 'default';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'available': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'moderate': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
+      case 'busy': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
+      case 'pacing_full': return <Warning sx={{ fontSize: 16, color: 'error.main' }} />;
+      case 'physically_full': return <Close sx={{ fontSize: 16, color: 'error.main' }} />;
+      default: return null;
+    }
+  };
+
+  const getStatusTooltip = (slot: EnhancedTimeSlot) => {
+    const { pacingStatus, tablesAvailable, alternativeTimes } = slot;
+    
+    switch (pacingStatus) {
+      case 'available':
+        return `✓ ${tablesAvailable} tables available - optimal booking time`;
+      case 'moderate':
+        return `⚠ ${tablesAvailable} tables available - good time to book`;
+      case 'busy':
+        return `⚠ ${tablesAvailable} tables available - busy period`;
+      case 'pacing_full':
+        return `⚠ ${tablesAvailable} tables available - exceeds pacing limits (can override)`;
+      case 'physically_full':
+        return alternativeTimes && alternativeTimes.length > 0 
+          ? `✗ No tables available - try ${alternativeTimes.slice(0, 2).join(', ')}`
+          : '✗ No tables available - please select different time';
+      default:
+        return `${tablesAvailable} tables available`;
     }
   };
 
@@ -774,53 +881,71 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     {availability.timeSlots.map((slot) => (
                       <Tooltip 
                         key={slot.time}
-                        title={
-                          slot.pacingStatus === 'physically_full' 
-                            ? 'No tables available - Cannot override (all tables booked or party too large)'
-                            : slot.pacingStatus === 'pacing_full'
-                              ? 'Full (pacing limit) - Click to override with reason'
-                              : slot.pacingStatus === 'full'
-                                ? 'Full - Click to override with reason'
-                                : slot.pacingStatus === 'busy' 
-                                  ? 'Busy period - Click to override or book directly'
-                                  : slot.pacingStatus === 'moderate'
-                                    ? 'Moderate activity - Good availability'
-                                    : 'Available - Optimal booking time'
-                        }
+                        title={getStatusTooltip(slot)}
                         placement="top"
+                        arrow
                       >
-                        <Chip
-                          label={slot.time}
-                          color={getPacingColor(slot.pacingStatus)}
-                          variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
-                          onClick={slot.pacingStatus === 'physically_full' ? undefined : () => handleTimeSlotSelect(slot)}
-                          icon={
-                            slot.pacingStatus === 'physically_full' ? <Close /> :
-                            slot.pacingStatus === 'pacing_full' ? <Warning /> :
-                            slot.pacingStatus === 'full' ? <Warning /> :
-                            slot.pacingStatus === 'busy' ? <AccessTime /> :
-                            slot.pacingStatus === 'moderate' ? <Warning /> :
-                            <CheckCircle />
-                          }
-                          sx={{ 
-                            cursor: slot.pacingStatus === 'physically_full' ? 'not-allowed' : 'pointer',
-                            opacity: slot.pacingStatus === 'physically_full' ? 0.6 : 1,
-                            '&:hover': {
-                              opacity: slot.pacingStatus === 'physically_full' ? 0.6 : 1,
-                              transform: slot.pacingStatus === 'physically_full' ? 'none' : 'scale(1.02)'
-                            },
-                            transition: 'all 0.2s ease'
-                          }}
-                        />
+                        <span>
+                          <Chip
+                            label={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                {slot.time}
+                                {getStatusIcon(slot.pacingStatus)}
+                              </Box>
+                            }
+                            color={getPacingColor(slot.pacingStatus)}
+                            variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
+                            onClick={slot.pacingStatus === 'physically_full' ? undefined : () => handleTimeSlotSelect(slot)}
+                            disabled={slot.pacingStatus === 'physically_full'}
+                            sx={{ 
+                              cursor: slot.pacingStatus === 'physically_full' ? 'not-allowed' : 'pointer',
+                              opacity: slot.pacingStatus === 'physically_full' ? 0.5 : 1,
+                              '&:hover': {
+                                opacity: slot.pacingStatus === 'physically_full' ? 0.5 : 1,
+                                transform: slot.pacingStatus === 'physically_full' ? 'none' : 'scale(1.05)',
+                                boxShadow: slot.pacingStatus === 'physically_full' ? 'none' : '0 2px 8px rgba(0,0,0,0.2)'
+                              },
+                              '&.Mui-disabled': {
+                                opacity: 0.5,
+                                color: 'text.disabled'
+                              },
+                              transition: 'all 0.2s ease',
+                              minWidth: '80px',
+                              fontWeight: formData.bookingTime === slot.time ? 600 : 400
+                            }}
+                          />
+                        </span>
                       </Tooltip>
                     ))}
                   </Box>
 
                   {selectedSlot && selectedSlot.alternativeTimes && selectedSlot.alternativeTimes.length > 0 && (
                     <Alert severity="warning" sx={{ mt: 2 }}>
-                      This time is busy. Alternative times: {selectedSlot.alternativeTimes.join(', ')}
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {selectedSlot.pacingStatus === 'busy' ? '⚠️ Busy Time Selected' : '🔴 Override Required'}
+                        </Typography>
+                        <Typography variant="body2">
+                          Alternative times with better availability: {selectedSlot.alternativeTimes.join(', ')}
+                        </Typography>
+                      </Box>
                     </Alert>
                   )}
+
+                  {/* Real-time availability status */}
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Last checked: {new Date().toLocaleTimeString()}
+                    </Typography>
+                    <Button 
+                      size="small" 
+                      onClick={loadAvailability}
+                      disabled={loadingAvailability}
+                      startIcon={loadingAvailability ? <CircularProgress size={16} /> : null}
+                    >
+                      Refresh Availability
+                    </Button>
+                  </Box>
                   </Box>
                 ) : (
                   <Alert severity="warning">
