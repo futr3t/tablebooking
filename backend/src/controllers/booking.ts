@@ -158,7 +158,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
 
 export const getBookings = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const { restaurantId } = req.params;
-  const { date, status, customerName, page, limit } = req.query;
+  const { date, status, customerName, page, limit, includeCancelled } = req.query;
 
   if (!req.user) {
     throw createError('Authentication required', 401);
@@ -174,7 +174,8 @@ export const getBookings = asyncHandler(async (req: AuthRequest, res: Response):
     status: status as BookingStatus,
     customerName: customerName as string,
     page: page ? parseInt(page as string) : undefined,
-    limit: limit ? parseInt(limit as string) : undefined
+    limit: limit ? parseInt(limit as string) : undefined,
+    includeCancelled: includeCancelled === 'true'
   });
 
   res.json(result);

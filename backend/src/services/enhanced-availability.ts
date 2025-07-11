@@ -54,8 +54,11 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         duration
       );
 
-      // Get all bookings for the date
-      const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+      // Get all bookings for the date (excluding cancelled/no-show)
+      const allBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+      const existingBookings = allBookings.filter(
+        booking => booking.status !== 'cancelled' && booking.status !== 'no_show'
+      );
       
       // Get all tables
       const allTablesResult = await TableModel.findByRestaurant(restaurantId);
@@ -72,7 +75,8 @@ export class EnhancedAvailabilityService extends AvailabilityService {
             totalTables,
             totalCapacity,
             restaurant,
-            partySize
+            partySize,
+            date
           );
 
           return {
@@ -110,7 +114,8 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     totalTables: number,
     totalCapacity: number,
     restaurant: Restaurant,
-    partySize: number
+    partySize: number,
+    date: string
   ): Promise<{
     pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
     tablesAvailable: number;
@@ -137,7 +142,8 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         restaurant.id,
         slotTime,
         partySize,
-        existingBookings
+        existingBookings,
+        date
       );
 
       return {
@@ -188,7 +194,8 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       restaurant.id,
       slotTime,
       partySize,
-      existingBookings
+      existingBookings,
+      date
     );
 
     return {
@@ -208,47 +215,86 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     restaurantId: string,
     requestedTime: string,
     partySize: number,
-    existingBookings: Booking[]
+    existingBookings: Booking[],
+    date?: string
   ): Promise<string[]> {
     const requestedMinutes = AvailabilityService.timeToMinutes(requestedTime);
     const alternativeTimes: string[] = [];
+    
+    // Get restaurant settings to check operating hours
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) return alternativeTimes;
+    
+    // Get the day of week for the requested date
+    const requestDate = date ? new Date(date) : new Date();
+    const dayOfWeek = requestDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const daySchedule = restaurant.openingHours[dayOfWeek];
+    
+    if (!daySchedule || !daySchedule.isOpen) {
+      return alternativeTimes;
+    }
+    
+    // Get valid service periods for this day
+    let servicePeriods: { startTime: string; endTime: string }[] = [];
+    
+    if (daySchedule.periods && daySchedule.periods.length > 0) {
+      servicePeriods = daySchedule.periods;
+    } else if (daySchedule.openTime && daySchedule.closeTime) {
+      servicePeriods = [{ startTime: daySchedule.openTime, endTime: daySchedule.closeTime }];
+    }
+    
+    if (servicePeriods.length === 0) {
+      return alternativeTimes;
+    }
     
     // Look for quieter times within 1 hour (before and after)
     const searchOffsets = [-60, -30, 30, 60]; // minutes relative to requested time
     
     for (const offset of searchOffsets) {
       const altMinutes = requestedMinutes + offset;
+      const altTime = AvailabilityService.minutesToTime(altMinutes);
       
-      // Ensure the time is within valid operating hours (0-1440 minutes = 24 hours)
-      if (altMinutes >= 0 && altMinutes <= 1440) {
-        const altTime = AvailabilityService.minutesToTime(altMinutes);
+      // Check if this alternative time falls within any service period
+      let isWithinOperatingHours = false;
+      for (const period of servicePeriods) {
+        const periodStart = AvailabilityService.timeToMinutes(period.startTime);
+        const periodEnd = AvailabilityService.timeToMinutes(period.endTime);
         
-        // Quick check: count bookings near this alternative time
-        const nearbyBookings = existingBookings.filter(booking => {
-          if (booking.status === 'cancelled' || booking.status === 'no_show') {
-            return false;
-          }
-          const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
-          return Math.abs(bookingMinutes - altMinutes) < 30; // Within 30 minutes
-        });
-        
-        // Check if this time has available tables for the party size
-        try {
-          const availableTables = await TableModel.findAvailableTablesForTimeSlot(
-            restaurantId,
-            altTime,
-            partySize
-          );
-          
-          // If tables are available and it's less busy, suggest it
-          if (availableTables.length > 0 && nearbyBookings.length < 5) { // Arbitrary threshold
-            alternativeTimes.push(altTime);
-          }
-        } catch (error) {
-          // Skip this alternative if there's an error checking availability
-          console.warn(`Error checking alternative time ${altTime}:`, error);
-          continue;
+        if (altMinutes >= periodStart && altMinutes <= periodEnd) {
+          isWithinOperatingHours = true;
+          break;
         }
+      }
+      
+      if (!isWithinOperatingHours) {
+        continue; // Skip times outside operating hours
+      }
+      
+      // Quick check: count bookings near this alternative time
+      const nearbyBookings = existingBookings.filter(booking => {
+        if (booking.status === 'cancelled' || booking.status === 'no_show') {
+          return false;
+        }
+        const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+        return Math.abs(bookingMinutes - altMinutes) < 30; // Within 30 minutes
+      });
+      
+      // Check if this time has available tables for the party size
+      try {
+        const availableTables = await TableModel.findAvailableTablesForTimeSlot(
+          restaurantId,
+          altTime,
+          partySize
+        );
+        
+        // If tables are available and it's less busy, suggest it
+        if (availableTables.length > 0 && nearbyBookings.length < 5) { // Arbitrary threshold
+          alternativeTimes.push(altTime);
+        }
+      } catch (error) {
+        // Skip this alternative if there's an error checking availability
+        console.warn(`Error checking alternative time ${altTime}:`, error);
+        continue;
       }
     }
     

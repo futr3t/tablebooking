@@ -68,8 +68,10 @@ export const authService = {
 };
 
 export const bookingService = {
-  getBookings: async (restaurantId: string, date?: string): Promise<Booking[]> => {
-    const params = date ? { date } : {};
+  getBookings: async (restaurantId: string, date?: string, includeCancelled: boolean = false): Promise<Booking[]> => {
+    const params: any = {};
+    if (date) params.date = date;
+    if (includeCancelled) params.includeCancelled = 'true';
     const response = await api.get(`/bookings/restaurant/${restaurantId}`, { params });
     // Backend returns { success: true, data: bookings, pagination }
     return response.data.data || response.data;

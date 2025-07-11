@@ -17,6 +17,8 @@ import {
   InputAdornment,
   CircularProgress,
   Alert,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Search,
@@ -48,12 +50,13 @@ const BookingList: React.FC = () => {
   const [openDetails, setOpenDetails] = useState(false);
   const [openQuickBooking, setOpenQuickBooking] = useState(false);
   const [openEnhancedEdit, setOpenEnhancedEdit] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   useEffect(() => {
     if (user?.restaurantId) {
       loadBookings();
     }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, showCancelled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBookings = async () => {
     if (!user?.restaurantId) return;
@@ -62,7 +65,7 @@ const BookingList: React.FC = () => {
     setError('');
     
     try {
-      const data = await bookingService.getBookings(user.restaurantId);
+      const data = await bookingService.getBookings(user.restaurantId, undefined, showCancelled);
       setBookings(data);
     } catch (err: any) {
       setError('Failed to load bookings');
@@ -179,20 +182,32 @@ const BookingList: React.FC = () => {
 
       <Paper sx={{ mb: 2 }}>
         <Box p={2}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search by name, email, phone, or confirmation code..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Box display="flex" gap={2} alignItems="center">
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search by name, email, phone, or confirmation code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showCancelled}
+                  onChange={(e) => setShowCancelled(e.target.checked)}
+                />
+              }
+              label="Show cancelled"
+              sx={{ minWidth: 'fit-content' }}
+            />
+          </Box>
         </Box>
       </Paper>
 

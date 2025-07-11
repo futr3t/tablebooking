@@ -99,8 +99,11 @@ export class AvailabilityService {
       return allSlots;
     }
 
-    // Get existing bookings for the date
-    const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+    // Get existing bookings for the date (excluding cancelled/no-show)
+    const allBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+    const existingBookings = allBookings.filter(
+      booking => booking.status !== 'cancelled' && booking.status !== 'no_show'
+    );
 
     // Pre-calculate concurrent booking limits once
     const maxConcurrentTables = bookingSettings.maxConcurrentTables;

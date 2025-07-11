@@ -478,12 +478,12 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const getPacingColor = (status: string) => {
     switch (status) {
-      case 'available': return 'success';        // Green - optimal booking time
-      case 'moderate': return 'warning';         // Yellow - good availability
-      case 'busy': return 'warning';             // Orange - busy but bookable
-      case 'full': return 'error';               // Red (legacy full status)
-      case 'pacing_full': return 'error';        // Red - can override with reason
-      case 'physically_full': return 'error';    // Red - cannot override, no tables
+      case 'available': return 'success';        // Green - OK to book
+      case 'moderate': return 'success';         // Green - OK to book
+      case 'busy': return 'success';             // Green - OK to book (still has tables)
+      case 'full': return 'warning';             // Amber - pacing full (legacy)
+      case 'pacing_full': return 'warning';      // Amber - pacing full, can override
+      case 'physically_full': return 'error';    // Red - no tables available
       default: return 'default';
     }
   };
@@ -491,9 +491,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'available': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
-      case 'moderate': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
-      case 'busy': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
-      case 'pacing_full': return <Warning sx={{ fontSize: 16, color: 'error.main' }} />;
+      case 'moderate': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'busy': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'pacing_full': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
       case 'physically_full': return <Close sx={{ fontSize: 16, color: 'error.main' }} />;
       default: return null;
     }
@@ -506,15 +506,15 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       case 'available':
         return `✓ ${tablesAvailable} tables available - optimal booking time`;
       case 'moderate':
-        return `⚠ ${tablesAvailable} tables available - good time to book`;
+        return `✓ ${tablesAvailable} tables available - good time to book`;
       case 'busy':
-        return `⚠ ${tablesAvailable} tables available - busy period`;
+        return `✓ ${tablesAvailable} tables available - busy but OK to book`;
       case 'pacing_full':
-        return `⚠ ${tablesAvailable} tables available - exceeds pacing limits (can override)`;
+        return `⚠ ${tablesAvailable} tables available - pacing limit reached (override required)`;
       case 'physically_full':
         return alternativeTimes && alternativeTimes.length > 0 
           ? `✗ No tables available - try ${alternativeTimes.slice(0, 2).join(', ')}`
-          : '✗ No tables available - please select different time';
+          : '✗ No tables available - restaurant fully booked';
       default:
         return `${tablesAvailable} tables available`;
     }

@@ -87,7 +87,8 @@ const Dashboard: React.FC = () => {
     
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const data = await bookingService.getBookings(user.restaurantId, today);
+      // Get all bookings including cancelled to show proper stats
+      const data = await bookingService.getBookings(user.restaurantId, today, true);
       
       const todaysBookings = data.filter(booking => 
         isBookingToday(booking)
@@ -104,12 +105,13 @@ const Dashboard: React.FC = () => {
   };
 
   const updateStats = (bookingsList: Booking[]) => {
+    const activeBookings = bookingsList.filter(b => b.status !== 'cancelled' && b.status !== 'no_show');
     setStats({
       totalToday: bookingsList.length,
       pending: bookingsList.filter(b => b.status === 'pending').length,
       confirmed: bookingsList.filter(b => b.status === 'confirmed').length,
       cancelled: bookingsList.filter(b => b.status === 'cancelled').length,
-      totalGuests: bookingsList.reduce((sum, b) => sum + b.partySize, 0),
+      totalGuests: activeBookings.reduce((sum, b) => sum + b.partySize, 0),
     });
   };
 

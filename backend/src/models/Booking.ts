@@ -184,15 +184,21 @@ export class BookingModel {
       customerName?: string;
       page?: number;
       limit?: number;
+      includeCancelled?: boolean;
     } = {}
   ): Promise<PaginatedResponse<Booking>> {
     try {
-      const { page = 1, limit = 50 } = filters;
+      const { page = 1, limit = 50, includeCancelled = false } = filters;
       const offset = (page - 1) * limit;
 
       let whereConditions = ['b.restaurant_id = $1'];
       let params: any[] = [restaurantId];
       let paramCount = 2;
+
+      // Exclude cancelled and no-show bookings by default
+      if (!includeCancelled && !filters.status) {
+        whereConditions.push(`b.status NOT IN ('cancelled', 'no_show')`);
+      }
 
       if (filters.date) {
         whereConditions.push(`b.booking_date = $${paramCount}`);
