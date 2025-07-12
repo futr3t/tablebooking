@@ -626,9 +626,28 @@ export class EnhancedAvailabilityService {
     time: string
   ): Promise<{ maxConcurrentBookings?: number }> {
     try {
+      // Skip time slot rules query if there's no database connection
+      if (!db) {
+        return {};
+      }
+
       const requestDate = new Date(date);
       const dayOfWeek = requestDate.getDay(); // 0=Sunday, 1=Monday, etc.
-      const timeMinutes = this.timeToMinutes(time);
+      
+      // Check if time_slot_rules table exists (defensive programming)
+      const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'time_slot_rules'
+        )
+      `;
+      
+      const tableExists = await db.query(tableCheckQuery);
+      if (!tableExists.rows[0]?.exists) {
+        console.warn('time_slot_rules table does not exist, skipping time slot limits');
+        return {};
+      }
       
       const query = `
         SELECT max_concurrent_bookings
@@ -653,6 +672,7 @@ export class EnhancedAvailabilityService {
       return {};
     } catch (error) {
       console.error('Error getting time slot concurrent limits:', error);
+      // Return empty object on error so the system can continue
       return {};
     }
   }

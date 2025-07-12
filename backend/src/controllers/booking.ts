@@ -508,6 +508,20 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
   const date = new Date(bookingDate);
   const dateString = date.toISOString().split('T')[0];
 
+  // Validate business rules (staff bookings can override some rules)
+  const businessRulesError = await BusinessRulesService.validateBookingRequest(
+    restaurantId,
+    dateString,
+    bookingTime,
+    partySize,
+    true, // isStaffBooking
+    overridePacing || false
+  );
+
+  if (businessRulesError && !overridePacing) {
+    throw createError(businessRulesError.message, 400);
+  }
+
   // Acquire booking lock
   const lockValue = await BookingLockService.acquireLock(restaurantId, dateString, bookingTime);
   
