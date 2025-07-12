@@ -172,7 +172,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
       }
 
       // If pacing override is required but not provided, reject the booking
-      if ((requestedSlot.pacingStatus === 'pacing_full' || requestedSlot.pacingStatus === 'full') && !overridePacing) {
+      if (requestedSlot.pacingStatus === 'pacing_full' && !overridePacing) {
         throw createError('This time slot exceeds capacity limits. Override is required.', 409);
       }
 
@@ -342,10 +342,10 @@ export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res
   // Add override risk assessment to each slot
   const enhancedTimeSlots = enhancedAvailability.timeSlots.map(slot => ({
     ...slot,
-    overrideRisk: slot.pacingStatus === 'full' ? 'high' : 
+    overrideRisk: slot.pacingStatus === 'pacing_full' ? 'high' : 
                   slot.pacingStatus === 'busy' ? 'medium' : 'low',
     currentBookings: slot.tablesAvailable ? Math.max(0, 10 - slot.tablesAvailable) : 0,
-    utilizationPercent: slot.pacingStatus === 'full' ? 95 : 
+    utilizationPercent: slot.pacingStatus === 'pacing_full' ? 95 : 
                        slot.pacingStatus === 'busy' ? 80 : 
                        slot.pacingStatus === 'moderate' ? 50 : 20
   }));

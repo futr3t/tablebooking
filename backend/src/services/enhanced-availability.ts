@@ -117,7 +117,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     partySize: number,
     date: string
   ): Promise<{
-    pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
+    pacingStatus: 'available' | 'moderate' | 'busy' | 'pacing_full' | 'physically_full';
     tablesAvailable: number;
     totalTablesBooked?: number;
     suggestedTables?: Table[];
@@ -173,7 +173,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
     const coverUtilization = (coversBooked / totalCapacity) * 100;
     
     // Determine base pacing status (when tables ARE physically available)
-    let pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full';
+    let pacingStatus: 'available' | 'moderate' | 'busy' | 'pacing_full';
     
     // Enhanced pacing logic: consider both table count AND actual availability
     const availabilityRatio = (availableTables.length / totalTables) * 100;
@@ -327,7 +327,7 @@ export class EnhancedAvailabilityService extends AvailabilityService {
         }
       }
       
-      if (slot.pacingStatus === 'busy' || slot.pacingStatus === 'full') {
+      if (slot.pacingStatus === 'busy' || slot.pacingStatus === 'pacing_full') {
         peakTimes.push(slot.time);
       }
     });

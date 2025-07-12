@@ -28,7 +28,7 @@ interface OverrideDialogProps {
   onConfirm: (reason: string) => void;
   slot: {
     time: string;
-    pacingStatus: 'available' | 'moderate' | 'busy' | 'full' | 'pacing_full' | 'physically_full';
+    pacingStatus: 'available' | 'moderate' | 'busy' | 'pacing_full' | 'physically_full';
     available: boolean;
     tablesAvailable?: number;
     alternativeTimes?: string[];
@@ -64,7 +64,7 @@ const OverrideDialog: React.FC<OverrideDialogProps> = ({
 
   const getRiskLevel = (pacingStatus: string, overrideRisk?: string) => {
     // Use explicit override risk if available, otherwise infer from pacing status
-    const riskLevel = overrideRisk || (pacingStatus === 'full' ? 'high' : pacingStatus === 'busy' ? 'medium' : 'low');
+    const riskLevel = overrideRisk || (pacingStatus === 'pacing_full' ? 'high' : pacingStatus === 'busy' ? 'medium' : 'low');
     
     switch (riskLevel) {
       case 'high': return { level: 'High', color: 'error' as const, icon: <Warning /> };
@@ -188,9 +188,6 @@ const OverrideDialog: React.FC<OverrideDialogProps> = ({
                 }
                 {slot.pacingStatus === 'pacing_full' && 
                   'This time slot is at pacing capacity but tables are available. Booking may impact service quality.'
-                }
-                {slot.pacingStatus === 'full' && 
-                  'This time slot is at full capacity. Booking may impact service quality.'
                 }
                 {slot.pacingStatus === 'busy' && 
                   'This time slot is busy. Consider alternative times if possible.'
