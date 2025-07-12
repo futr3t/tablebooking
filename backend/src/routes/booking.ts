@@ -9,7 +9,14 @@ import {
   cancelBooking,
   markNoShow,
   addToWaitlist,
-  getWaitlist
+  getWaitlist,
+  // Staff booking functions (consolidated)
+  createStaffBooking,
+  getCustomerSuggestions,
+  getEnhancedAvailability,
+  getAvailableTables,
+  bulkCheckAvailability,
+  staffBookingValidation
 } from '../controllers/booking';
 import {
   authenticate,
@@ -118,6 +125,46 @@ router.post('/:id/no-show',
     { field: 'id', required: true, type: 'uuid' }
   ]),
   markNoShow
+);
+
+// ========================================
+// Staff Booking Routes (consolidated from staffBooking.ts)
+// ========================================
+
+// Create staff booking with enhanced features
+router.post('/staff',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
+  staffBookingValidation,
+  createStaffBooking
+);
+
+// Get customer suggestions for auto-complete
+router.get('/staff/customers/:restaurantId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST, UserRole.SERVER),
+  getCustomerSuggestions
+);
+
+// Get enhanced availability with pacing indicators
+router.get('/staff/availability',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST, UserRole.SERVER),
+  getEnhancedAvailability
+);
+
+// Get available tables for specific time slot
+router.get('/staff/tables',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
+  getAvailableTables
+);
+
+// Bulk check availability for multiple dates
+router.post('/staff/availability/bulk',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
+  bulkCheckAvailability
 );
 
 export default router;

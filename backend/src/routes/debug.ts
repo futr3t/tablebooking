@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { BookingLockService } from '../services/booking-lock';
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
-import { AvailabilityService } from '../services/availability';
+import { EnhancedAvailabilityService as AvailabilityService } from '../services/enhanced-availability';
 
 const router = Router();
 

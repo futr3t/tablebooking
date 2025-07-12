@@ -9,7 +9,7 @@ import widgetRoutes from './widget';
 import publicWidgetRoutes from './publicWidget';
 import widgetEmbeddedRoutes from './widget-embedded';
 import diagnosticRoutes from './diagnostic';
-import staffBookingRoutes from './staffBooking';
+// import staffBookingRoutes from './staffBooking'; // Consolidated into booking routes
 import dietaryRequirementsRoutes from './dietaryRequirements';
 import debugRoutes from './debug';
 import turnTimeRulesRoutes from './turnTimeRules';
@@ -18,7 +18,7 @@ import userRoutes from './user';
 const router = Router();
 
 router.use('/auth', authRoutes);
-router.use('/bookings/staff', staffBookingRoutes);  // Must come before general bookings route
+// router.use('/bookings/staff', staffBookingRoutes); // Consolidated into booking routes
 router.use('/bookings', bookingRoutes);
 router.use('/tables', tableRoutes);
 router.use('/restaurants', restaurantRoutes);

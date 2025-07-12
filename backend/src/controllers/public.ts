@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { WidgetConfigModel } from '../models/WidgetConfig';
 import { BookingModel } from '../models/Booking';
-import { AvailabilityService } from '../services/availability';
+import { EnhancedAvailabilityService as AvailabilityService } from '../services/enhanced-availability';
 import { ApiResponse } from '../types';
 
 // Extend Request type to include restaurant info from API key middleware

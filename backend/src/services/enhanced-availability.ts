@@ -3,9 +3,9 @@ import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
 import { AvailabilityService } from './availability';
 import { redis } from '../config/database';
-import { EnhancedTimeSlot, Table, Booking, Restaurant } from '../types';
+import { EnhancedTimeSlot, Table, Booking, Restaurant, BookingAvailability } from '../types';
 
-export class EnhancedAvailabilityService extends AvailabilityService {
+export class EnhancedAvailabilityService {
   /**
    * Get enhanced availability with pacing status and suggestions
    */
@@ -471,6 +471,86 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       risks,
       recommendations
     };
+  }
+
+  // ========================================
+  // Core Availability Methods (moved from AvailabilityService)
+  // ========================================
+
+  /**
+   * Check basic availability for a given date, party size and duration
+   */
+  static async checkAvailability(
+    restaurantId: string,
+    date: string,
+    partySize: number,
+    duration?: number
+  ): Promise<BookingAvailability> {
+    return AvailabilityService.checkAvailability(restaurantId, date, partySize, duration);
+  }
+
+  /**
+   * Find the best available table for a booking
+   */
+  static async findBestTable(
+    restaurantId: string,
+    date: string,
+    startTime: string,
+    partySize: number,
+    duration: number = 120,
+    isStaffBooking: boolean = false
+  ): Promise<Table | null> {
+    return AvailabilityService.findBestTable(
+      restaurantId,
+      date,
+      startTime,
+      partySize,
+      duration,
+      isStaffBooking
+    );
+  }
+
+  /**
+   * Invalidate availability cache
+   */
+  static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
+    return AvailabilityService.invalidateAvailabilityCache(restaurantId, date);
+  }
+
+  /**
+   * Get turn time for a party size
+   */
+  static async getTurnTimeForParty(
+    restaurantId: string,
+    partySize: number,
+    bookingDate: Date,
+    bookingTime?: string
+  ): Promise<number> {
+    return AvailabilityService.getTurnTimeForParty(restaurantId, partySize, bookingDate, bookingTime);
+  }
+
+  /**
+   * Utility: Convert time string to minutes
+   */
+  public static timeToMinutes(timeString: string): number {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  /**
+   * Utility: Convert minutes to time string
+   */
+  public static minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Utility: Get day of week string
+   */
+  private static getDayOfWeek(date: Date): string {
+    return date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   }
 }
 

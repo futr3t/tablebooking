@@ -1,12 +1,12 @@
 import request from 'supertest';
 import { app } from '../index';
 import { BookingModel } from '../models/Booking';
-import { AvailabilityService } from '../services/availability';
+import { EnhancedAvailabilityService as AvailabilityService } from '../services/enhanced-availability';
 import { WaitlistService } from '../services/waitlist';
 import { BookingLockService } from '../services/booking-lock';
 
 jest.mock('../models/Booking');
-jest.mock('../services/availability');
+jest.mock('../services/enhanced-availability');
 jest.mock('../services/waitlist');
 jest.mock('../services/booking-lock');
 

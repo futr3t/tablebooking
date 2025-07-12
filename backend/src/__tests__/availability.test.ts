@@ -1,4 +1,4 @@
-import { AvailabilityService } from '../services/availability';
+import { EnhancedAvailabilityService as AvailabilityService } from '../services/enhanced-availability';
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
