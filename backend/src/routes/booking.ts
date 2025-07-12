@@ -154,7 +154,7 @@ router.get('/staff/availability',
 );
 
 // Get available tables for specific time slot
-router.get('/staff/tables',
+router.get('/staff/tables/available',
   authenticate,
   authorize(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.HOST),
   getAvailableTables

@@ -497,10 +497,16 @@ export const staffBookingValidation = [
  * Create a staff booking with enhanced features
  */
 export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  // Enhanced debugging
+  console.log('=== STAFF BOOKING REQUEST DEBUG ===');
+  console.log('Headers:', req.headers);
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+  console.log('User:', req.user ? { id: req.user.id, role: req.user.role } : 'No user');
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log('Staff booking validation errors:', errors.array());
-    console.log('Request body received:', req.body);
+    console.log('❌ Validation errors:', errors.array());
+    console.log('Failed fields:', errors.array().map(e => `${e.param}: ${e.msg} (value: ${e.value})`));
     res.status(400).json({
       success: false,
       message: 'Validation failed',
@@ -508,10 +514,16 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
         field: error.param,
         message: error.msg,
         value: error.value
-      }))
+      })),
+      debug: {
+        receivedBody: req.body,
+        requiredFields: ['restaurantId', 'customerName', 'partySize', 'bookingDate', 'bookingTime']
+      }
     });
     return;
   }
+  
+  console.log('✅ Validation passed, proceeding with booking...');
 
   const {
     restaurantId,
