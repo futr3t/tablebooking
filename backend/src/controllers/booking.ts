@@ -522,168 +522,166 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     throw createError(businessRulesError.message, 400);
   }
 
-  // Acquire booking lock
-  const lockValue = await BookingLockService.acquireLock(restaurantId, dateString, bookingTime);
-  
-  if (!lockValue) {
-    throw createError('Another booking is being processed for this time slot. Please try again.', 409);
-  }
+  // Use withLock like regular booking (handles Redis unavailability in production)
+  const booking = await BookingLockService.withLock(
+    restaurantId,
+    dateString,
+    bookingTime,
+    async () => {
+      // Check if override is needed and validate
+      if (overridePacing) {
+        if (!overrideReason || overrideReason.trim().length < 5) {
+          throw createError('Override reason must be at least 5 characters', 400);
+        }
 
-  try {
-    // Check if override is needed and validate
-    if (overridePacing) {
-      if (!overrideReason || overrideReason.trim().length < 5) {
-        throw createError('Override reason must be at least 5 characters', 400);
-      }
+        const overrideCheck = await EnhancedAvailabilityService.canOverridePacing(
+          restaurantId,
+          dateString,
+          bookingTime,
+          partySize,
+          overrideReason
+        );
 
-      const overrideCheck = await EnhancedAvailabilityService.canOverridePacing(
-        restaurantId,
-        dateString,
-        bookingTime,
-        partySize,
-        overrideReason
-      );
-
-      if (!overrideCheck.canOverride) {
-        throw createError('Cannot override booking for this time slot', 400);
-      }
-    }
-
-    // Get appropriate turn time for this party size if duration not specified
-    const bookingDuration = duration || await AvailabilityService.getTurnTimeForParty(
-      restaurantId,
-      partySize,
-      date,
-      bookingTime
-    );
-
-    let assignedTable = null;
-
-    // If not overriding, check normal availability
-    if (!overridePacing) {
-      const currentAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
-        restaurantId,
-        dateString,
-        partySize,
-        bookingDuration,
-        bookingTime
-      );
-
-      const selectedSlot = currentAvailability.timeSlots.find(slot => slot.time === bookingTime);
-      if (!selectedSlot) {
-        throw createError('Time slot not available', 400);
-      }
-
-      if (selectedSlot.pacingStatus === 'physically_full') {
-        throw createError('No tables physically available for this time slot', 400);
-      }
-
-      // If busy or pacing_full, require override
-      if ((selectedSlot.pacingStatus === 'busy' || selectedSlot.pacingStatus === 'pacing_full') && !overridePacing) {
-        throw createError('This time slot requires override due to high demand', 400);
-      }
-    }
-
-    // Check for conflicting bookings in a wider time window
-    const existingBookings = await BookingModel.findByDateRange(restaurantId, dateString, dateString);
-    const bookingStart = date;
-    bookingStart.setHours(parseInt(bookingTime.split(':')[0]), parseInt(bookingTime.split(':')[1]), 0, 0);
-    const bookingEnd = new Date(bookingStart.getTime() + bookingDuration * 60000);
-
-    // Check for conflicts with existing bookings
-    const conflictingBookings = existingBookings.filter(booking => {
-      if (booking.status === 'cancelled' || booking.status === 'no_show') {
-        return false;
-      }
-
-      const existingStart = new Date(booking.bookingDate);
-      if (booking.bookingTime) {
-        const startMinutes = AvailabilityService.timeToMinutes(bookingTime);
-        existingStart.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
-      }
-
-      const existingEnd = new Date(existingStart.getTime() + (booking.duration || 120) * 60000);
-
-      // Check for overlapping bookings for the same customer
-      if (booking.customerPhone === customerPhone || booking.customerEmail === customerEmail) {
-        const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
-        const requestedMinutes = AvailabilityService.timeToMinutes(bookingTime);
-        const timeDiff = Math.abs(bookingMinutes - requestedMinutes);
-        
-        // Flag if bookings are within 2 hours of each other
-        if (timeDiff <= 120) {
-          return true;
+        if (!overrideCheck.canOverride) {
+          throw createError('Cannot override booking for this time slot', 400);
         }
       }
 
-      return false;
-    });
-
-    if (conflictingBookings.length > 0) {
-      throw createError('Customer already has a booking around this time', 400);
-    }
-
-    // Find best available table
-    if (!overridePacing) {
-      assignedTable = await EnhancedAvailabilityService.findBestTable(
+      // Get appropriate turn time for this party size if duration not specified
+      const bookingDuration = duration || await AvailabilityService.getTurnTimeForParty(
         restaurantId,
-        dateString,
-        bookingTime,
         partySize,
-        bookingDuration,
-        true // isStaffBooking
+        date,
+        bookingTime
       );
 
-      if (!assignedTable) {
-        throw createError('No suitable tables available', 400);
+      let assignedTable = null;
+
+      // If not overriding, check normal availability
+      if (!overridePacing) {
+        const currentAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
+          restaurantId,
+          dateString,
+          partySize,
+          bookingDuration,
+          bookingTime
+        );
+
+        const selectedSlot = currentAvailability.timeSlots.find(slot => slot.time === bookingTime);
+        if (!selectedSlot) {
+          throw createError('Time slot not available', 400);
+        }
+
+        if (selectedSlot.pacingStatus === 'physically_full') {
+          throw createError('No tables physically available for this time slot', 400);
+        }
+
+        // If busy or pacing_full, require override
+        if ((selectedSlot.pacingStatus === 'busy' || selectedSlot.pacingStatus === 'pacing_full') && !overridePacing) {
+          throw createError('This time slot requires override due to high demand', 400);
+        }
       }
-    }
 
-    // Create the booking
-    const booking = await BookingModel.create({
-      restaurantId,
-      customerName,
-      customerPhone: customerPhone || null,
-      customerEmail: customerEmail || null,
-      partySize,
-      bookingDate: date,
-      bookingTime,
-      duration: bookingDuration,
-      status: BookingStatus.CONFIRMED,
-      source: BookingSource.STAFF,
-      assignedTableId: assignedTable?.id || null,
-      dietaryRequirements: dietaryRequirements || null,
-      allergens: allergens || null,
-      occasion: occasion || null,
-      seatingPreference: seatingPreference || null,
-      vipCustomer: vipCustomer || false,
-      marketingConsent: marketingConsent || false,
-      internalNotes: internalNotes || null,
-      overridePacing: overridePacing || false,
-      overrideReason: overrideReason || null,
-      createdBy: req.user.id
-    });
+      // Check for conflicting bookings in a wider time window
+      const existingBookings = await BookingModel.findByDateRange(restaurantId, dateString, dateString);
+      const bookingStart = date;
+      bookingStart.setHours(parseInt(bookingTime.split(':')[0]), parseInt(bookingTime.split(':')[1]), 0, 0);
+      const bookingEnd = new Date(bookingStart.getTime() + bookingDuration * 60000);
 
-    // Create booking template for future auto-complete if customer provided contact info
-    if (customerPhone || customerEmail) {
-      await BookingTemplateModel.createFromBooking(booking);
-    }
+      // Check for conflicts with existing bookings
+      const conflictingBookings = existingBookings.filter(booking => {
+        if (booking.status === 'cancelled' || booking.status === 'no_show') {
+          return false;
+        }
 
-    // Invalidate availability cache
-    await EnhancedAvailabilityService.invalidateAvailabilityCache(restaurantId, dateString);
+        const existingStart = new Date(booking.bookingDate);
+        if (booking.bookingTime) {
+          const startMinutes = AvailabilityService.timeToMinutes(bookingTime);
+          existingStart.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+        }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        ...booking,
+        const existingEnd = new Date(existingStart.getTime() + (booking.duration || 120) * 60000);
+
+        // Check for overlapping bookings for the same customer
+        if (booking.customerPhone === customerPhone || booking.customerEmail === customerEmail) {
+          const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+          const requestedMinutes = AvailabilityService.timeToMinutes(bookingTime);
+          const timeDiff = Math.abs(bookingMinutes - requestedMinutes);
+          
+          // Flag if bookings are within 2 hours of each other
+          if (timeDiff <= 120) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      if (conflictingBookings.length > 0) {
+        throw createError('Customer already has a booking around this time', 400);
+      }
+
+      // Find best available table
+      if (!overridePacing) {
+        assignedTable = await EnhancedAvailabilityService.findBestTable(
+          restaurantId,
+          dateString,
+          bookingTime,
+          partySize,
+          bookingDuration,
+          true // isStaffBooking
+        );
+
+        if (!assignedTable) {
+          throw createError('No suitable tables available', 400);
+        }
+      }
+
+      // Create the booking
+      const newBooking = await BookingModel.create({
+        restaurantId,
+        customerName,
+        customerPhone: customerPhone || null,
+        customerEmail: customerEmail || null,
+        partySize,
+        bookingDate: date,
+        bookingTime,
+        duration: bookingDuration,
+        status: BookingStatus.CONFIRMED,
+        source: BookingSource.STAFF,
+        assignedTableId: assignedTable?.id || null,
+        dietaryRequirements: dietaryRequirements || null,
+        allergens: allergens || null,
+        occasion: occasion || null,
+        seatingPreference: seatingPreference || null,
+        vipCustomer: vipCustomer || false,
+        marketingConsent: marketingConsent || false,
+        internalNotes: internalNotes || null,
+        overridePacing: overridePacing || false,
+        overrideReason: overrideReason || null,
+        createdBy: req.user.id
+      });
+
+      // Create booking template for future auto-complete if customer provided contact info
+      if (customerPhone || customerEmail) {
+        await BookingTemplateModel.createFromBooking(newBooking);
+      }
+
+      // Invalidate availability cache
+      await EnhancedAvailabilityService.invalidateAvailabilityCache(restaurantId, dateString);
+
+      return {
+        ...newBooking,
         assignedTable: assignedTable
-      },
-      message: 'Staff booking created successfully'
-    } as ApiResponse);
+      };
+    }
+  );
 
-  } finally {
-    await BookingLockService.releaseLock(restaurantId, dateString, bookingTime, lockValue);
-  }
+  res.status(201).json({
+    success: true,
+    data: booking,
+    message: 'Staff booking created successfully'
+  } as ApiResponse);
 });
 
 /**
