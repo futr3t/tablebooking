@@ -143,4 +143,44 @@ export class BookingTemplateModel {
     const result = await pool.query(query, [restaurantId, minBookings]);
     return result.rows.map(row => toCamelCase(row));
   }
+
+  /**
+   * Create or update booking template from a booking record
+   */
+  static async createFromBooking(booking: any): Promise<BookingTemplate | null> {
+    try {
+      // Only create template if customer provided contact info
+      if (!booking.customerPhone && !booking.customerEmail) {
+        return null;
+      }
+
+      // Use phone as primary key, fallback to email if no phone
+      const primaryContact = booking.customerPhone || booking.customerEmail;
+      if (!primaryContact) {
+        return null;
+      }
+
+      // Create booking template data from the booking
+      const templateData = {
+        restaurantId: booking.restaurantId,
+        customerPhone: booking.customerPhone || primaryContact,
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        preferredPartySize: booking.partySize,
+        dietaryRequirements: booking.dietaryRequirements,
+        preferredSeating: booking.seatingPreference,
+        specialRequests: booking.internalNotes,
+        isVip: booking.vipCustomer || false,
+        notes: null,
+        lastBookingDate: booking.bookingDate || new Date(),
+        totalBookings: 1,
+        noShowCount: 0
+      };
+
+      return await this.upsert(templateData);
+    } catch (error) {
+      console.error('Error creating booking template from booking:', error);
+      return null; // Don't fail the booking if template creation fails
+    }
+  }
 }
