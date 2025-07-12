@@ -860,6 +860,36 @@ export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Res
     throw createError('Access denied to this restaurant', 403);
   }
 
+  // FIXED: Use the enhanced table availability method that includes proper buffer logic
+  // This replaces the manual filtering logic with the corrected implementation
+  const availableTables = await TableModel.findAvailableTablesForTimeSlot(
+    restaurantId as string,
+    time as string,
+    parseInt(partySize as string),
+    date as string,
+    duration ? parseInt(duration as string) : undefined
+  );
+
+  // Get all restaurant tables for comparison metrics
+  const { tables: allTables } = await TableModel.findByRestaurant(restaurantId as string);
+  
+  // Filter tables that can accommodate the party size (for comparison)
+  const suitableTables = allTables.filter(table => 
+    table.minCapacity <= parseInt(partySize as string) && 
+    table.maxCapacity >= parseInt(partySize as string)
+  );
+
+  // Get existing bookings for conflict count (for debugging)
+  const existingBookings = await BookingModel.findByDateRange(
+    restaurantId as string,
+    date as string,
+    date as string
+  );
+
+  const activeBookings = existingBookings.filter(booking => 
+    booking.status !== 'cancelled' && booking.status !== 'no_show'
+  );
+
   const turnTime = await AvailabilityService.getTurnTimeForParty(
     restaurantId as string,
     parseInt(partySize as string),
@@ -869,46 +899,17 @@ export const getAvailableTables = asyncHandler(async (req: AuthRequest, res: Res
 
   const startMinutes = AvailabilityService.timeToMinutes(time as string);
   
-  // Get existing bookings for this date
-  const existingBookings = await BookingModel.findByDateRange(
-    restaurantId as string,
-    date as string,
-    date as string
-  );
-
-  // Filter out cancelled and no-show bookings
-  const activeBookings = existingBookings.filter(booking => 
-    booking.status !== 'cancelled' && booking.status !== 'no_show'
-  );
-
-  // Check for conflicts within the duration window
+  // Calculate conflicting bookings for debugging info (includes buffer logic)
   const conflictingBookings = activeBookings.filter(booking => {
     const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
     const bookingDuration = booking.duration || 120;
-    const bookingEndMinutes = bookingMinutes + bookingDuration;
+    const bookingEndMinutes = bookingMinutes + bookingDuration + 15; // Add 15-minute buffer after
+    const requestStartMinutes = startMinutes - 15; // Add 15-minute buffer before
     const requestEndMinutes = startMinutes + (duration ? parseInt(duration as string) : turnTime);
 
-    // Check for time overlap
-    return !(bookingEndMinutes <= startMinutes || bookingMinutes >= requestEndMinutes);
+    // Check for time overlap with buffers
+    return !(bookingEndMinutes <= requestStartMinutes || bookingMinutes >= requestEndMinutes);
   });
-
-  // Get all restaurant tables
-  const { tables: allTables } = await TableModel.findByRestaurant(restaurantId as string);
-  
-  // Filter tables that can accommodate the party size
-  const suitableTables = allTables.filter(table => 
-    table.minCapacity <= parseInt(partySize as string) && 
-    table.maxCapacity >= parseInt(partySize as string)
-  );
-
-  // Filter out tables that are booked during the requested time
-  const occupiedTableIds = conflictingBookings
-    .map(booking => booking.tableId)
-    .filter(id => id !== null);
-
-  const availableTables = suitableTables.filter(table => 
-    !occupiedTableIds.includes(table.id)
-  );
 
   res.json({
     success: true,
