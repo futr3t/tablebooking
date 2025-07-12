@@ -130,7 +130,9 @@ export class EnhancedAvailabilityService {
     const availableTables = await TableModel.findAvailableTablesForTimeSlot(
       restaurant.id,
       slotTime,
-      partySize
+      partySize,
+      date,
+      defaultDuration
     );
 
     const hasPhysicalTables = availableTables.length > 0;

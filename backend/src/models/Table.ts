@@ -393,19 +393,62 @@ export class TableModel {
   static async findAvailableTablesForTimeSlot(
     restaurantId: string,
     time: string,
-    partySize: number
+    partySize: number,
+    date?: string,
+    duration?: number
   ): Promise<Table[]> {
     try {
       // First get all suitable tables for the party size
       const suitableTables = await this.findAvailableTablesForPartySize(restaurantId, partySize);
       
-      // For now, return all suitable tables
-      // In a real implementation, you would check against bookings for the specific time
-      return suitableTables;
+      // If no date provided, return all suitable tables (backward compatibility)
+      if (!date) {
+        return suitableTables;
+      }
+      
+      // Get existing bookings for the date to check conflicts
+      const { BookingModel } = await import('./Booking');
+      const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+      
+      // Filter out cancelled and no-show bookings
+      const activeBookings = existingBookings.filter(
+        booking => booking.status !== 'cancelled' && booking.status !== 'no_show'
+      );
+      
+      // Calculate time slot boundaries
+      const startMinutes = this.timeToMinutes(time);
+      const endMinutes = startMinutes + (duration || 120); // Default 2 hours if no duration
+      
+      // Filter tables that are available (no conflicting bookings)
+      const availableTables = suitableTables.filter(table => {
+        const tableBookings = activeBookings.filter(booking => booking.tableId === table.id);
+        
+        for (const booking of tableBookings) {
+          const bookingStartMinutes = this.timeToMinutes(booking.bookingTime);
+          const bookingEndMinutes = bookingStartMinutes + booking.duration;
+          
+          // Check for overlap
+          if (!(endMinutes <= bookingStartMinutes || startMinutes >= bookingEndMinutes)) {
+            return false; // Table is booked during this time
+          }
+        }
+        
+        return true; // Table is available
+      });
+      
+      return availableTables;
     } catch (error) {
       console.error('Error finding available tables for time slot:', error);
       throw error;
     }
+  }
+
+  /**
+   * Convert time string (HH:MM) to minutes since midnight
+   */
+  private static timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   /**
