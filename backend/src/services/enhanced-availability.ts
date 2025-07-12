@@ -189,14 +189,17 @@ export class EnhancedAvailabilityService extends AvailabilityService {
       pacingStatus = 'available';
     }
 
-    // Generate alternative times if slot is busy/full
-    const alternativeTimes = await this.findAlternativeTimesForParty(
-      restaurant.id,
-      slotTime,
-      partySize,
-      existingBookings,
-      date
-    );
+    // Only generate alternative times if slot is busy/full (not for available/moderate slots)
+    let alternativeTimes: string[] = [];
+    if (pacingStatus === 'busy' || pacingStatus === 'pacing_full') {
+      alternativeTimes = await this.findAlternativeTimesForParty(
+        restaurant.id,
+        slotTime,
+        partySize,
+        existingBookings,
+        date
+      );
+    }
 
     return {
       pacingStatus,
