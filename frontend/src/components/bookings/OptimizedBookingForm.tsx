@@ -316,13 +316,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const handleTimeSlotSelect = (slot: EnhancedTimeSlot) => {
     // Check if physically full - should not be clickable but just in case
-    if (slot.pacingStatus === 'physically_full') {
+    if (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') {
       setError('This time slot has no available tables. Please select a different time or contact the restaurant for large group bookings.');
       return;
     }
 
-    // If slot is pacing_full or full, show override dialog
-    if (slot.pacingStatus === 'pacing_full' || slot.pacingStatus === 'full') {
+    // If slot is pacing_full, show override dialog
+    if (slot.pacingStatus === 'pacing_full') {
       setOverrideDialog({ open: true, slot });
     } else {
       // All other statuses (available, moderate, busy) are OK to book
@@ -389,13 +389,12 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           }
 
           // Check if slot became physically unavailable
-          if (requestedSlot.pacingStatus === 'physically_full') {
+          if (requestedSlot.pacingStatus === 'physically_full' || requestedSlot.pacingStatus === 'full') {
             throw new Error(`The ${formData.bookingTime} time slot is now fully booked. Please select a different time or add to waitlist.`);
           }
 
           // Check if slot requires override but none provided
-          if ((requestedSlot.pacingStatus === 'pacing_full' || requestedSlot.pacingStatus === 'full') 
-              && !formData.overridePacing) {
+          if (requestedSlot.pacingStatus === 'pacing_full' && !formData.overridePacing) {
             // Update availability state to show current status
             setAvailability(currentAvailability.data.data);
             throw new Error(`The ${formData.bookingTime} time slot now requires an override due to capacity limits. Please check "Override pacing limits" and provide a reason.`);
@@ -481,7 +480,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       case 'available': return 'success';        // Green - OK to book
       case 'moderate': return 'success';         // Green - OK to book
       case 'busy': return 'success';             // Green - OK to book (still has tables)
-      case 'full': return 'warning';             // Amber - pacing full (legacy)
+      case 'full': return 'error';               // Red - physically full
       case 'pacing_full': return 'warning';      // Amber - pacing full, can override
       case 'physically_full': return 'error';    // Red - no tables available
       default: return 'default';
@@ -493,6 +492,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       case 'available': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
       case 'moderate': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
       case 'busy': return <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'full': return <Close sx={{ fontSize: 16, color: 'error.main' }} />;
       case 'pacing_full': return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
       case 'physically_full': return <Close sx={{ fontSize: 16, color: 'error.main' }} />;
       default: return null;
@@ -511,6 +511,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         return `✓ ${tablesAvailable} tables available - busy but OK to book`;
       case 'pacing_full':
         return `⚠ ${tablesAvailable} tables available - pacing limit reached (override required)`;
+      case 'full':
       case 'physically_full':
         return alternativeTimes && alternativeTimes.length > 0 
           ? `✗ No tables available - try ${alternativeTimes.slice(0, 2).join(', ')}`
@@ -895,15 +896,15 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                             }
                             color={getPacingColor(slot.pacingStatus)}
                             variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
-                            onClick={slot.pacingStatus === 'physically_full' ? undefined : () => handleTimeSlotSelect(slot)}
-                            disabled={slot.pacingStatus === 'physically_full'}
+                            onClick={(slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? undefined : () => handleTimeSlotSelect(slot)}
+                            disabled={slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full'}
                             sx={{ 
-                              cursor: slot.pacingStatus === 'physically_full' ? 'not-allowed' : 'pointer',
-                              opacity: slot.pacingStatus === 'physically_full' ? 0.5 : 1,
+                              cursor: (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? 'not-allowed' : 'pointer',
+                              opacity: (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? 0.5 : 1,
                               '&:hover': {
-                                opacity: slot.pacingStatus === 'physically_full' ? 0.5 : 1,
-                                transform: slot.pacingStatus === 'physically_full' ? 'none' : 'scale(1.05)',
-                                boxShadow: slot.pacingStatus === 'physically_full' ? 'none' : '0 2px 8px rgba(0,0,0,0.2)'
+                                opacity: (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? 0.5 : 1,
+                                transform: (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? 'none' : 'scale(1.05)',
+                                boxShadow: (slot.pacingStatus === 'physically_full' || slot.pacingStatus === 'full') ? 'none' : '0 2px 8px rgba(0,0,0,0.2)'
                               },
                               '&.Mui-disabled': {
                                 opacity: 0.5,
