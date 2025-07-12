@@ -509,10 +509,9 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
   const dateString = date.toISOString().split('T')[0];
 
   // Acquire booking lock
-  const lockKey = `booking_${restaurantId}_${dateString}_${bookingTime}`;
-  const lockAcquired = await BookingLockService.acquireLock(lockKey, 30000);
+  const lockValue = await BookingLockService.acquireLock(restaurantId, dateString, bookingTime);
   
-  if (!lockAcquired) {
+  if (!lockValue) {
     throw createError('Another booking is being processed for this time slot. Please try again.', 409);
   }
 
@@ -669,7 +668,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
     } as ApiResponse);
 
   } finally {
-    await BookingLockService.releaseLock(lockKey);
+    await BookingLockService.releaseLock(restaurantId, dateString, bookingTime, lockValue);
   }
 });
 
