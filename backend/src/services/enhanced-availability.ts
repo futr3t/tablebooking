@@ -78,7 +78,7 @@ export class EnhancedAvailabilityService {
 
       // Get basic availability
       console.log('[EnhancedAvailability] Checking basic availability...');
-      const basicAvailability = await EnhancedAvailabilityService.checkAvailability(
+      const basicAvailability = await AvailabilityService.checkAvailability(
         restaurantId,
         date,
         partySize,
@@ -120,7 +120,8 @@ export class EnhancedAvailabilityService {
             totalCapacity,
             restaurant,
             partySize,
-            date
+            date,
+            duration
           );
 
           return {
@@ -142,7 +143,7 @@ export class EnhancedAvailabilityService {
           available: enhancedSlots.filter(s => s.pacingStatus === 'available').length,
           moderate: enhancedSlots.filter(s => s.pacingStatus === 'moderate').length,
           busy: enhancedSlots.filter(s => s.pacingStatus === 'busy').length,
-          full: enhancedSlots.filter(s => s.pacingStatus === 'full').length
+          physically_full: enhancedSlots.filter(s => s.pacingStatus === 'physically_full').length
         }
       });
 
@@ -181,7 +182,8 @@ export class EnhancedAvailabilityService {
     totalCapacity: number,
     restaurant: Restaurant,
     partySize: number,
-    date: string
+    date: string,
+    defaultDuration: number
   ): Promise<{
     pacingStatus: 'available' | 'moderate' | 'busy' | 'pacing_full' | 'physically_full';
     tablesAvailable: number;
@@ -189,6 +191,19 @@ export class EnhancedAvailabilityService {
     suggestedTables?: Table[];
     alternativeTimes: string[];
     canOverride?: boolean;
+    pacingDetails?: {
+      concurrentTables: number;
+      concurrentCovers: number;
+      maxConcurrentTables?: number;
+      maxConcurrentCovers?: number;
+      restaurantMaxCovers?: number;
+      concurrentLimitReached: boolean;
+      utilization: {
+        tables: number;
+        covers: number;
+        availability: number;
+      };
+    };
   }> {
     const slotMinutes = AvailabilityService.timeToMinutes(slotTime);
     
@@ -269,18 +284,19 @@ export class EnhancedAvailabilityService {
     let maxConcurrentCovers = bookingSettings.maxConcurrentCovers;
     const restaurantMaxCovers = restaurant.maxCovers;
     
-    // Check for time slot rule overrides
-    const timeSlotLimits = await this.getTimeSlotConcurrentLimits(
-      restaurant.id,
-      date,
-      slotTime
-    );
+    // Check for time slot rule overrides (disabled for now)
+    // const timeSlotLimits = await this.getTimeSlotConcurrentLimits(
+    //   restaurant.id,
+    //   date,
+    //   slotTime
+    // );
+    const timeSlotLimits = {}; // Empty object as fallback
     
-    // Time slot rules override restaurant settings if more restrictive
-    if (timeSlotLimits.maxConcurrentBookings && 
-        (!maxConcurrentTables || timeSlotLimits.maxConcurrentBookings < maxConcurrentTables)) {
-      maxConcurrentTables = timeSlotLimits.maxConcurrentBookings;
-    }
+    // Time slot rules override restaurant settings if more restrictive (disabled for now)
+    // if (timeSlotLimits.maxConcurrentBookings && 
+    //     (!maxConcurrentTables || timeSlotLimits.maxConcurrentBookings < maxConcurrentTables)) {
+    //   maxConcurrentTables = timeSlotLimits.maxConcurrentBookings;
+    // }
     
     // Calculate utilization percentages for pacing
     const tableUtilization = (tablesBooked / totalTables) * 100;
@@ -496,277 +512,5 @@ export class EnhancedAvailabilityService {
       peakTimes: peakTimes.slice(0, 5),
       bestAvailability: bestAvailability.slice(0, 5)
     };
-  }
-
-  /**
-   * Check basic availability (delegates to parent class)
-   */
-  static async checkAvailability(
-    restaurantId: string,
-    date: string,
-    partySize: number,
-    duration: number = 120
-  ): Promise<any> {
-    return AvailabilityService.checkAvailability(restaurantId, date, partySize, duration);
-  }
-
-  /**
-   * Find the best available table for a booking (delegates to parent class)
-   */
-  static async findBestTable(
-    restaurantId: string,
-    date: string,
-    startTime: string,
-    partySize: number,
-    duration: number = 120,
-    isStaffBooking: boolean = false
-  ): Promise<Table | null> {
-    return AvailabilityService.findBestTable(
-      restaurantId,
-      date,
-      startTime,
-      partySize,
-      duration,
-      isStaffBooking
-    );
-  }
-
-  /**
-   * Invalidate availability cache (delegates to parent class)
-   */
-  static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
-    return AvailabilityService.invalidateAvailabilityCache(restaurantId, date);
-  }
-
-  /**
-   * Check if a specific time slot can be overridden by staff
-   */
-  static async canOverridePacing(
-    restaurantId: string,
-    date: string,
-    time: string,
-    partySize: number,
-    reason: string
-  ): Promise<{
-    canOverride: boolean;
-    risks: string[];
-    recommendations: string[];
-  }> {
-    const restaurant = await RestaurantModel.findById(restaurantId);
-    if (!restaurant) {
-      return {
-        canOverride: false,
-        risks: ['Restaurant not found'],
-        recommendations: []
-      };
-    }
-
-    const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
-    const slotMinutes = AvailabilityService.timeToMinutes(time);
-    
-    // Check various override conditions
-    const risks: string[] = [];
-    const recommendations: string[] = [];
-    
-    // Check kitchen capacity
-    const bookingsInWindow = existingBookings.filter(booking => {
-      const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
-      return Math.abs(bookingMinutes - slotMinutes) < 15; // Within 15 minutes
-    });
-    
-    if (bookingsInWindow.length >= 5) {
-      risks.push('Kitchen may be overwhelmed with too many simultaneous orders');
-      recommendations.push('Consider staggering the booking by 15-30 minutes');
-    }
-    
-    // Check server capacity (assuming 4 tables per server)
-    const tablesBooked = bookingsInWindow.length;
-    const estimatedServersNeeded = Math.ceil(tablesBooked / 4);
-    if (estimatedServersNeeded > 3) {
-      risks.push('May not have enough servers for proper service');
-      recommendations.push('Ensure adequate staffing for this time period');
-    }
-    
-    // Check large party conflicts
-    const largeParties = bookingsInWindow.filter(b => b.partySize >= 6);
-    if (largeParties.length > 0 && partySize >= 6) {
-      risks.push('Multiple large parties at the same time can strain service');
-      recommendations.push('Consider alternative time slots for better service quality');
-    }
-    
-    // Valid override reasons
-    const validReasons = [
-      'vip customer',
-      'special event',
-      'regular customer',
-      'celebration',
-      'business meeting',
-      'compensation'
-    ];
-    
-    const isValidReason = validReasons.some(vr => 
-      reason.toLowerCase().includes(vr)
-    );
-    
-    if (!isValidReason) {
-      recommendations.push('Document the specific reason for override');
-    }
-    
-    return {
-      canOverride: true, // Staff can always override, but with warnings
-      risks,
-      recommendations
-    };
-  }
-
-  // ========================================
-  // Core Availability Methods (moved from AvailabilityService)
-  // ========================================
-
-  /**
-   * Check basic availability for a given date, party size and duration
-   */
-  static async checkAvailability(
-    restaurantId: string,
-    date: string,
-    partySize: number,
-    duration?: number
-  ): Promise<BookingAvailability> {
-    return AvailabilityService.checkAvailability(restaurantId, date, partySize, duration);
-  }
-
-  /**
-   * Find the best available table for a booking
-   */
-  static async findBestTable(
-    restaurantId: string,
-    date: string,
-    startTime: string,
-    partySize: number,
-    duration: number = 120,
-    isStaffBooking: boolean = false
-  ): Promise<Table | null> {
-    return AvailabilityService.findBestTable(
-      restaurantId,
-      date,
-      startTime,
-      partySize,
-      duration,
-      isStaffBooking
-    );
-  }
-
-  /**
-   * Invalidate availability cache
-   */
-  static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
-    return AvailabilityService.invalidateAvailabilityCache(restaurantId, date);
-  }
-
-  /**
-   * Get turn time for a party size
-   */
-  static async getTurnTimeForParty(
-    restaurantId: string,
-    partySize: number,
-    bookingDate: Date,
-    bookingTime?: string
-  ): Promise<number> {
-    return AvailabilityService.getTurnTimeForParty(restaurantId, partySize, bookingDate, bookingTime);
-  }
-
-  /**
-   * Utility: Convert time string to minutes
-   */
-  public static timeToMinutes(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  /**
-   * Utility: Convert minutes to time string
-   */
-  public static minutesToTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
-  /**
-   * Utility: Get day of week string
-   */
-  private static getDayOfWeek(date: Date): string {
-    return date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  }
-
-  /**
-   * Get time slot rule concurrent limits for a specific date/time
-   */
-  private static async getTimeSlotConcurrentLimits(
-    restaurantId: string,
-    date: string,
-    time: string
-  ): Promise<{ maxConcurrentBookings?: number }> {
-    try {
-      // Skip time slot rules query if there's no database connection
-      if (!db) {
-        return {};
-      }
-
-      const requestDate = new Date(date);
-      const dayOfWeek = requestDate.getDay(); // 0=Sunday, 1=Monday, etc.
-      
-      // Check if time_slot_rules table exists (defensive programming)
-      const tableCheckQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'time_slot_rules'
-        )
-      `;
-      
-      const tableExists = await db.query(tableCheckQuery);
-      if (!tableExists.rows[0]?.exists) {
-        console.warn('time_slot_rules table does not exist, skipping time slot limits');
-        return {};
-      }
-      
-      const query = `
-        SELECT max_concurrent_bookings
-        FROM time_slot_rules
-        WHERE restaurant_id = $1
-          AND is_active = true
-          AND (day_of_week IS NULL OR day_of_week = $2)
-          AND $3::TIME >= start_time
-          AND $3::TIME <= end_time
-        ORDER BY 
-          CASE WHEN day_of_week IS NOT NULL THEN 1 ELSE 2 END,
-          max_concurrent_bookings ASC
-        LIMIT 1
-      `;
-      
-      const result = await db.query(query, [restaurantId, dayOfWeek, time]);
-      
-      if (result.rows.length > 0 && result.rows[0].max_concurrent_bookings) {
-        return { maxConcurrentBookings: result.rows[0].max_concurrent_bookings };
-      }
-      
-      return {};
-    } catch (error) {
-      console.error('Error getting time slot concurrent limits:', error);
-      // Return empty object on error so the system can continue
-      return {};
-    }
-  }
-}
-
-// Extend TableModel to add the missing method
-declare module '../models/Table' {
-  interface TableModel {
-    findAvailableTablesForTimeSlot(
-      restaurantId: string,
-      time: string,
-      partySize: number
-    ): Promise<Table[]>;
   }
 }

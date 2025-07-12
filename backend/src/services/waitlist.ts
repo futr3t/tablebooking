@@ -1,6 +1,6 @@
 import { BookingModel } from '../models/Booking';
 import { RestaurantModel } from '../models/Restaurant';
-import { EnhancedAvailabilityService as AvailabilityService } from './enhanced-availability';
+import { AvailabilityService } from './availability';
 import { Booking, BookingStatus } from '../types';
 
 // Helper function to extract date string from Date or timestamp
