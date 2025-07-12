@@ -2,7 +2,7 @@ import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
 import { AvailabilityService } from './availability';
-import { redis } from '../config/database';
+import { redis, db } from '../config/database';
 import { EnhancedTimeSlot, Table, Booking, Restaurant, BookingAvailability } from '../types';
 
 export class EnhancedAvailabilityService {
@@ -156,7 +156,7 @@ export class EnhancedAvailabilityService {
       };
     }
 
-    // Count bookings starting within 30 minutes of this slot (for pacing calculations)
+    // Count bookings starting within 30 minutes of this slot (for general pacing calculations)
     const nearbyBookings = existingBookings.filter(booking => {
       if (booking.status === 'cancelled' || booking.status === 'no_show') {
         return false;
@@ -165,8 +165,40 @@ export class EnhancedAvailabilityService {
       return Math.abs(bookingMinutes - slotMinutes) < 30;
     });
 
+    // Count bookings starting at EXACTLY the same time (for concurrent limits)
+    const exactTimeBookings = existingBookings.filter(booking => {
+      if (booking.status === 'cancelled' || booking.status === 'no_show') {
+        return false;
+      }
+      const bookingMinutes = AvailabilityService.timeToMinutes(booking.bookingTime);
+      return bookingMinutes === slotMinutes;
+    });
+
     const tablesBooked = nearbyBookings.length;
     const coversBooked = nearbyBookings.reduce((sum, b) => sum + b.partySize, 0);
+    
+    // Concurrent booking metrics (exact time only)
+    const concurrentTables = exactTimeBookings.length;
+    const concurrentCovers = exactTimeBookings.reduce((sum, b) => sum + b.partySize, 0);
+    
+    // Get restaurant booking limits
+    const bookingSettings = restaurant.bookingSettings;
+    let maxConcurrentTables = bookingSettings.maxConcurrentTables;
+    let maxConcurrentCovers = bookingSettings.maxConcurrentCovers;
+    const restaurantMaxCovers = restaurant.maxCovers;
+    
+    // Check for time slot rule overrides
+    const timeSlotLimits = await this.getTimeSlotConcurrentLimits(
+      restaurant.id,
+      date,
+      slotTime
+    );
+    
+    // Time slot rules override restaurant settings if more restrictive
+    if (timeSlotLimits.maxConcurrentBookings && 
+        (!maxConcurrentTables || timeSlotLimits.maxConcurrentBookings < maxConcurrentTables)) {
+      maxConcurrentTables = timeSlotLimits.maxConcurrentBookings;
+    }
     
     // Calculate utilization percentages for pacing
     const tableUtilization = (tablesBooked / totalTables) * 100;
@@ -175,18 +207,36 @@ export class EnhancedAvailabilityService {
     // Determine base pacing status (when tables ARE physically available)
     let pacingStatus: 'available' | 'moderate' | 'busy' | 'pacing_full';
     
-    // Enhanced pacing logic: consider both table count AND actual availability
+    // Enhanced pacing logic: consider table count, availability, AND concurrent limits
     const availabilityRatio = (availableTables.length / totalTables) * 100;
     
-    if (tableUtilization >= 90 || coverUtilization >= 90 || availabilityRatio <= 10) {
-      // High utilization OR very few tables left - this is pacing_full (can override)
+    // CRITICAL: Check concurrent booking limits first (these are hard limits)
+    let concurrentLimitReached = false;
+    
+    if (maxConcurrentTables && concurrentTables >= maxConcurrentTables) {
+      // Concurrent table limit reached
+      concurrentLimitReached = true;
       pacingStatus = 'pacing_full';
-    } else if (tableUtilization >= 70 || coverUtilization >= 70 || availabilityRatio <= 30) {
-      pacingStatus = 'busy';
-    } else if (tableUtilization >= 40 || coverUtilization >= 40 || availabilityRatio <= 60) {
-      pacingStatus = 'moderate';
+    } else if (maxConcurrentCovers && (concurrentCovers + partySize) > maxConcurrentCovers) {
+      // Concurrent covers limit would be exceeded
+      concurrentLimitReached = true;
+      pacingStatus = 'pacing_full';
+    } else if (restaurantMaxCovers && (coversBooked + partySize) > restaurantMaxCovers) {
+      // Restaurant total capacity would be exceeded
+      concurrentLimitReached = true;
+      pacingStatus = 'pacing_full';
     } else {
-      pacingStatus = 'available';
+      // No concurrent limits hit, use standard pacing thresholds
+      if (tableUtilization >= 90 || coverUtilization >= 90 || availabilityRatio <= 10) {
+        // High utilization OR very few tables left - this is pacing_full (can override)
+        pacingStatus = 'pacing_full';
+      } else if (tableUtilization >= 70 || coverUtilization >= 70 || availabilityRatio <= 30) {
+        pacingStatus = 'busy';
+      } else if (tableUtilization >= 40 || coverUtilization >= 40 || availabilityRatio <= 60) {
+        pacingStatus = 'moderate';
+      } else {
+        pacingStatus = 'available';
+      }
     }
 
     // Only generate alternative times if slot is busy/full (not for available/moderate slots)
@@ -207,7 +257,21 @@ export class EnhancedAvailabilityService {
       totalTablesBooked: tablesBooked,
       suggestedTables: availableTables.slice(0, 3), // Top 3 suggestions
       alternativeTimes: alternativeTimes.slice(0, 4), // Up to 4 alternatives
-      canOverride: true // Can override when physical tables exist (handled by pacing status)
+      canOverride: true, // Can override when physical tables exist (handled by pacing status)
+      // Enhanced pacing information
+      pacingDetails: {
+        concurrentTables,
+        concurrentCovers,
+        maxConcurrentTables,
+        maxConcurrentCovers,
+        restaurantMaxCovers,
+        concurrentLimitReached,
+        utilization: {
+          tables: Math.round(tableUtilization),
+          covers: Math.round(coverUtilization),
+          availability: Math.round(availabilityRatio)
+        }
+      }
     };
   }
 
@@ -551,6 +615,46 @@ export class EnhancedAvailabilityService {
    */
   private static getDayOfWeek(date: Date): string {
     return date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  }
+
+  /**
+   * Get time slot rule concurrent limits for a specific date/time
+   */
+  private static async getTimeSlotConcurrentLimits(
+    restaurantId: string,
+    date: string,
+    time: string
+  ): Promise<{ maxConcurrentBookings?: number }> {
+    try {
+      const requestDate = new Date(date);
+      const dayOfWeek = requestDate.getDay(); // 0=Sunday, 1=Monday, etc.
+      const timeMinutes = this.timeToMinutes(time);
+      
+      const query = `
+        SELECT max_concurrent_bookings
+        FROM time_slot_rules
+        WHERE restaurant_id = $1
+          AND is_active = true
+          AND (day_of_week IS NULL OR day_of_week = $2)
+          AND $3::TIME >= start_time
+          AND $3::TIME <= end_time
+        ORDER BY 
+          CASE WHEN day_of_week IS NOT NULL THEN 1 ELSE 2 END,
+          max_concurrent_bookings ASC
+        LIMIT 1
+      `;
+      
+      const result = await db.query(query, [restaurantId, dayOfWeek, time]);
+      
+      if (result.rows.length > 0 && result.rows[0].max_concurrent_bookings) {
+        return { maxConcurrentBookings: result.rows[0].max_concurrent_bookings };
+      }
+      
+      return {};
+    } catch (error) {
+      console.error('Error getting time slot concurrent limits:', error);
+      return {};
+    }
   }
 }
 

@@ -319,5 +319,18 @@ export interface EnhancedTimeSlot extends TimeSlot {
   suggestedTables?: Table[];
   alternativeTimes?: string[];
   canOverride?: boolean;
+  pacingDetails?: {
+    concurrentTables: number;
+    concurrentCovers: number;
+    maxConcurrentTables?: number;
+    maxConcurrentCovers?: number;
+    restaurantMaxCovers?: number;
+    concurrentLimitReached: boolean;
+    utilization: {
+      tables: number;
+      covers: number;
+      availability: number;
+    };
+  };
 }
 
