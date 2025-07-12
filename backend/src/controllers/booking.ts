@@ -445,20 +445,51 @@ export const getWaitlist = asyncHandler(async (req: AuthRequest, res: Response):
 export const staffBookingValidation = [
   body('restaurantId').isUUID().withMessage('Invalid restaurant ID'),
   body('customerName').trim().notEmpty().withMessage('Customer name is required'),
-  body('customerPhone').optional().matches(/^[\d\s\-\+\(\)]+$/).withMessage('Invalid phone number'),
-  body('customerEmail').optional().isEmail().withMessage('Invalid email address'),
+  body('customerPhone').optional().custom((value) => {
+    // Allow empty string or null for optional phone
+    if (!value || value === '' || value === null) return true;
+    // Validate phone format if provided
+    return /^[\d\s\-\+\(\)\.]+$/.test(value);
+  }).withMessage('Invalid phone number format'),
+  body('customerEmail').optional().custom((value) => {
+    // Allow empty string or null for optional email
+    if (!value || value === '' || value === null) return true;
+    // Validate email format if provided
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }).withMessage('Invalid email address'),
   body('partySize').isInt({ min: 1, max: 100 }).withMessage('Party size must be between 1 and 100'),
-  body('bookingDate').isISO8601().toDate().withMessage('Invalid booking date'),
+  body('bookingDate').custom((value) => {
+    // Accept ISO date string or Date object
+    const date = new Date(value);
+    return !isNaN(date.getTime());
+  }).withMessage('Invalid booking date'),
   body('bookingTime').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid time format (HH:MM)'),
-  body('duration').optional().isInt({ min: 30, max: 480 }).withMessage('Duration must be between 30 and 480 minutes'),
+  body('duration').optional().custom((value) => {
+    // Allow empty/null or valid integer
+    if (!value || value === '' || value === null) return true;
+    const num = parseInt(value);
+    return Number.isInteger(num) && num >= 30 && num <= 480;
+  }).withMessage('Duration must be between 30 and 480 minutes'),
   body('dietaryRequirements').optional().trim(),
   body('allergens').optional().trim(),
   body('occasion').optional().trim(),
   body('seatingPreference').optional().trim(),
-  body('vipCustomer').optional().isBoolean(),
-  body('marketingConsent').optional().isBoolean(),
+  body('vipCustomer').optional().custom((value) => {
+    // Allow boolean, string 'true'/'false', or empty
+    if (value === '' || value === null || value === undefined) return true;
+    return typeof value === 'boolean' || value === 'true' || value === 'false';
+  }),
+  body('marketingConsent').optional().custom((value) => {
+    // Allow boolean, string 'true'/'false', or empty
+    if (value === '' || value === null || value === undefined) return true;
+    return typeof value === 'boolean' || value === 'true' || value === 'false';
+  }),
   body('internalNotes').optional().trim(),
-  body('overridePacing').optional().isBoolean(),
+  body('overridePacing').optional().custom((value) => {
+    // Allow boolean, string 'true'/'false', or empty
+    if (value === '' || value === null || value === undefined) return true;
+    return typeof value === 'boolean' || value === 'true' || value === 'false';
+  }),
   body('overrideReason').optional().trim()
 ];
 
@@ -468,10 +499,16 @@ export const staffBookingValidation = [
 export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Staff booking validation errors:', errors.array());
+    console.log('Request body received:', req.body);
     res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: errors.array()
+      errors: errors.array().map(error => ({
+        field: error.param,
+        message: error.msg,
+        value: error.value
+      }))
     });
     return;
   }
