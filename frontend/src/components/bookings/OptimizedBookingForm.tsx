@@ -321,18 +321,18 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       return;
     }
 
-    // If slot is available or moderately busy, select it directly
-    if (slot.available || slot.pacingStatus === 'available' || slot.pacingStatus === 'moderate') {
+    // If slot is pacing_full or full, show override dialog
+    if (slot.pacingStatus === 'pacing_full' || slot.pacingStatus === 'full') {
+      setOverrideDialog({ open: true, slot });
+    } else {
+      // All other statuses (available, moderate, busy) are OK to book
       setSelectedSlot(slot);
       setFormData(prev => ({ ...prev, bookingTime: slot.time }));
       
-      // Show warning if slot is moderate
-      if (slot.pacingStatus === 'moderate') {
+      // Show advanced options if slot is getting busy
+      if (slot.pacingStatus === 'busy') {
         setShowAdvanced(true);
       }
-    } else {
-      // If slot needs override (busy, full, pacing_full), show override dialog
-      setOverrideDialog({ open: true, slot });
     }
   };
 
