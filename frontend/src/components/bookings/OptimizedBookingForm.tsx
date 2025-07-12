@@ -115,6 +115,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const [suggestedTableId, setSuggestedTableId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [customerSuggestions, setCustomerSuggestions] = useState<BookingTemplate[]>([]);
   const [dietaryOptions, setDietaryOptions] = useState<DietaryRequirement[]>([]);
@@ -230,19 +232,68 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       });
       setAvailability(response.data.data);
     } catch (error: any) {
-      console.error('Failed to load availability:', error);
+      console.error('Failed to load availability:', {
+        error: error,
+        response: error.response?.data,
+        status: error.response?.status,
+        request: {
+          restaurantId,
+          date: formData.bookingDate,
+          partySize: formData.partySize,
+          preferredTime: formData.bookingTime
+        }
+      });
       
-      // Check if it's a restaurant closed error
+      // Extract detailed error information
       const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+      const statusCode = error.response?.status;
       
-      if (errorMessage && (
+      console.log('Error details:', {
+        message: errorMessage,
+        statusCode,
+        fullError: error.response?.data
+      });
+      
+      // Handle specific error types with detailed messages
+      if (statusCode === 401) {
+        setError('Authentication failed. Please log in again.');
+      } else if (statusCode === 403) {
+        setError('Access denied to this restaurant.');
+      } else if (statusCode === 400) {
+        setError(errorMessage || 'Invalid request parameters.');
+      } else if (errorMessage && (
         errorMessage.includes('Restaurant is closed') || 
         errorMessage.includes('closed on') ||
         errorMessage.includes('outside service hours')
       )) {
         setError(errorMessage);
+      } else if (errorMessage && errorMessage.includes('Restaurant not found')) {
+        setError('Restaurant not found. Please refresh the page and try again.');
+      } else if (errorMessage && errorMessage.includes('Party size') && errorMessage.includes('exceeds')) {
+        setError(errorMessage);
+      } else if (errorMessage && errorMessage.includes('Cannot book for past dates')) {
+        setError('Cannot book for past dates. Please select a future date.');
+      } else if (errorMessage && errorMessage.includes('Cannot book more than')) {
+        setError(errorMessage);
       } else {
-        setError('Failed to load availability. Please try again.');
+        // Generic error with more helpful context
+        const debugId = Date.now().toString(36);
+        const debugData = {
+          errorMessage,
+          statusCode,
+          fullResponse: error.response,
+          timestamp: new Date().toISOString(),
+          request: {
+            restaurantId,
+            date: formData.bookingDate,
+            partySize: formData.partySize,
+            preferredTime: formData.bookingTime
+          }
+        };
+        
+        console.error(`Availability error ${debugId}:`, debugData);
+        setDebugInfo(debugData);
+        setError(`Failed to load availability (Error ${debugId}). Please check the date and party size, then try again. If the problem persists, please contact support.`);
       }
     } finally {
       setLoadingAvailability(false);
@@ -528,7 +579,44 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
             {error}
+            {debugInfo && (
+              <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={showDebugPanel}
+                      onChange={(e) => setShowDebugPanel(e.target.checked)}
+                      size="small"
+                    />
+                  }
+                  label="Show debug information"
+                />
+              </Box>
+            )}
           </Alert>
+        )}
+
+        {showDebugPanel && debugInfo && (
+          <Card sx={{ mb: 2, border: '1px solid #e0e0e0' }}>
+            <CardContent>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Debug Information (Error ID: {debugInfo.timestamp})
+              </Typography>
+              <Box component="pre" sx={{ 
+                fontSize: '0.75rem', 
+                backgroundColor: '#f5f5f5', 
+                p: 1, 
+                borderRadius: 1,
+                overflow: 'auto',
+                maxHeight: '300px'
+              }}>
+                {JSON.stringify(debugInfo, null, 2)}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Please share this information with support if the issue persists.
+              </Typography>
+            </CardContent>
+          </Card>
         )}
 
         <Grid container spacing={3}>

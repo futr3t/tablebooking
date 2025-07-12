@@ -770,31 +770,77 @@ export const getCustomerSuggestions = asyncHandler(async (req: AuthRequest, res:
 export const getEnhancedAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const { restaurantId, date, partySize, duration, preferredTime } = req.query;
 
+  console.log('[Controller] getEnhancedAvailability request:', {
+    restaurantId,
+    date,
+    partySize,
+    duration,
+    preferredTime,
+    user: req.user?.email
+  });
+
   if (!req.user) {
+    console.error('[Controller] No authenticated user');
     throw createError('Authentication required', 401);
   }
 
   if (!restaurantId || !date || !partySize) {
+    console.error('[Controller] Missing required parameters:', { restaurantId, date, partySize });
     throw createError('Restaurant ID, date, and party size are required', 400);
   }
 
   // Check restaurant access
   if (req.user.role !== 'super_admin' && (!req.user.restaurantId || req.user.restaurantId !== restaurantId)) {
+    console.error('[Controller] Access denied:', {
+      userRole: req.user.role,
+      userRestaurantId: req.user.restaurantId,
+      requestedRestaurantId: restaurantId
+    });
     throw createError('Access denied to this restaurant', 403);
   }
 
-  const enhancedAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
-    restaurantId as string,
-    date as string,
-    parseInt(partySize as string),
-    duration ? parseInt(duration as string) : undefined,
-    preferredTime as string
-  );
+  try {
+    const enhancedAvailability = await EnhancedAvailabilityService.getEnhancedAvailability(
+      restaurantId as string,
+      date as string,
+      parseInt(partySize as string),
+      duration ? parseInt(duration as string) : undefined,
+      preferredTime as string
+    );
 
-  res.json({
-    success: true,
-    data: enhancedAvailability
-  } as ApiResponse);
+    console.log('[Controller] Enhanced availability successful:', {
+      date,
+      slotsCount: enhancedAvailability.timeSlots.length,
+      hasAvailableSlots: enhancedAvailability.timeSlots.some(s => s.available)
+    });
+
+    res.json({
+      success: true,
+      data: enhancedAvailability
+    } as ApiResponse);
+  } catch (error: any) {
+    console.error('[Controller] Enhanced availability error:', {
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      },
+      request: {
+        restaurantId,
+        date,
+        partySize,
+        duration,
+        preferredTime
+      }
+    });
+    
+    // Re-throw with more context if it's a generic error
+    if (error.message === 'Failed to load availability' || !error.message) {
+      throw createError('Unable to check availability. Please check server logs for details.', 500);
+    }
+    
+    throw error;
+  }
 });
 
 /**

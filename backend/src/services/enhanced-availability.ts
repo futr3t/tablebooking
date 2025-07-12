@@ -24,16 +24,40 @@ export class EnhancedAvailabilityService {
       bestAvailability: string[];
     };
   }> {
+    const debugInfo = {
+      restaurantId,
+      date,
+      partySize,
+      duration,
+      preferredTime,
+      timestamp: new Date().toISOString()
+    };
+    
     try {
+      console.log('[EnhancedAvailability] Starting enhanced availability check:', debugInfo);
+      
       // Get restaurant settings first to validate party size
       const restaurant = await RestaurantModel.findById(restaurantId);
       if (!restaurant) {
-        throw new Error('Restaurant not found');
+        const error = new Error('Restaurant not found');
+        console.error('[EnhancedAvailability] Restaurant not found:', debugInfo);
+        throw error;
       }
+
+      console.log('[EnhancedAvailability] Restaurant loaded:', {
+        id: restaurant.id,
+        name: restaurant.name
+      });
 
       // Get all tables to check maximum capacity
       const allTablesForValidation = await TableModel.findByRestaurant(restaurantId);
       const activeTables = allTablesForValidation.tables.filter(t => t.isActive);
+      
+      console.log('[EnhancedAvailability] Table capacity check:', {
+        totalTables: allTablesForValidation.tables.length,
+        activeTables: activeTables.length,
+        tableCapacities: activeTables.map(t => ({ id: t.id, min: t.minCapacity, max: t.maxCapacity }))
+      });
       
       // Check if party size can be accommodated by any table or combination
       const maxSingleTableCapacity = Math.max(...activeTables.map(t => t.maxCapacity));
@@ -43,10 +67,17 @@ export class EnhancedAvailabilityService {
       );
       
       if (partySize > maxCombinationCapacity) {
-        throw new Error(`Party size of ${partySize} exceeds maximum capacity of ${maxCombinationCapacity}. Please contact the restaurant directly for large group bookings.`);
+        const error = new Error(`Party size of ${partySize} exceeds maximum capacity of ${maxCombinationCapacity}. Please contact the restaurant directly for large group bookings.`);
+        console.error('[EnhancedAvailability] Party size exceeds capacity:', {
+          ...debugInfo,
+          maxSingleTableCapacity,
+          maxCombinationCapacity
+        });
+        throw error;
       }
 
       // Get basic availability
+      console.log('[EnhancedAvailability] Checking basic availability...');
       const basicAvailability = await EnhancedAvailabilityService.checkAvailability(
         restaurantId,
         date,
@@ -54,11 +85,22 @@ export class EnhancedAvailabilityService {
         duration
       );
 
+      console.log('[EnhancedAvailability] Basic availability result:', {
+        slotsCount: basicAvailability.timeSlots.length,
+        date: basicAvailability.date
+      });
+
       // Get all bookings for the date (excluding cancelled/no-show)
       const allBookings = await BookingModel.findByDateRange(restaurantId, date, date);
       const existingBookings = allBookings.filter(
         booking => booking.status !== 'cancelled' && booking.status !== 'no_show'
       );
+      
+      console.log('[EnhancedAvailability] Existing bookings:', {
+        totalBookings: allBookings.length,
+        activeBookings: existingBookings.length,
+        cancelledBookings: allBookings.length - existingBookings.length
+      });
       
       // Get all tables
       const allTablesResult = await TableModel.findByRestaurant(restaurantId);
@@ -66,6 +108,8 @@ export class EnhancedAvailabilityService {
       const totalTables = allTables.filter(t => t.isActive).length;
       const totalCapacity = allTables.reduce((sum, t) => sum + t.capacity, 0);
 
+      console.log('[EnhancedAvailability] Enhancing time slots with pacing data...');
+      
       // Enhance time slots with pacing information
       const enhancedSlots: EnhancedTimeSlot[] = await Promise.all(
         basicAvailability.timeSlots.map(async (slot) => {
@@ -91,17 +135,39 @@ export class EnhancedAvailabilityService {
         })
       );
 
+      console.log('[EnhancedAvailability] Enhanced slots summary:', {
+        totalSlots: enhancedSlots.length,
+        availableSlots: enhancedSlots.filter(s => s.available).length,
+        pacingStatuses: {
+          available: enhancedSlots.filter(s => s.pacingStatus === 'available').length,
+          moderate: enhancedSlots.filter(s => s.pacingStatus === 'moderate').length,
+          busy: enhancedSlots.filter(s => s.pacingStatus === 'busy').length,
+          full: enhancedSlots.filter(s => s.pacingStatus === 'full').length
+        }
+      });
+
       // Generate suggestions
       const suggestions = EnhancedAvailabilityService.generateSuggestions(enhancedSlots, preferredTime);
+
+      console.log('[EnhancedAvailability] Suggestions generated:', {
+        quietTimes: suggestions.quietTimes.length,
+        peakTimes: suggestions.peakTimes.length,
+        bestAvailability: suggestions.bestAvailability.length
+      });
 
       return {
         date,
         timeSlots: enhancedSlots,
         suggestions
       };
-    } catch (error) {
-      console.error('Error getting enhanced availability:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('[EnhancedAvailability] Error in getEnhancedAvailability:', {
+        error: error.message,
+        stack: error.stack,
+        params: debugInfo,
+        timestamp: new Date().toISOString()
+      });
+      throw new Error(`Enhanced availability check failed: ${error.message}`);
     }
   }
 
@@ -127,6 +193,14 @@ export class EnhancedAvailabilityService {
     const slotMinutes = AvailabilityService.timeToMinutes(slotTime);
     
     // CRITICAL: First check physical table availability for this specific party size and time
+    console.log('[EnhancedAvailability] Checking table availability for slot:', {
+      restaurantId: restaurant.id,
+      slotTime,
+      partySize,
+      date,
+      defaultDuration
+    });
+    
     const availableTables = await TableModel.findAvailableTablesForTimeSlot(
       restaurant.id,
       slotTime,
@@ -134,6 +208,12 @@ export class EnhancedAvailabilityService {
       date,
       defaultDuration
     );
+
+    console.log('[EnhancedAvailability] Table availability result:', {
+      slotTime,
+      availableTablesCount: availableTables.length,
+      tableIds: availableTables.map(t => t.id)
+    });
 
     const hasPhysicalTables = availableTables.length > 0;
     

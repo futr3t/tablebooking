@@ -11,12 +11,31 @@ export class AvailabilityService {
     partySize: number,
     duration?: number
   ): Promise<BookingAvailability> {
+    const debugInfo = {
+      restaurantId,
+      date,
+      partySize,
+      duration,
+      timestamp: new Date().toISOString()
+    };
+    
     try {
+      console.log('[AvailabilityService] Starting availability check:', debugInfo);
+      
       // Get restaurant settings
       const restaurant = await RestaurantModel.findById(restaurantId);
       if (!restaurant) {
-        throw new Error('Restaurant not found');
+        const error = new Error('Restaurant not found');
+        console.error('[AvailabilityService] Restaurant lookup failed:', { ...debugInfo, error: error.message });
+        throw error;
       }
+
+      console.log('[AvailabilityService] Restaurant found:', {
+        restaurantId: restaurant.id,
+        name: restaurant.name,
+        hasOpeningHours: !!restaurant.openingHours,
+        hasBookingSettings: !!restaurant.bookingSettings
+      });
 
       const openingHours = restaurant.openingHours;
       const bookingSettings = restaurant.bookingSettings;
@@ -27,17 +46,28 @@ export class AvailabilityService {
       const maxAdvanceDays = bookingSettings.maxAdvanceBookingDays || 270; // 9 months default
       const minAdvanceHours = bookingSettings.minAdvanceBookingHours || 2;
 
+      console.log('[AvailabilityService] Date validation:', {
+        today: today.toISOString(),
+        requestDate: requestDate.toISOString(),
+        maxAdvanceDays,
+        minAdvanceHours
+      });
+
       // Compare just the date part (not time) for past date check
       const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const requestDateOnly = new Date(requestDate.getFullYear(), requestDate.getMonth(), requestDate.getDate());
       
       if (requestDateOnly < todayDateOnly) {
-        throw new Error('Cannot book for past dates');
+        const error = new Error('Cannot book for past dates');
+        console.error('[AvailabilityService] Past date error:', { ...debugInfo, todayDateOnly, requestDateOnly });
+        throw error;
       }
 
       const daysDiff = Math.ceil((requestDateOnly.getTime() - todayDateOnly.getTime()) / (1000 * 60 * 60 * 24));
       if (daysDiff > maxAdvanceDays) {
-        throw new Error(`Cannot book more than ${maxAdvanceDays} days in advance`);
+        const error = new Error(`Cannot book more than ${maxAdvanceDays} days in advance`);
+        console.error('[AvailabilityService] Advance booking limit exceeded:', { ...debugInfo, daysDiff, maxAdvanceDays });
+        throw error;
       }
 
       // For same-day bookings, we'll check the minimum advance time per slot
@@ -48,16 +78,26 @@ export class AvailabilityService {
       const dayOfWeekString = this.getDayOfWeek(requestDate);
       const daySchedule = openingHours[dayOfWeekString];
       
+      console.log('[AvailabilityService] Day schedule check:', {
+        dayOfWeek: dayOfWeekString,
+        isOpen: daySchedule?.isOpen,
+        schedule: daySchedule
+      });
+      
       if (!daySchedule || !daySchedule.isOpen) {
-        throw new Error(`Restaurant is closed on ${this.getDayOfWeek(requestDate).charAt(0).toUpperCase() + this.getDayOfWeek(requestDate).slice(1)}s`);
+        const error = new Error(`Restaurant is closed on ${this.getDayOfWeek(requestDate).charAt(0).toUpperCase() + this.getDayOfWeek(requestDate).slice(1)}s`);
+        console.error('[AvailabilityService] Restaurant closed error:', { ...debugInfo, dayOfWeekString, daySchedule });
+        throw error;
       }
 
       // Get appropriate turn time for this party size if duration not specified
       if (!duration) {
         duration = await this.getTurnTimeForParty(restaurantId, partySize, requestDate);
+        console.log('[AvailabilityService] Calculated turn time:', { duration, partySize });
       }
 
       // Generate time slots using enhanced opening hours (supports multiple periods)
+      console.log('[AvailabilityService] Generating time slots...');
       const timeSlots = await this.generateTimeSlotsFromOpeningHours(
         restaurantId,
         date,
@@ -67,12 +107,26 @@ export class AvailabilityService {
         bookingSettings
       );
 
+      console.log('[AvailabilityService] Time slots generated:', {
+        count: timeSlots.length,
+        availableSlots: timeSlots.filter(s => s.available).length,
+        firstSlot: timeSlots[0],
+        lastSlot: timeSlots[timeSlots.length - 1]
+      });
+
       return {
         date,
         timeSlots
       };
-    } catch (error) {
-      console.error('Error checking availability:', error);
+    } catch (error: any) {
+      console.error('[AvailabilityService] Error checking availability:', {
+        ...debugInfo,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      });
       throw error;
     }
   }

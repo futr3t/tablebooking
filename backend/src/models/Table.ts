@@ -398,42 +398,103 @@ export class TableModel {
     duration?: number
   ): Promise<Table[]> {
     try {
+      console.log('[TableModel] findAvailableTablesForTimeSlot called:', {
+        restaurantId,
+        time,
+        partySize,
+        date,
+        duration
+      });
+
       // First get all suitable tables for the party size
       const suitableTables = await this.findAvailableTablesForPartySize(restaurantId, partySize);
+      console.log('[TableModel] Suitable tables found:', {
+        count: suitableTables.length,
+        tableIds: suitableTables.map(t => t.id)
+      });
       
       // If no date provided, return all suitable tables (backward compatibility)
       if (!date) {
+        console.log('[TableModel] No date provided, returning all suitable tables');
         return suitableTables;
       }
       
       // Get existing bookings for the date to check conflicts
       const { BookingModel } = await import('./Booking');
       const existingBookings = await BookingModel.findByDateRange(restaurantId, date, date);
+      console.log('[TableModel] Existing bookings found:', {
+        total: existingBookings.length,
+        bookings: existingBookings.map(b => ({
+          id: b.id,
+          tableId: b.tableId,
+          time: b.bookingTime,
+          status: b.status,
+          duration: b.duration
+        }))
+      });
       
       // Filter out cancelled and no-show bookings
       const activeBookings = existingBookings.filter(
         booking => booking.status !== 'cancelled' && booking.status !== 'no_show'
       );
+      console.log('[TableModel] Active bookings after filtering:', {
+        count: activeBookings.length,
+        activeBookings: activeBookings.map(b => ({
+          id: b.id,
+          tableId: b.tableId,
+          time: b.bookingTime,
+          duration: b.duration
+        }))
+      });
       
       // Calculate time slot boundaries
       const startMinutes = this.timeToMinutes(time);
       const endMinutes = startMinutes + (duration || 120); // Default 2 hours if no duration
+      console.log('[TableModel] Time slot boundaries:', {
+        requestedTime: time,
+        startMinutes,
+        endMinutes,
+        durationUsed: duration || 120
+      });
       
       // Filter tables that are available (no conflicting bookings)
       const availableTables = suitableTables.filter(table => {
         const tableBookings = activeBookings.filter(booking => booking.tableId === table.id);
+        console.log(`[TableModel] Checking table ${table.id} (${table.number}):`, {
+          tableBookings: tableBookings.length,
+          bookings: tableBookings.map(b => ({
+            time: b.bookingTime,
+            duration: b.duration,
+            startMin: this.timeToMinutes(b.bookingTime),
+            endMin: this.timeToMinutes(b.bookingTime) + b.duration
+          }))
+        });
         
         for (const booking of tableBookings) {
           const bookingStartMinutes = this.timeToMinutes(booking.bookingTime);
           const bookingEndMinutes = bookingStartMinutes + booking.duration;
           
+          const hasOverlap = !(endMinutes <= bookingStartMinutes || startMinutes >= bookingEndMinutes);
+          console.log(`[TableModel] Overlap check for table ${table.id}:`, {
+            requestedSlot: `${startMinutes}-${endMinutes}`,
+            existingBooking: `${bookingStartMinutes}-${bookingEndMinutes}`,
+            hasOverlap,
+            reason: hasOverlap ? 'CONFLICT - table unavailable' : 'No conflict'
+          });
+          
           // Check for overlap
-          if (!(endMinutes <= bookingStartMinutes || startMinutes >= bookingEndMinutes)) {
+          if (hasOverlap) {
             return false; // Table is booked during this time
           }
         }
         
+        console.log(`[TableModel] Table ${table.id} is AVAILABLE`);
         return true; // Table is available
+      });
+      
+      console.log('[TableModel] Final available tables:', {
+        count: availableTables.length,
+        availableTableIds: availableTables.map(t => t.id)
       });
       
       return availableTables;
