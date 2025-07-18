@@ -190,7 +190,7 @@ const Dashboard: React.FC = () => {
       )}
       
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
+        <Grid item xs={12} sm={6} md={6}>
           <Card sx={{ 
             background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
             color: 'white',
@@ -203,13 +203,13 @@ const Dashboard: React.FC = () => {
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             }
           }}>
-            <CardContent sx={{ pb: '16px !important' }}>
+            <CardContent sx={{ pb: '24px !important', pt: '24px !important', px: '24px !important' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
+                  <Typography variant="h2" sx={{ fontWeight: 700, mb: 1, color: 'white', fontSize: '3rem' }}>
                     {stats.totalToday}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '1.1rem', fontWeight: 500 }}>
                     Total Bookings Today
                   </Typography>
                 </Box>
@@ -218,7 +218,7 @@ const Dashboard: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
+        <Grid item xs={12} sm={6} md={6}>
           <Card sx={{ 
             background: 'linear-gradient(to bottom right, #059669, #047857)',
             color: 'white',
@@ -231,13 +231,13 @@ const Dashboard: React.FC = () => {
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             }
           }}>
-            <CardContent sx={{ pb: '16px !important' }}>
+            <CardContent sx={{ pb: '24px !important', pt: '24px !important', px: '24px !important' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
+                  <Typography variant="h2" sx={{ fontWeight: 700, mb: 1, color: 'white', fontSize: '3rem' }}>
                     {stats.totalGuests}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '1.1rem', fontWeight: 500 }}>
                     Total Guests
                   </Typography>
                 </Box>
@@ -246,33 +246,6 @@ const Dashboard: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
-          <Card sx={{ 
-            background: 'linear-gradient(to bottom right, #0891b2, #0e7490)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 0,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            }
-          }}>
-            <CardContent sx={{ pb: '16px !important' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
-                    {stats.confirmed}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                    Confirmed
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
         
         {!restaurantSettings?.bookingSettings?.autoConfirm && (
           <Grid item xs={12} sm={6} md={3}>
@@ -288,7 +261,7 @@ const Dashboard: React.FC = () => {
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               }
             }}>
-              <CardContent sx={{ pb: '16px !important' }}>
+              <CardContent sx={{ pb: '24px !important', pt: '24px !important', px: '24px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: 'white' }}>
@@ -305,32 +278,6 @@ const Dashboard: React.FC = () => {
         )}
       </Grid>
       
-      <Card sx={{ 
-        p: 0,
-        backgroundColor: 'rgba(30, 41, 59, 0.5)',
-        borderColor: '#334155',
-        borderRadius: 0,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-      }}>
-        <Box sx={{ 
-          p: 3, 
-          borderBottom: '1px solid #334155',
-          backgroundColor: 'rgba(30, 41, 59, 0.3)'
-        }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'white' }}>
-            Today's Bookings Timeline
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgb(203, 213, 225)' }}>
-            Real-time view of all bookings scheduled for today
-          </Typography>
-        </Box>
-        <Box sx={{ p: 3 }}>
-          <TimelineView 
-            bookings={bookings} 
-            onBookingUpdate={handleBookingUpdate}
-          />
-        </Box>
-      </Card>
 
       {/* Quick Booking Dialog */}
       {user?.restaurantId && (

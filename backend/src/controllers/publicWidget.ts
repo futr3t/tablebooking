@@ -84,7 +84,7 @@ export const getAvailability = async (req: WidgetRequest, res: Response): Promis
       return;
     }
 
-    const availability = await AvailabilityService.checkAvailability(
+    const availability = await AvailabilityService.getEnhancedAvailability(
       restaurant.id,
       date as string,
       parsedPartySize
