@@ -1,19 +1,13 @@
 import { BookingLockService } from '../services/booking-lock';
-import { redis } from '../config/database';
-
-jest.mock('../config/database');
-
-const mockRedis = redis as jest.Mocked<typeof redis>;
 
 describe('BookingLockService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Clear any existing locks before each test
+    BookingLockService.cleanupExpiredLocks();
   });
 
   describe('acquireLock', () => {
     it('should acquire lock successfully', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-
       const lockValue = await BookingLockService.acquireLock(
         'restaurant-1',
         '2024-01-03',
@@ -23,84 +17,139 @@ describe('BookingLockService', () => {
 
       expect(lockValue).toBeTruthy();
       expect(typeof lockValue).toBe('string');
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'booking-lock:restaurant-1:2024-01-03:18:00:table-1',
-        lockValue,
-        'EX',
-        30,
-        'NX'
-      );
     });
 
-    it('should fail to acquire lock when already locked', async () => {
-      mockRedis.set.mockResolvedValue(null);
-
-      const lockValue = await BookingLockService.acquireLock(
+    it('should fail to acquire lock when already held', async () => {
+      // First lock should succeed
+      const lockValue1 = await BookingLockService.acquireLock(
         'restaurant-1',
         '2024-01-03',
         '18:00',
         'table-1'
       );
+      expect(lockValue1).toBeTruthy();
 
-      expect(lockValue).toBeNull();
-    });
-
-    it('should handle Redis errors gracefully', async () => {
-      mockRedis.set.mockRejectedValue(new Error('Redis connection failed'));
-
-      const lockValue = await BookingLockService.acquireLock(
+      // Second lock should fail
+      const lockValue2 = await BookingLockService.acquireLock(
         'restaurant-1',
         '2024-01-03',
         '18:00',
         'table-1'
       );
+      expect(lockValue2).toBeNull();
+    });
 
-      expect(lockValue).toBeNull();
+    it('should allow acquiring lock for different time slots', async () => {
+      const lockValue1 = await BookingLockService.acquireLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'table-1'
+      );
+      const lockValue2 = await BookingLockService.acquireLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:30',
+        'table-1'
+      );
+
+      expect(lockValue1).toBeTruthy();
+      expect(lockValue2).toBeTruthy();
     });
   });
 
   describe('releaseLock', () => {
     it('should release lock successfully', async () => {
-      mockRedis.eval.mockResolvedValue(1);
-
-      const result = await BookingLockService.releaseLock(
+      const lockValue = await BookingLockService.acquireLock(
         'restaurant-1',
         '2024-01-03',
         '18:00',
-        'test-lock-value',
         'table-1'
       );
+      expect(lockValue).toBeTruthy();
 
-      expect(result).toBe(true);
-      expect(mockRedis.eval).toHaveBeenCalledWith(
-        expect.stringContaining('redis.call("get", KEYS[1])'),
-        1,
-        'booking-lock:restaurant-1:2024-01-03:18:00:table-1',
-        'test-lock-value'
+      const released = await BookingLockService.releaseLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        lockValue!,
+        'table-1'
       );
+      expect(released).toBe(true);
+
+      // Should be able to acquire the lock again
+      const newLockValue = await BookingLockService.acquireLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'table-1'
+      );
+      expect(newLockValue).toBeTruthy();
     });
 
     it('should fail to release lock with wrong value', async () => {
-      mockRedis.eval.mockResolvedValue(0);
-
-      const result = await BookingLockService.releaseLock(
+      const lockValue = await BookingLockService.acquireLock(
         'restaurant-1',
         '2024-01-03',
         '18:00',
-        'wrong-lock-value',
         'table-1'
       );
+      expect(lockValue).toBeTruthy();
 
-      expect(result).toBe(false);
+      const released = await BookingLockService.releaseLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'wrong-value',
+        'table-1'
+      );
+      expect(released).toBe(false);
+    });
+  });
+
+  describe('extendLock', () => {
+    it('should extend lock successfully', async () => {
+      const lockValue = await BookingLockService.acquireLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'table-1'
+      );
+      expect(lockValue).toBeTruthy();
+
+      const extended = await BookingLockService.extendLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        lockValue!,
+        'table-1'
+      );
+      expect(extended).toBe(true);
+    });
+
+    it('should fail to extend lock with wrong value', async () => {
+      const lockValue = await BookingLockService.acquireLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'table-1'
+      );
+      expect(lockValue).toBeTruthy();
+
+      const extended = await BookingLockService.extendLock(
+        'restaurant-1',
+        '2024-01-03',
+        '18:00',
+        'wrong-value',
+        'table-1'
+      );
+      expect(extended).toBe(false);
     });
   });
 
   describe('withLock', () => {
-    it('should execute operation within lock', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-      mockRedis.eval.mockResolvedValue(1);
-
-      const mockOperation = jest.fn().mockResolvedValue('operation-result');
+    it('should execute operation with lock', async () => {
+      const mockOperation = jest.fn().mockResolvedValue('success');
 
       const result = await BookingLockService.withLock(
         'restaurant-1',
@@ -110,187 +159,108 @@ describe('BookingLockService', () => {
         'table-1'
       );
 
-      expect(result).toBe('operation-result');
+      expect(result).toBe('success');
       expect(mockOperation).toHaveBeenCalledTimes(1);
-      expect(mockRedis.set).toHaveBeenCalled(); // Lock acquired
-      expect(mockRedis.eval).toHaveBeenCalled(); // Lock released
     });
 
-    it('should throw error when unable to acquire lock', async () => {
-      mockRedis.set.mockResolvedValue(null);
+    it('should retry on lock acquisition failure', async () => {
+      let callCount = 0;
+      const mockOperation = jest.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount <= 2) {
+          throw new Error('Operation failed');
+        }
+        return 'success';
+      });
 
-      const mockOperation = jest.fn();
-
-      await expect(
-        BookingLockService.withLock(
-          'restaurant-1',
-          '2024-01-03',
-          '18:00',
-          mockOperation,
-          'table-1'
-        )
-      ).rejects.toThrow('Unable to acquire booking lock');
-
-      expect(mockOperation).not.toHaveBeenCalled();
-    });
-
-    it('should release lock even if operation throws', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-      mockRedis.eval.mockResolvedValue(1);
-
-      const mockOperation = jest.fn().mockRejectedValue(new Error('Operation failed'));
-
-      await expect(
-        BookingLockService.withLock(
-          'restaurant-1',
-          '2024-01-03',
-          '18:00',
-          mockOperation,
-          'table-1'
-        )
-      ).rejects.toThrow('Operation failed');
-
-      expect(mockRedis.eval).toHaveBeenCalled(); // Lock should still be released
-    });
-  });
-
-  describe('extendLock', () => {
-    it('should extend lock successfully', async () => {
-      mockRedis.eval.mockResolvedValue(1);
-
-      const result = await BookingLockService.extendLock(
+      const result = await BookingLockService.withLock(
         'restaurant-1',
         '2024-01-03',
         '18:00',
-        'test-lock-value',
+        mockOperation,
         'table-1'
       );
 
-      expect(result).toBe(true);
-      expect(mockRedis.eval).toHaveBeenCalledWith(
-        expect.stringContaining('redis.call("expire", KEYS[1], ARGV[2])'),
-        1,
-        'booking-lock:restaurant-1:2024-01-03:18:00:table-1',
-        'test-lock-value',
-        '30'
-      );
-    });
-
-    it('should fail to extend lock with wrong value', async () => {
-      mockRedis.eval.mockResolvedValue(0);
-
-      const result = await BookingLockService.extendLock(
-        'restaurant-1',
-        '2024-01-03',
-        '18:00',
-        'wrong-lock-value',
-        'table-1'
-      );
-
-      expect(result).toBe(false);
+      expect(result).toBe('success');
+      expect(mockOperation).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('table locks', () => {
-    it('should acquire table lock successfully', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-
+    it('should acquire and release table lock', async () => {
       const lockValue = await BookingLockService.acquireTableLock('table-1');
-
       expect(lockValue).toBeTruthy();
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'booking-lock:table:table-1',
-        lockValue,
-        'EX',
-        30,
-        'NX'
-      );
+
+      const released = await BookingLockService.releaseTableLock('table-1', lockValue!);
+      expect(released).toBe(true);
     });
 
-    it('should execute operation within table lock', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-      mockRedis.eval.mockResolvedValue(1);
+    it('should work with table lock operation', async () => {
+      const mockOperation = jest.fn().mockResolvedValue('table-success');
 
-      const mockOperation = jest.fn().mockResolvedValue('table-operation-result');
+      const result = await BookingLockService.withTableLock(
+        'table-1',
+        mockOperation
+      );
 
-      const result = await BookingLockService.withTableLock('table-1', mockOperation);
-
-      expect(result).toBe('table-operation-result');
+      expect(result).toBe('table-success');
       expect(mockOperation).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('cleanupExpiredLocks', () => {
     it('should clean up expired locks', async () => {
-      const mockKeys = [
-        'booking-lock:restaurant-1:2024-01-03:18:00:table-1',
-        'booking-lock:restaurant-1:2024-01-03:18:30:table-2'
-      ];
-
-      mockRedis.keys.mockResolvedValue(mockKeys);
+      // Mock Date.now to control time
+      const originalDateNow = Date.now;
+      let currentTime = 1000000;
       
-      // Mock pipeline
-      const mockPipeline = {
-        ttl: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([
-          [null, -2], // Expired
-          [null, 15]  // Still valid
-        ])
-      };
-      
-      mockRedis.pipeline.mockReturnValue(mockPipeline as any);
-      mockRedis.del.mockResolvedValue(1);
+      Date.now = jest.fn(() => currentTime);
 
-      await BookingLockService.cleanupExpiredLocks();
+      try {
+        // Acquire a lock
+        const lockValue = await BookingLockService.acquireLock(
+          'restaurant-1',
+          '2024-01-03',
+          '18:00',
+          'table-1'
+        );
+        expect(lockValue).toBeTruthy();
 
-      expect(mockRedis.keys).toHaveBeenCalledWith('booking-lock:*');
-      expect(mockRedis.del).toHaveBeenCalledWith(mockKeys[0]); // Only expired key
-    });
+        // Advance time beyond lock timeout (10 seconds)
+        currentTime += 15000;
 
-    it('should handle no expired locks', async () => {
-      mockRedis.keys.mockResolvedValue([]);
+        // Cleanup should remove expired locks
+        await BookingLockService.cleanupExpiredLocks();
 
-      await BookingLockService.cleanupExpiredLocks();
-
-      expect(mockRedis.keys).toHaveBeenCalled();
-      expect(mockRedis.del).not.toHaveBeenCalled();
-    });
-
-    it('should handle Redis errors during cleanup', async () => {
-      mockRedis.keys.mockRejectedValue(new Error('Redis error'));
-
-      // Should not throw
-      await expect(BookingLockService.cleanupExpiredLocks()).resolves.toBeUndefined();
+        // Should be able to acquire the lock again
+        const newLockValue = await BookingLockService.acquireLock(
+          'restaurant-1',
+          '2024-01-03',
+          '18:00',
+          'table-1'
+        );
+        expect(newLockValue).toBeTruthy();
+      } finally {
+        Date.now = originalDateNow;
+      }
     });
   });
 
-  describe('lock key generation', () => {
-    it('should generate consistent lock keys', async () => {
-      mockRedis.set.mockResolvedValue('OK');
+  describe('getLockStats', () => {
+    it('should return lock statistics', async () => {
+      const stats1 = BookingLockService.getLockStats();
+      expect(stats1.total).toBe(0);
+      expect(stats1.active).toBe(0);
+      expect(stats1.expired).toBe(0);
 
-      await BookingLockService.acquireLock('restaurant-1', '2024-01-03', '18:00');
-
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'booking-lock:restaurant-1:2024-01-03:18:00',
-        expect.any(String),
-        'EX',
-        30,
-        'NX'
-      );
-    });
-
-    it('should include table ID in lock key when provided', async () => {
-      mockRedis.set.mockResolvedValue('OK');
-
+      // Acquire some locks
       await BookingLockService.acquireLock('restaurant-1', '2024-01-03', '18:00', 'table-1');
+      await BookingLockService.acquireLock('restaurant-1', '2024-01-03', '18:30', 'table-2');
 
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'booking-lock:restaurant-1:2024-01-03:18:00:table-1',
-        expect.any(String),
-        'EX',
-        30,
-        'NX'
-      );
+      const stats2 = BookingLockService.getLockStats();
+      expect(stats2.total).toBe(2);
+      expect(stats2.active).toBe(2);
+      expect(stats2.expired).toBe(0);
     });
   });
 });

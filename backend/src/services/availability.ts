@@ -1,7 +1,7 @@
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
-import { db, redis } from '../config/database';
+import { db } from '../config/database';
 import { BookingAvailability, TimeSlot, Table, Booking } from '../types';
 
 export class AvailabilityService {
@@ -300,18 +300,7 @@ export class AvailabilityService {
     tableId?: string;
     waitlistAvailable: boolean;
   }> {
-    // Check cache first (if Redis is available) - only for guest bookings
-    const cacheKey = `availability:${restaurantId}:${date}:${startTime}:${partySize}:${isStaffBooking}`;
-    if (redis && !isStaffBooking) {
-      try {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-      } catch (error) {
-        console.warn('Redis cache read failed:', error.message);
-      }
-    }
+    // No caching - compute availability directly
 
     // Calculate time windows (no buffer time anymore)
     const startMinutes = this.timeToMinutes(startTime);
@@ -328,19 +317,10 @@ export class AvailabilityService {
       );
       
       if (concurrentLimitExceeded) {
-        const result = {
+        return {
           available: false,
           waitlistAvailable: true
         };
-        
-        if (redis) {
-          try {
-            await redis.setex(cacheKey, 60, JSON.stringify(result));
-          } catch (error) {
-            console.warn('Redis cache write failed:', error.message);
-          }
-        }
-        return result;
       }
     }
 
@@ -358,14 +338,7 @@ export class AvailabilityService {
           waitlistAvailable: false
         };
 
-        // Cache result for 1 minute (if Redis is available)
-        if (redis && !isStaffBooking) {
-          try {
-            await redis.setex(cacheKey, 60, JSON.stringify(result));
-          } catch (error) {
-            console.warn('Redis cache write failed:', error.message);
-          }
-        }
+
         return result;
       }
     }
@@ -388,13 +361,6 @@ export class AvailabilityService {
           waitlistAvailable: false
         };
 
-        if (redis && !isStaffBooking) {
-          try {
-            await redis.setex(cacheKey, 60, JSON.stringify(result));
-          } catch (error) {
-            console.warn('Redis cache write failed:', error.message);
-          }
-        }
         return result;
       }
     }
@@ -405,13 +371,7 @@ export class AvailabilityService {
       waitlistAvailable: true
     };
 
-    if (redis && !isStaffBooking) {
-      try {
-        await redis.setex(cacheKey, 60, JSON.stringify(result));
-      } catch (error) {
-        console.warn('Redis cache write failed:', error.message);
-      }
-    }
+
     return result;
   }
 
@@ -610,23 +570,7 @@ export class AvailabilityService {
     }
   }
 
-  static async invalidateAvailabilityCache(restaurantId: string, date: string): Promise<void> {
-    // If Redis is not available, skip cache invalidation
-    if (!redis) {
-      return;
-    }
 
-    try {
-      const pattern = `availability:${restaurantId}:${date}:*`;
-      const keys = await redis.keys(pattern);
-      
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
-    } catch (error) {
-      console.error('Error invalidating availability cache:', error);
-    }
-  }
 
   private static getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

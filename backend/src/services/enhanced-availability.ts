@@ -2,7 +2,7 @@ import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
 import { AvailabilityService } from './availability';
-import { redis, db } from '../config/database';
+import { db } from '../config/database';
 import { EnhancedTimeSlot, Table, Booking, Restaurant, BookingAvailability } from '../types';
 
 export class EnhancedAvailabilityService {

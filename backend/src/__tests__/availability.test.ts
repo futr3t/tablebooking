@@ -2,7 +2,6 @@ import { EnhancedAvailabilityService as AvailabilityService } from '../services/
 import { RestaurantModel } from '../models/Restaurant';
 import { TableModel } from '../models/Table';
 import { BookingModel } from '../models/Booking';
-import { redis } from '../config/database';
 
 // Mock dependencies
 jest.mock('../models/Restaurant');
@@ -13,7 +12,6 @@ jest.mock('../config/database');
 const mockRestaurantModel = RestaurantModel as jest.Mocked<typeof RestaurantModel>;
 const mockTableModel = TableModel as jest.Mocked<typeof TableModel>;
 const mockBookingModel = BookingModel as jest.Mocked<typeof BookingModel>;
-const mockRedis = redis as jest.Mocked<typeof redis>;
 
 describe('AvailabilityService', () => {
   const mockRestaurant = {

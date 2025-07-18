@@ -84,7 +84,7 @@ export class WaitlistService {
           await this.updateWaitlistPositions(restaurantId, date, booking.waitlistPosition!);
 
           // Invalidate availability cache
-          await AvailabilityService.invalidateAvailabilityCache(restaurantId, date);
+          // No cache invalidation needed - removed Redis dependency
 
           // Send notification (TODO: implement notification service)
           await this.sendWaitlistNotification(booking);

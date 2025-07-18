@@ -126,7 +126,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
           });
 
           // Invalidate availability cache
-          await AvailabilityService.invalidateAvailabilityCache(restaurantId, bookingDate);
+          // No cache invalidation needed - removed Redis dependency
           
           return booking;
         });
@@ -274,10 +274,7 @@ export const updateBooking = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(
-    updatedBooking.restaurantId,
-    getDateString(updatedBooking.bookingDate)
-  );
+  // No cache invalidation needed - removed Redis dependency
 
   res.json({
     success: true,
@@ -314,7 +311,7 @@ export const cancelBooking = asyncHandler(async (req: AuthRequest, res: Response
   await WaitlistService.processWaitlistForDate(booking.restaurantId, getDateString(booking.bookingDate));
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, getDateString(booking.bookingDate));
+  // No cache invalidation needed - removed Redis dependency
 
   res.json({
     success: true,
@@ -353,7 +350,7 @@ export const markNoShow = asyncHandler(async (req: AuthRequest, res: Response): 
   await WaitlistService.processWaitlistForDate(booking.restaurantId, getDateString(booking.bookingDate));
 
   // Invalidate availability cache
-  await AvailabilityService.invalidateAvailabilityCache(booking.restaurantId, getDateString(booking.bookingDate));
+  // No cache invalidation needed - removed Redis dependency
 
   res.json({
     success: true,
@@ -715,7 +712,7 @@ export const createStaffBooking = asyncHandler(async (req: AuthRequest, res: Res
       }
 
       // Invalidate availability cache
-      await AvailabilityService.invalidateAvailabilityCache(restaurantId, dateString);
+      // No cache invalidation needed - removed Redis dependency
 
       return {
         ...newBooking,

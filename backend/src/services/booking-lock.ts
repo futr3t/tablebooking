@@ -1,8 +1,13 @@
-import { redis } from '../config/database';
+interface LockEntry {
+  value: string;
+  expiry: number;
+  timestamp: number;
+}
 
 export class BookingLockService {
-  private static readonly LOCK_TIMEOUT = 10; // seconds - reduced from 30 to prevent stuck locks
+  private static readonly LOCK_TIMEOUT = 10000; // 10 seconds in milliseconds
   private static readonly LOCK_PREFIX = 'booking-lock:';
+  private static readonly locks = new Map<string, LockEntry>();
 
   static async acquireLock(
     restaurantId: string,
@@ -10,26 +15,29 @@ export class BookingLockService {
     time: string,
     tableId?: string
   ): Promise<string | null> {
-    // If Redis is not available, return null (no locking)
-    if (!redis) {
-      console.warn('Redis not available, skipping lock acquisition');
-      return null;
-    }
-
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
       const lockValue = this.generateLockValue();
+      const now = Date.now();
+      const expiry = now + this.LOCK_TIMEOUT;
 
-      // Try to acquire lock with expiration
-      const result = await redis.set(
-        lockKey,
-        lockValue,
-        'EX',
-        this.LOCK_TIMEOUT,
-        'NX'
-      );
+      // Clean up expired locks first
+      this.cleanupExpiredLock(lockKey);
 
-      return result === 'OK' ? lockValue : null;
+      // Check if lock already exists and is not expired
+      const existingLock = this.locks.get(lockKey);
+      if (existingLock && existingLock.expiry > now) {
+        return null; // Lock already held
+      }
+
+      // Acquire the lock
+      this.locks.set(lockKey, {
+        value: lockValue,
+        expiry: expiry,
+        timestamp: now
+      });
+
+      return lockValue;
     } catch (error) {
       console.error('Error acquiring booking lock:', error);
       return null;
@@ -43,25 +51,17 @@ export class BookingLockService {
     lockValue: string,
     tableId?: string
   ): Promise<boolean> {
-    // If Redis is not available, return true (no locking to release)
-    if (!redis) {
-      return true;
-    }
-
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
+      const existingLock = this.locks.get(lockKey);
 
-      // Use Lua script to ensure we only delete if we own the lock
-      const luaScript = `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-          return redis.call("del", KEYS[1])
-        else
-          return 0
-        end
-      `;
+      // Only release if we own the lock
+      if (existingLock && existingLock.value === lockValue) {
+        this.locks.delete(lockKey);
+        return true;
+      }
 
-      const result = await redis.eval(luaScript, 1, lockKey, lockValue);
-      return result === 1;
+      return false;
     } catch (error) {
       console.error('Error releasing booking lock:', error);
       return false;
@@ -75,32 +75,17 @@ export class BookingLockService {
     lockValue: string,
     tableId?: string
   ): Promise<boolean> {
-    // If Redis is not available, return true (no locking to extend)
-    if (!redis) {
-      return true;
-    }
-
     try {
       const lockKey = this.generateLockKey(restaurantId, date, time, tableId);
+      const existingLock = this.locks.get(lockKey);
 
-      // Use Lua script to extend lock only if we own it
-      const luaScript = `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-          return redis.call("expire", KEYS[1], ARGV[2])
-        else
-          return 0
-        end
-      `;
+      // Only extend if we own the lock
+      if (existingLock && existingLock.value === lockValue) {
+        existingLock.expiry = Date.now() + this.LOCK_TIMEOUT;
+        return true;
+      }
 
-      const result = await redis.eval(
-        luaScript,
-        1,
-        lockKey,
-        lockValue,
-        this.LOCK_TIMEOUT.toString()
-      );
-
-      return result === 1;
+      return false;
     } catch (error) {
       console.error('Error extending booking lock:', error);
       return false;
@@ -114,20 +99,6 @@ export class BookingLockService {
     operation: () => Promise<T>,
     tableId?: string
   ): Promise<T> {
-    // TEMPORARY FIX: Disable Redis locking in production to bypass the issue
-    // This reduces consistency but allows the system to continue functioning
-    if (!redis || process.env.NODE_ENV === 'production') {
-      const reason = !redis ? 'Redis not available' : 'Production Redis bypass enabled';
-      console.warn(`${reason}, running operation without distributed locking`);
-      try {
-        return await operation();
-      } catch (error: any) {
-        // Preserve the original error when Redis is unavailable
-        console.error('Operation failed without locking:', error);
-        throw error;
-      }
-    }
-
     const maxRetries = 3;
     const retryDelay = 1000; // 1 second
     let lastOperationError: any = null;
@@ -216,25 +187,29 @@ export class BookingLockService {
   }
 
   static async acquireTableLock(tableId: string): Promise<string | null> {
-    // If Redis is not available, return null (no locking)
-    if (!redis) {
-      console.warn('Redis not available, skipping table lock acquisition');
-      return null;
-    }
-
     try {
       const lockKey = `${this.LOCK_PREFIX}table:${tableId}`;
       const lockValue = this.generateLockValue();
+      const now = Date.now();
+      const expiry = now + this.LOCK_TIMEOUT;
 
-      const result = await redis.set(
-        lockKey,
-        lockValue,
-        'EX',
-        this.LOCK_TIMEOUT,
-        'NX'
-      );
+      // Clean up expired locks first
+      this.cleanupExpiredLock(lockKey);
 
-      return result === 'OK' ? lockValue : null;
+      // Check if lock already exists and is not expired
+      const existingLock = this.locks.get(lockKey);
+      if (existingLock && existingLock.expiry > now) {
+        return null; // Lock already held
+      }
+
+      // Acquire the lock
+      this.locks.set(lockKey, {
+        value: lockValue,
+        expiry: expiry,
+        timestamp: now
+      });
+
+      return lockValue;
     } catch (error) {
       console.error('Error acquiring table lock:', error);
       return null;
@@ -242,24 +217,17 @@ export class BookingLockService {
   }
 
   static async releaseTableLock(tableId: string, lockValue: string): Promise<boolean> {
-    // If Redis is not available, return true (no locking to release)
-    if (!redis) {
-      return true;
-    }
-
     try {
       const lockKey = `${this.LOCK_PREFIX}table:${tableId}`;
+      const existingLock = this.locks.get(lockKey);
 
-      const luaScript = `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-          return redis.call("del", KEYS[1])
-        else
-          return 0
-        end
-      `;
+      // Only release if we own the lock
+      if (existingLock && existingLock.value === lockValue) {
+        this.locks.delete(lockKey);
+        return true;
+      }
 
-      const result = await redis.eval(luaScript, 1, lockKey, lockValue);
-      return result === 1;
+      return false;
     } catch (error) {
       console.error('Error releasing table lock:', error);
       return false;
@@ -270,20 +238,6 @@ export class BookingLockService {
     tableId: string,
     operation: () => Promise<T>
   ): Promise<T> {
-    // TEMPORARY FIX: Disable Redis locking in production to bypass the issue
-    // This reduces consistency but allows the system to continue functioning
-    if (!redis || process.env.NODE_ENV === 'production') {
-      const reason = !redis ? 'Redis not available' : 'Production Redis table bypass enabled';
-      console.warn(`${reason}, running table operation without distributed locking`);
-      try {
-        return await operation();
-      } catch (error: any) {
-        // Preserve the original error when Redis is unavailable
-        console.error('Table operation failed without locking:', error);
-        throw error;
-      }
-    }
-
     const maxRetries = 3;
     const retryDelay = 500; // 0.5 seconds for table locks
     let lastOperationError: any = null;
@@ -351,51 +305,60 @@ export class BookingLockService {
     return `${Date.now()}-${Math.random().toString(36).substring(2)}`;
   }
 
-  static async cleanupExpiredLocks(): Promise<void> {
-    // If Redis is not available, skip cleanup
-    if (!redis) {
-      return;
+  private static cleanupExpiredLock(lockKey: string): void {
+    const lock = this.locks.get(lockKey);
+    if (lock && lock.expiry <= Date.now()) {
+      this.locks.delete(lockKey);
     }
+  }
 
+  static async cleanupExpiredLocks(): Promise<void> {
     try {
-      const pattern = `${this.LOCK_PREFIX}*`;
-      const keys = await redis.keys(pattern);
-      
-      if (keys.length === 0) {
-        return;
+      const now = Date.now();
+      const expiredKeys: string[] = [];
+
+      // Find all expired locks
+      for (const [key, lock] of this.locks.entries()) {
+        if (lock.expiry <= now) {
+          expiredKeys.push(key);
+        }
       }
 
-      // Check which keys are still valid (non-expired)
-      const pipeline = redis.pipeline();
-      for (const key of keys) {
-        pipeline.ttl(key);
+      // Remove expired locks
+      for (const key of expiredKeys) {
+        this.locks.delete(key);
       }
-      
-      const ttls = await pipeline.exec();
-      
-      if (!ttls) {
-        return;
-      }
-
-      // Delete expired locks (TTL = -1 means no expiration, TTL = -2 means expired)
-      const expiredKeys = keys.filter((key, index) => {
-        const ttl = ttls[index];
-        return ttl && ttl[1] === -2;
-      });
 
       if (expiredKeys.length > 0) {
-        await redis.del(...expiredKeys);
         console.log(`Cleaned up ${expiredKeys.length} expired booking locks`);
       }
     } catch (error) {
       console.error('Error cleaning up expired locks:', error);
     }
   }
+
+  static getLockStats(): { total: number; active: number; expired: number } {
+    const now = Date.now();
+    let active = 0;
+    let expired = 0;
+
+    for (const lock of this.locks.values()) {
+      if (lock.expiry > now) {
+        active++;
+      } else {
+        expired++;
+      }
+    }
+
+    return {
+      total: this.locks.size,
+      active,
+      expired
+    };
+  }
 }
 
-// Run lock cleanup every 5 minutes (only if Redis is available)
-if (redis) {
-  setInterval(() => {
-    BookingLockService.cleanupExpiredLocks();
-  }, 5 * 60 * 1000);
-}
+// Run lock cleanup every 30 seconds
+setInterval(() => {
+  BookingLockService.cleanupExpiredLocks();
+}, 30 * 1000);
