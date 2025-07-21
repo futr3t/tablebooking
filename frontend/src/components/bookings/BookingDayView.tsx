@@ -80,9 +80,9 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
   // Filter bookings based on search term
   const filteredBookings = useMemo(() => {
     if (!searchTerm) return bookings;
-    
+
     const term = searchTerm.toLowerCase();
-    return bookings.filter(booking => 
+    return bookings.filter(booking =>
       booking.customerName.toLowerCase().includes(term) ||
       booking.customerEmail?.toLowerCase().includes(term) ||
       booking.customerPhone?.includes(term) ||
@@ -108,7 +108,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
     const pending = bookings.filter(b => b.status === 'pending').length;
     const cancelled = bookings.filter(b => b.status === 'cancelled').length;
     const totalGuests = bookings.reduce((sum, b) => sum + b.partySize, 0);
-    
+
     return { total, confirmed, pending, cancelled, totalGuests };
   }, [bookings]);
 
@@ -201,8 +201,8 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
     <Box sx={{ p: 3 }}>
       {/* Day Statistics */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
-          <Card sx={{ 
+        <Grid item xs={6} sm={6}>
+          <Card sx={{
             background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
             color: 'white'
           }}>
@@ -216,9 +216,9 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
             </CardContent>
           </Card>
         </Grid>
-        
-        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
-          <Card sx={{ 
+
+        <Grid item xs={6} sm={6}>
+          <Card sx={{
             background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
             color: 'white'
           }}>
@@ -232,40 +232,6 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
             </CardContent>
           </Card>
         </Grid>
-        
-        <Grid item xs={6} sm={restaurantSettings?.bookingSettings?.autoConfirm ? 4 : 3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-            color: 'white'
-          }}>
-            <CardContent sx={{ pb: '16px !important' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {stats.confirmed}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Confirmed
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {!restaurantSettings?.bookingSettings?.autoConfirm && (
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ 
-              background: 'linear-gradient(135deg, #d97706 0%, #92400e 100%)',
-              color: 'white'
-            }}>
-              <CardContent sx={{ pb: '16px !important' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  {stats.pending}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Pending
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
       </Grid>
 
       {/* Search */}
@@ -287,9 +253,9 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
 
       {/* Bookings List */}
       {sortedBookings.length === 0 ? (
-        <Alert 
-          severity="info" 
-          sx={{ 
+        <Alert
+          severity="info"
+          sx={{
             textAlign: 'center',
             py: 4
           }}
@@ -298,7 +264,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
             No bookings found
           </Typography>
           <Typography variant="body2">
-            {searchTerm 
+            {searchTerm
               ? 'Try adjusting your search criteria'
               : `No bookings scheduled for ${formatDate(selectedDate, 'long')}`
             }
@@ -321,7 +287,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                   onClick={() => handleViewDetails(booking)}
                 >
                   <ListItemAvatar>
-                    <Avatar sx={{ 
+                    <Avatar sx={{
                       bgcolor: getStatusColor(booking.status) === 'success' ? 'success.main' :
                                getStatusColor(booking.status) === 'warning' ? 'warning.main' :
                                getStatusColor(booking.status) === 'error' ? 'error.main' : 'grey.500'
@@ -329,14 +295,14 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                       {getStatusIcon(booking.status)}
                     </Avatar>
                   </ListItemAvatar>
-                  
+
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           {booking.customerName}
                         </Typography>
-                        <Chip 
+                        <Chip
                           label={booking.status}
                           color={getStatusColor(booking.status) as any}
                           size="small"
@@ -354,14 +320,14 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                             {formatBookingTime(booking)}
                           </Typography>
                         </Box>
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           <People fontSize="small" />
                           <Typography variant="body2">
                             {booking.partySize} guest{booking.partySize !== 1 ? 's' : ''}
                           </Typography>
                         </Box>
-                        
+
                         {booking.tableNumber && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <TableBar fontSize="small" />
@@ -370,7 +336,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                             </Typography>
                           </Box>
                         )}
-                        
+
                         {booking.customerPhone && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Phone fontSize="small" />
@@ -379,7 +345,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                             </Typography>
                           </Box>
                         )}
-                        
+
                         {booking.customerEmail && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Email fontSize="small" />
@@ -391,8 +357,8 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                       </Stack>
                     }
                   />
-                  
-                  <IconButton 
+
+                  <IconButton
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMenuOpen(e, booking);
@@ -402,7 +368,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
                     <MoreVert />
                   </IconButton>
                 </ListItem>
-                
+
                 {index < sortedBookings.length - 1 && <Divider />}
               </React.Fragment>
             ))}
@@ -425,7 +391,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
           Edit Booking
         </MenuItem>
         {menuBooking && menuBooking.status !== 'cancelled' && menuBooking.status !== 'completed' && (
-          <MenuItem 
+          <MenuItem
             onClick={() => menuBooking && handleCancelBooking(menuBooking)}
             sx={{ color: 'warning.main' }}
           >
@@ -433,7 +399,7 @@ const BookingDayView: React.FC<BookingDayViewProps> = ({
             Cancel Booking
           </MenuItem>
         )}
-        <MenuItem 
+        <MenuItem
           onClick={() => menuBooking && handleDeleteBooking(menuBooking)}
           sx={{ color: 'error.main' }}
         >
