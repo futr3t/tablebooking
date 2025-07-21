@@ -24,6 +24,21 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 480);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   useEffect(() => {
     generateCalendarDays();
@@ -99,6 +114,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   ];
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDaysMobile = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   const today = new Date();
   const canGoPrev = currentMonth.getMonth() > today.getMonth() || currentMonth.getFullYear() > today.getFullYear();
@@ -109,7 +125,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   return (
     <div className="date-picker">
       <h3 className={styles.marginBottom}>Select a Date</h3>
-      
+
       <div className="calendar">
         {/* Calendar Header */}
         <div className="calendar-header" style={{
@@ -124,31 +140,61 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             disabled={!canGoPrev}
             style={{
               background: 'none',
-              border: 'none',
+              border: '1px solid #e5e5e5',
+              borderRadius: 'var(--tb-border-radius)',
               fontSize: '18px',
               cursor: canGoPrev ? 'pointer' : 'not-allowed',
               opacity: canGoPrev ? 1 : 0.3,
-              padding: '8px'
+              padding: '8px 12px',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              if (canGoPrev) {
+                e.currentTarget.style.background = 'var(--tb-hover-color)';
+              }
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'none';
             }}
           >
             ◀
           </button>
-          
-          <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
+
+          <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 600, textAlign: 'center' }}>
             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
           </h4>
-          
+
           <button
             type="button"
             onClick={handleNextMonth}
             disabled={!canGoNext}
             style={{
               background: 'none',
-              border: 'none',
+              border: '1px solid #e5e5e5',
+              borderRadius: 'var(--tb-border-radius)',
               fontSize: '18px',
               cursor: canGoNext ? 'pointer' : 'not-allowed',
               opacity: canGoNext ? 1 : 0.3,
-              padding: '8px'
+              padding: '8px 12px',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              if (canGoNext) {
+                e.currentTarget.style.background = 'var(--tb-hover-color)';
+              }
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'none';
             }}
           >
             ▶
@@ -162,15 +208,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           gap: '2px',
           marginBottom: '8px'
         }}>
-          {weekDays.map(day => (
+          {(isMobile ? weekDaysMobile : weekDays).map((day, idx) => (
             <div
-              key={day}
+              key={`${day}-${idx}`}
               style={{
                 textAlign: 'center',
-                fontSize: '12px',
+                fontSize: isMobile ? '11px' : '12px',
                 fontWeight: 600,
                 color: '#666',
-                padding: '8px 4px'
+                padding: isMobile ? '4px 2px' : '8px 4px'
               }}
             >
               {day}
@@ -193,17 +239,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 onClick={() => handleDateClick(day)}
                 disabled={!day.isAvailable}
                 style={{
-                  padding: '12px 4px',
+                  padding: '8px 2px',
+                  minHeight: '40px',
                   border: '1px solid #eee',
-                  background: isSelected 
-                    ? 'var(--tb-primary-color)' 
-                    : day.isAvailable 
-                      ? 'white' 
+                  background: isSelected
+                    ? 'var(--tb-primary-color)'
+                    : day.isAvailable
+                      ? 'white'
                       : '#f9f9f9',
-                  color: isSelected 
+                  color: isSelected
                     ? 'white'
-                    : day.isAvailable 
-                      ? day.isToday 
+                    : day.isAvailable
+                      ? day.isToday
                         ? 'var(--tb-primary-color)'
                         : 'var(--tb-text-color)'
                       : '#ccc',
@@ -212,7 +259,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   fontWeight: day.isToday ? 600 : 400,
                   borderRadius: 'var(--tb-border-radius)',
                   transition: 'all 0.2s ease',
-                  opacity: day.isCurrentMonth ? 1 : 0.3
+                  opacity: day.isCurrentMonth ? 1 : 0.3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
                 onMouseOver={(e) => {
                   if (day.isAvailable && !isSelected) {
@@ -235,30 +285,36 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {/* Restaurant Hours Info */}
       <div style={{
         marginTop: '20px',
-        padding: '12px',
+        padding: isMobile ? '10px' : '12px',
         background: '#f8f9fa',
         borderRadius: 'var(--tb-border-radius)',
-        fontSize: '14px'
+        fontSize: isMobile ? '12px' : '14px'
       }}>
         <div style={{ fontWeight: 600, marginBottom: '8px' }}>Restaurant Hours:</div>
-        {Object.entries(restaurantInfo.openingHours).map(([day, hours]) => {
-          const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-          return (
-            <div key={day} style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              marginBottom: '4px'
-            }}>
-              <span>{dayName}:</span>
-              <span>
-                {hours.isOpen 
-                  ? `${hours.openTime} - ${hours.closeTime}`
-                  : 'Closed'
-                }
-              </span>
-            </div>
-          );
-        })}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: '4px'
+        }}>
+          {Object.entries(restaurantInfo.openingHours).map(([day, hours]) => {
+            const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+            return (
+              <div key={day} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: isMobile ? '4px 0' : '2px 0'
+              }}>
+                <span>{dayName}:</span>
+                <span style={{ fontWeight: 500 }}>
+                  {hours.isOpen
+                    ? `${hours.openTime} - ${hours.closeTime}`
+                    : 'Closed'
+                  }
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

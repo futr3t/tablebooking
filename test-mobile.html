@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Mobile Test - TableBooking Widget</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        /* Mobile device frame simulation */
+        .device-frame {
+            max-width: 375px; /* iPhone X width */
+            margin: 20px auto;
+            background: #000;
+            border-radius: 30px;
+            padding: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        .device-screen {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            min-height: 812px; /* iPhone X height */
+        }
+
+        /* Widget container */
+        #tablebooking-widget {
+            /* Widget will fill its container */
+        }
+
+        /* Device selector */
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        @media (max-width: 480px) {
+            .device-frame {
+                margin: 0;
+                border-radius: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .device-screen {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h2>Test Mobile Responsiveness</h2>
+        <label>
+            Device:
+            <select id="deviceSelector" onchange="changeDevice()">
+                <option value="375">iPhone X/XS/11 Pro (375px)</option>
+                <option value="390">iPhone 12/13/14 Pro (390px)</option>
+                <option value="360">Android Small (360px)</option>
+                <option value="414">iPhone Plus/Max (414px)</option>
+                <option value="320">iPhone SE/5 (320px)</option>
+                <option value="768">iPad (768px)</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="device-frame" id="deviceFrame">
+        <div class="device-screen">
+            <div id="tablebooking-widget"></div>
+        </div>
+    </div>
+
+    <!-- Include React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Load the widget -->
+    <script src="widget/dist/widget.js"></script>
+
+    <script>
+        // Initialize the widget
+        setTimeout(() => {
+            if (window.TablebookingWidget) {
+                window.TablebookingWidget.init({
+                    containerId: 'tablebooking-widget',
+                    apiKey: 'B946B3EC9EDBB544FD29A3AAD280E78F218E20853D5C341EFC90C0AB1358B392',
+                    baseUrl: 'https://kind-benevolence-production.up.railway.app'
+                });
+            } else {
+                console.error('Widget not loaded');
+            }
+        }, 500);
+
+        // Device switcher
+        function changeDevice() {
+            const selector = document.getElementById('deviceSelector');
+            const frame = document.getElementById('deviceFrame');
+            frame.style.maxWidth = selector.value + 'px';
+        }
+    </script>
+</body>
+</html>

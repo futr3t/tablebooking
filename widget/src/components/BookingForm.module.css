@@ -21,15 +21,24 @@
   --tb-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* Global box-sizing for all widget elements */
+.container *,
+.container *::before,
+.container *::after {
+  box-sizing: border-box;
+}
+
 .container {
   font-family: var(--tb-font-family);
   max-width: 400px;
+  width: 100%;
   background: var(--tb-background-white);
   border-radius: var(--tb-border-radius);
   box-shadow: var(--tb-shadow-lg);
   overflow: hidden;
   color: var(--tb-text-color);
   border: 1px solid var(--tb-border-color);
+  box-sizing: border-box;
 }
 
 .header {
@@ -288,28 +297,30 @@
 /* Responsive */
 @media (max-width: 480px) {
   .container {
-    max-width: none;
+    max-width: 100%;
+    width: 100%;
     border-radius: 0;
     box-shadow: none;
-    min-height: 100vh;
+    border: none;
+    margin: 0;
   }
-  
+
   .content {
     padding: 16px;
   }
-  
+
   .header {
     padding: 16px;
   }
-  
+
   .title {
     font-size: 20px; /* Smaller on mobile */
   }
-  
+
   .restaurantName {
     font-size: 14px; /* Smaller on mobile */
   }
-  
+
   .primaryButton,
   .secondaryButton,
   .backButton {
@@ -317,19 +328,27 @@
     padding: 14px 20px; /* More padding for touch */
     min-height: 48px; /* Consistent touch target */
   }
-  
-  .grid2,
-  .grid3,
-  .grid4 {
-    grid-template-columns: 1fr;
+
+  .grid2 {
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px; /* Smaller gap on mobile */
   }
-  
+
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px; /* Smaller gap on mobile */
+  }
+
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px; /* Smaller gap on mobile */
+  }
+
   .input,
   .textarea {
     font-size: 16px; /* Prevent zoom on iOS */
   }
-  
+
   /* Better spacing for form elements */
   .formGroup {
     margin-bottom: 16px;
@@ -388,11 +407,11 @@
     max-width: 100%;
     margin: 0 auto;
   }
-  
+
   .grid3 {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .grid4 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -413,12 +432,12 @@
   .container {
     border: 2px solid;
   }
-  
+
   .primaryButton:disabled {
     background: transparent;
     border: 2px solid;
   }
-  
+
   .spinner {
     border-width: 4px;
   }
@@ -435,4 +454,47 @@
   font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+  .container {
+    font-size: 14px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .restaurantName {
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .header {
+    padding: 12px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    font-size: 13px;
+    padding: 12px 16px;
+  }
+
+  .formGroup {
+    margin-bottom: 12px;
+  }
+
+  .label {
+    font-size: 13px;
+  }
+
+  .input,
+  .textarea {
+    padding: 12px;
+    font-size: 16px; /* Keep 16px to prevent iOS zoom */
+  }
 }

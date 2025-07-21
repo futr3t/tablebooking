@@ -17,9 +17,26 @@ declare global {
 class TablebookingWidget {
   private static instances: Map<string, { root: any; api: WidgetAPI }> = new Map();
 
+  private static ensureViewportMeta() {
+    // Check if viewport meta tag exists
+    let viewport = document.querySelector('meta[name="viewport"]');
+
+    if (!viewport) {
+      // Create viewport meta tag if it doesn't exist
+      viewport = document.createElement('meta');
+      viewport.setAttribute('name', 'viewport');
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+      document.head.appendChild(viewport);
+      console.log('TablebookingWidget: Added viewport meta tag for mobile compatibility');
+    }
+  }
+
   static init(config: WidgetConfig) {
     const { containerId, apiKey, baseUrl = 'https://kind-benevolence-production.up.railway.app' } = config;
-    
+
+    // Ensure viewport meta tag for mobile
+    this.ensureViewportMeta();
+
     // Find the container element
     const container = document.getElementById(containerId);
     if (!container) {
@@ -36,13 +53,13 @@ class TablebookingWidget {
 
       // Create React root and render
       const root = createRoot(container);
-      
+
       // Load restaurant info to get theme
       api.getRestaurantInfo()
         .then(restaurantInfo => {
           root.render(
-            <BookingForm 
-              api={api} 
+            <BookingForm
+              api={api}
               theme={restaurantInfo.theme}
             />
           );
