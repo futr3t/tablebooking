@@ -31,7 +31,7 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({ config }) => {
       <Typography variant="body2" color="text.secondary" gutterBottom>
         This is how your widget will appear on your website:
       </Typography>
-      
+
       <Box
         sx={{
           maxWidth: 400,
@@ -127,12 +127,22 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({ config }) => {
               )}
 
               <Grid item xs={6}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontFamily: theme.fontFamily,
+                    fontWeight: 500,
+                    mb: 1,
+                    color: 'text.primary',
+                  }}
+                >
+                  Date
+                </Typography>
                 <TextField
                   fullWidth
                   size="small"
                   type="date"
-                  label="Date"
-                  InputLabelProps={{ shrink: true }}
+                  placeholder="dd/mm/yyyy"
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: theme.borderRadius,
@@ -143,11 +153,21 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({ config }) => {
               </Grid>
 
               <Grid item xs={6}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontFamily: theme.fontFamily,
+                    fontWeight: 500,
+                    mb: 1,
+                    color: 'text.primary',
+                  }}
+                >
+                  Party Size
+                </Typography>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Party Size</InputLabel>
                   <Select
-                    label="Party Size"
                     defaultValue={2}
+                    displayEmpty
                     sx={{
                       borderRadius: theme.borderRadius,
                       fontFamily: theme.fontFamily,

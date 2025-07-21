@@ -87,7 +87,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   editMode = false
 }) => {
   const { user } = useAuth();
-  
+
   // Form state
   const [formData, setFormData] = useState({
     customerName: '',
@@ -151,7 +151,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     if (booking && editMode) {
       const bookingDate = booking.bookingDate || '';
       const bookingTime = booking.bookingTime || '';
-      
+
       setFormData({
         customerName: booking.customerName || '',
         customerPhone: booking.customerPhone || '',
@@ -184,10 +184,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         // The availability response might include duration info in future
         // For now, use the restaurant settings or defaults
         const turnTimeRules = restaurantSettings?.turnTimeRules || [];
-        const matchingRule = turnTimeRules.find((rule: any) => 
+        const matchingRule = turnTimeRules.find((rule: any) =>
           formData.partySize >= rule.minPartySize && formData.partySize <= rule.maxPartySize
         );
-        
+
         if (matchingRule) {
           setDynamicDuration(matchingRule.turnTimeMinutes);
           setFormData(prev => ({ ...prev, duration: matchingRule.turnTimeMinutes }));
@@ -220,7 +220,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     setLoadingAvailability(true);
     setAvailability(null);
     setError(null);
-    
+
     try {
       const response = await api.get('/bookings/staff/availability', {
         params: {
@@ -243,17 +243,17 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           preferredTime: formData.bookingTime
         }
       });
-      
+
       // Extract detailed error information
       const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
       const statusCode = error.response?.status;
-      
+
       console.log('Error details:', {
         message: errorMessage,
         statusCode,
         fullError: error.response?.data
       });
-      
+
       // Handle specific error types with detailed messages
       if (statusCode === 401) {
         setError('Authentication failed. Please log in again.');
@@ -262,7 +262,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       } else if (statusCode === 400) {
         setError(errorMessage || 'Invalid request parameters.');
       } else if (errorMessage && (
-        errorMessage.includes('Restaurant is closed') || 
+        errorMessage.includes('Restaurant is closed') ||
         errorMessage.includes('closed on') ||
         errorMessage.includes('outside service hours')
       )) {
@@ -290,7 +290,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
             preferredTime: formData.bookingTime
           }
         };
-        
+
         console.error(`Availability error ${debugId}:`, debugData);
         setDebugInfo(debugData);
         setError(`Failed to load availability (Error ${debugId}). Please check the date and party size, then try again. If the problem persists, please contact support.`);
@@ -315,10 +315,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           partySize: formData.partySize
         }
       });
-      
+
       const { availableTables, suggestedTable } = response.data.data;
       setAvailableTables(availableTables);
-      
+
       // Auto-select suggested table if no table is selected
       if (suggestedTable && !formData.tableId) {
         setSuggestedTableId(suggestedTable.id);
@@ -379,7 +379,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       // All other statuses (available, moderate, busy) are OK to book
       setSelectedSlot(slot);
       setFormData(prev => ({ ...prev, bookingTime: slot.time }));
-      
+
       // Show advanced options if slot is getting busy
       if (slot.pacingStatus === 'busy') {
         setShowAdvanced(true);
@@ -390,8 +390,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
   const handleOverrideConfirm = (reason: string) => {
     if (overrideDialog.slot) {
       setSelectedSlot(overrideDialog.slot);
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         bookingTime: overrideDialog.slot!.time,
         overridePacing: true,
         overrideReason: reason
@@ -414,7 +414,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       if (restaurantSettings?.bookingSettings?.requirePhone && !formData.customerPhone) {
         throw new Error('Phone number is required');
       }
-      
+
       if (restaurantSettings?.bookingSettings?.requireEmail && !formData.customerEmail) {
         throw new Error('Email address is required');
       }
@@ -422,7 +422,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       // CRITICAL: Re-check availability before submission to prevent race conditions
       if (!editMode) { // Only for new bookings, not edits
         console.log('Re-checking availability before booking submission...');
-        
+
         try {
           const currentAvailability = await api.get('/bookings/staff/availability', {
             params: {
@@ -458,13 +458,13 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           }
 
           console.log(`✓ Availability confirmed for ${formData.bookingTime} (status: ${requestedSlot.pacingStatus})`);
-          
+
         } catch (availabilityError: any) {
           // If it's a validation error from our checks, throw it
           if (availabilityError.message && !availabilityError.response) {
             throw availabilityError;
           }
-          
+
           // If it's an API error, show generic message
           console.error('Failed to re-check availability:', availabilityError);
           throw new Error('Unable to verify availability. Please refresh the page and try again.');
@@ -493,11 +493,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
         // Create new booking
         response = await api.post('/bookings/staff', bookingData);
       }
-      
+
       onSuccess(response.data.data);
     } catch (error: any) {
       console.error('Booking creation/update error:', error.response?.data || error);
-      
+
       // Enhanced error handling for concurrent booking conflicts
       const errorResponse = error.response?.data;
       let errorMessage = error.message;
@@ -505,7 +505,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       if (errorResponse) {
         // Backend returned specific error
         errorMessage = errorResponse.error || errorResponse.message;
-        
+
         // Handle specific concurrent booking error codes
         if (errorResponse.code === 'BOOKING_CONFLICT' || errorResponse.code === 'TABLE_UNAVAILABLE') {
           errorMessage = `${errorMessage} Please refresh availability and select a different time.`;
@@ -519,7 +519,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       } else {
         errorMessage = `Failed to ${editMode ? 'update' : 'create'} booking`;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -550,7 +550,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
   const getStatusTooltip = (slot: EnhancedTimeSlot) => {
     const { pacingStatus, tablesAvailable, alternativeTimes } = slot;
-    
+
     switch (pacingStatus) {
       case 'available':
         return `✓ ${tablesAvailable} tables available - optimal booking time`;
@@ -561,7 +561,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
       case 'pacing_full':
         return `⚠ ${tablesAvailable} tables available - pacing limit reached (override required)`;
       case 'physically_full':
-        return alternativeTimes && alternativeTimes.length > 0 
+        return alternativeTimes && alternativeTimes.length > 0
           ? `✗ No tables available - try ${alternativeTimes.slice(0, 2).join(', ')}`
           : '✗ No tables available - restaurant fully booked';
       default:
@@ -602,10 +602,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Debug Information (Error ID: {debugInfo.timestamp})
               </Typography>
-              <Box component="pre" sx={{ 
-                fontSize: '0.75rem', 
-                backgroundColor: '#f5f5f5', 
-                p: 1, 
+              <Box component="pre" sx={{
+                fontSize: '0.75rem',
+                backgroundColor: '#f5f5f5',
+                p: 1,
                 borderRadius: 1,
                 overflow: 'auto',
                 maxHeight: '300px'
@@ -626,14 +626,14 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Person /> Customer Information
               </Typography>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -645,7 +645,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     options={customerSuggestions}
                     value={formData.customerName}
                     inputValue={formData.customerName}
-                    getOptionLabel={(option) => 
+                    getOptionLabel={(option) =>
                       typeof option === 'string' ? option : option.customerName
                     }
                     onInputChange={(_, value, reason) => {
@@ -705,11 +705,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -733,11 +733,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -781,22 +781,23 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.primary',
+                      mb: 1,
                       fontSize: '0.875rem',
-                      fontWeight: 500
+                      fontWeight: 600,
+                      display: 'block'
                     }}
                   >
                     Date *
                   </Typography>
                   <DatePicker
                     value={parseISO(formData.bookingDate)}
-                    onChange={(date) => date && setFormData(prev => ({ 
-                      ...prev, 
-                      bookingDate: format(date, 'yyyy-MM-dd') 
+                    onChange={(date) => date && setFormData(prev => ({
+                      ...prev,
+                      bookingDate: format(date, 'yyyy-MM-dd')
                     }))}
                     minDate={new Date()}
                     maxDate={addDays(new Date(), 270)}
@@ -832,13 +833,14 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.primary',
+                      mb: 1,
                       fontSize: '0.875rem',
-                      fontWeight: 500
+                      fontWeight: 600,
+                      display: 'block'
                     }}
                   >
                     Party Size *
@@ -848,9 +850,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     type="number"
                     required
                     value={formData.partySize}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      partySize: parseInt(e.target.value) || 1 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      partySize: parseInt(e.target.value) || 1
                     }))}
                     InputProps={{
                       inputProps: { min: 1, max: 100 },
@@ -886,11 +888,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -901,9 +903,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     fullWidth
                     type="number"
                     value={formData.duration}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      duration: parseInt(e.target.value) || 120 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      duration: parseInt(e.target.value) || 120
                     }))}
                     InputProps={{
                       inputProps: { min: 30, max: 480, step: 30 },
@@ -932,7 +934,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 <Typography variant="subtitle1" gutterBottom color="primary">
                   🕐 Time & Table Selection
                 </Typography>
-                
+
                 {!formData.bookingDate || !formData.partySize ? (
                   <Alert severity="info">
                     Please select a date and party size to see available times
@@ -956,7 +958,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     <Typography variant="subtitle1" gutterBottom>
                       Select Time
                     </Typography>
-                  
+
                   {availability.suggestions.bestAvailability.length > 0 && (
                     <Alert severity="info" sx={{ mb: 2 }}>
                       Recommended times: {availability.suggestions.bestAvailability.join(', ')}
@@ -965,7 +967,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {availability.timeSlots.map((slot) => (
-                      <Tooltip 
+                      <Tooltip
                         key={slot.time}
                         title={getStatusTooltip(slot)}
                         placement="top"
@@ -983,7 +985,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                             variant={formData.bookingTime === slot.time ? 'filled' : 'outlined'}
                             onClick={slot.pacingStatus === 'physically_full' ? undefined : () => handleTimeSlotSelect(slot)}
                             disabled={slot.pacingStatus === 'physically_full'}
-                            sx={{ 
+                            sx={{
                               cursor: slot.pacingStatus === 'physically_full' ? 'not-allowed' : 'pointer',
                               opacity: slot.pacingStatus === 'physically_full' ? 0.5 : 1,
                               '&:hover': {
@@ -1023,8 +1025,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                     <Typography variant="caption" color="text.secondary">
                       Last checked: {new Date().toLocaleTimeString()}
                     </Typography>
-                    <Button 
-                      size="small" 
+                    <Button
+                      size="small"
                       onClick={loadAvailability}
                       disabled={loadingAvailability}
                       startIcon={loadingAvailability ? <CircularProgress size={16} /> : null}
@@ -1046,7 +1048,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                   <Typography variant="subtitle1" gutterBottom>
                     Select Table
                   </Typography>
-                  
+
                   <FormControl fullWidth>
                     <Select
                       value={formData.tableId}
@@ -1057,8 +1059,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                         <em>Auto-assign table</em>
                       </MenuItem>
                       {availableTables.map((table) => (
-                        <MenuItem 
-                          key={table.id} 
+                        <MenuItem
+                          key={table.id}
                           value={table.id}
                           sx={{
                             backgroundColor: table.id === suggestedTableId ? 'action.hover' : 'transparent',
@@ -1066,7 +1068,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                         >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                             <span>
-                              Table {table.number} 
+                              Table {table.number}
                               {table.id === suggestedTableId && ' (Recommended)'}
                             </span>
                             <Box component="span" sx={{ color: 'text.secondary', ml: 2 }}>
@@ -1095,11 +1097,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -1141,11 +1143,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -1166,11 +1168,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -1180,9 +1182,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                   <Autocomplete
                     options={SEATING_PREFERENCES}
                     value={formData.preferredSeating}
-                    onChange={(_, value) => setFormData(prev => ({ 
-                      ...prev, 
-                      preferredSeating: value || '' 
+                    onChange={(_, value) => setFormData(prev => ({
+                      ...prev,
+                      preferredSeating: value || ''
                     }))}
                     renderInput={(params) => (
                       <TextField
@@ -1202,11 +1204,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      mb: 0.5, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#cbd5e1',
+                      mb: 0.5,
                       fontSize: '0.875rem',
                       fontWeight: 500
                     }}
@@ -1233,10 +1235,10 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           {/* Advanced Options */}
           <Grid item xs={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   cursor: 'pointer'
                 }}
@@ -1254,11 +1256,11 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                 <Divider sx={{ my: 2 }} />
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#cbd5e1', 
-                        mb: 0.5, 
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#cbd5e1',
+                        mb: 0.5,
                         fontSize: '0.875rem',
                         fontWeight: 500
                       }}
@@ -1286,9 +1288,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                         control={
                           <Checkbox
                             checked={formData.marketingConsent}
-                            onChange={(e) => setFormData(prev => ({ 
-                              ...prev, 
-                              marketingConsent: e.target.checked 
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              marketingConsent: e.target.checked
                             }))}
                           />
                         }
@@ -1299,9 +1301,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                         control={
                           <Checkbox
                             checked={formData.isVip}
-                            onChange={(e) => setFormData(prev => ({ 
-                              ...prev, 
-                              isVip: e.target.checked 
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              isVip: e.target.checked
                             }))}
                           />
                         }
@@ -1314,23 +1316,23 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                             control={
                               <Checkbox
                                 checked={formData.overridePacing}
-                                onChange={(e) => setFormData(prev => ({ 
-                                  ...prev, 
-                                  overridePacing: e.target.checked 
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  overridePacing: e.target.checked
                                 }))}
                                 color="warning"
                               />
                             }
                             label="Override pacing limits"
                           />
-                          
+
                           {formData.overridePacing && (
                             <>
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                  color: '#cbd5e1', 
-                                  mb: 0.5, 
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: '#cbd5e1',
+                                  mb: 0.5,
                                   fontSize: '0.875rem',
                                   fontWeight: 500
                                 }}
@@ -1341,9 +1343,9 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
                                 fullWidth
                                 required
                                 value={formData.overrideReason}
-                                onChange={(e) => setFormData(prev => ({ 
-                                  ...prev, 
-                                  overrideReason: e.target.value 
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  overrideReason: e.target.value
                                 }))}
                                 helperText="Please provide a reason for overriding"
                                 color="warning"
@@ -1367,8 +1369,8 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
           {/* Actions */}
           <Grid item xs={12}>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 onClick={onCancel}
                 disabled={loading}
               >
@@ -1377,7 +1379,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={loading || !formData.customerName || !formData.bookingTime || 
+                disabled={loading || !formData.customerName || !formData.bookingTime ||
                   (restaurantSettings?.bookingSettings?.requirePhone && !formData.customerPhone) ||
                   (restaurantSettings?.bookingSettings?.requireEmail && !formData.customerEmail)
                 }
