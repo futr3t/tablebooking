@@ -1,24 +1,35 @@
-/* CSS Custom Properties for theming */
+/* CSS Custom Properties for theming - Professional Design */
 :root {
-  --tb-primary-color: #1976d2;
-  --tb-secondary-color: #f5f5f5;
-  --tb-font-family: 'Roboto', sans-serif;
-  --tb-border-radius: 4px;
-  --tb-text-color: #333;
-  --tb-error-color: #f44336;
-  --tb-success-color: #4caf50;
-  --tb-border-color: #ddd;
-  --tb-hover-color: #f9f9f9;
+  --tb-primary-color: #2563eb;
+  --tb-primary-hover: #1d4ed8;
+  --tb-primary-light: #eff6ff;
+  --tb-secondary-color: #f8fafc;
+  --tb-font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --tb-border-radius: 8px;
+  --tb-text-color: #0f172a; /* High contrast dark */
+  --tb-error-color: #dc2626; /* High contrast red */
+  --tb-success-color: #059669; /* High contrast green */
+  --tb-border-color: #d1d5db; /* Better contrast border */
+  --tb-border-focus: #2563eb; /* Focus state border */
+  --tb-hover-color: #f1f5f9; /* Subtle hover background */
+  --tb-disabled-color: #9ca3af; /* Better disabled color */
+  --tb-disabled-text: #6b7280; /* Disabled text with better contrast */
+  --tb-secondary-text: #374151; /* Better contrast secondary text */
+  --tb-background-white: #ffffff;
+  --tb-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --tb-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --tb-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .container {
   font-family: var(--tb-font-family);
   max-width: 400px;
-  background: white;
+  background: var(--tb-background-white);
   border-radius: var(--tb-border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--tb-shadow-lg);
   overflow: hidden;
   color: var(--tb-text-color);
+  border: 1px solid var(--tb-border-color);
 }
 
 .header {
@@ -37,18 +48,23 @@
 .restaurantName {
   margin: 0;
   font-size: 16px;
-  opacity: 0.9;
+  opacity: 0.95; /* Better readability */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.3;
 }
 
 .content {
-  padding: 24px;
+  padding: 28px; /* Better internal spacing */
 }
 
 .loading {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--tb-secondary-text);
   font-size: 16px;
+  line-height: 1.5;
 }
 
 .error {
@@ -56,16 +72,20 @@
   padding: 40px;
   color: var(--tb-error-color);
   font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word; /* Handle long error messages */
 }
 
 .errorMessage {
-  background: #ffebee;
+  background: #fef2f2; /* Softer error background */
   color: var(--tb-error-color);
-  padding: 12px 16px;
+  padding: 16px 20px; /* Better spacing */
   border-radius: var(--tb-border-radius);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   border-left: 4px solid var(--tb-error-color);
   font-size: 14px;
+  line-height: 1.4;
+  box-shadow: var(--tb-shadow-sm);
 }
 
 .success {
@@ -95,58 +115,84 @@
   font-size: 18px;
 }
 
-/* Button Styles */
+/* Button Styles - Professional Design */
 .primaryButton {
   background: var(--tb-primary-color);
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 16px 24px; /* Better padding for text */
   border-radius: var(--tb-border-radius);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   width: 100%;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   font-family: var(--tb-font-family);
+  min-height: 52px; /* Better touch target */
+  line-height: 1.2; /* Prevent text overflow */
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--tb-shadow-sm);
+  white-space: nowrap; /* Prevent button text wrapping */
+  overflow: hidden;
 }
 
 .primaryButton:hover {
-  background: color-mix(in srgb, var(--tb-primary-color) 85%, black);
+  background: var(--tb-primary-hover);
+  box-shadow: var(--tb-shadow-md);
+  transform: translateY(-1px);
 }
 
 .primaryButton:disabled {
-  background: #ccc;
+  background: var(--tb-disabled-color);
+  color: var(--tb-disabled-text);
   cursor: not-allowed;
+  border: none;
 }
 
 .secondaryButton {
-  background: transparent;
+  background: var(--tb-background-white);
   color: var(--tb-primary-color);
   border: 2px solid var(--tb-primary-color);
-  padding: 10px 24px;
+  padding: 14px 24px; /* Better padding for text */
   border-radius: var(--tb-border-radius);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: var(--tb-font-family);
+  min-height: 48px; /* Better touch target */
+  line-height: 1.2; /* Prevent text overflow */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap; /* Prevent button text wrapping */
+  overflow: hidden;
+  box-shadow: var(--tb-shadow-sm);
 }
 
 .secondaryButton:hover {
   background: var(--tb-primary-color);
   color: white;
+  box-shadow: var(--tb-shadow-md);
+  transform: translateY(-1px);
 }
 
 .backButton {
   background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
+  color: var(--tb-secondary-text);
+  border: 1px solid var(--tb-border-color);
   padding: 8px 16px;
   border-radius: var(--tb-border-radius);
   font-size: 14px;
   cursor: pointer;
   margin-right: 12px;
   font-family: var(--tb-font-family);
+  transition: all 0.2s ease;
+  min-height: 44px; /* Better touch target */
 }
 
 .backButton:hover {
@@ -155,7 +201,7 @@
 
 /* Form Elements */
 .formGroup {
-  margin-bottom: 20px;
+  margin-bottom: 24px; /* Better spacing between form elements */
 }
 
 .label {
@@ -167,42 +213,64 @@
 
 .input {
   width: 100%;
-  padding: 12px;
+  padding: 14px 16px; /* Better internal spacing */
   border: 2px solid var(--tb-border-color);
   border-radius: var(--tb-border-radius);
   font-size: 16px;
   font-family: var(--tb-font-family);
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
   box-sizing: border-box;
+  color: var(--tb-text-color);
+  background: var(--tb-background-white);
+  min-height: 48px; /* Better touch target */
+  line-height: 1.2; /* Prevent text overflow */
+  overflow: hidden; /* Prevent text spillover */
+  text-overflow: ellipsis; /* Handle overflow gracefully */
+}
+
+.input::placeholder {
+  color: var(--tb-secondary-text);
+  opacity: 0.8;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--tb-primary-color);
+  border-color: var(--tb-border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* Focus ring */
 }
 
 .textarea {
   width: 100%;
-  padding: 12px;
+  padding: 14px 16px; /* Better internal spacing */
   border: 2px solid var(--tb-border-color);
   border-radius: var(--tb-border-radius);
   font-size: 16px;
   font-family: var(--tb-font-family);
   resize: vertical;
-  min-height: 80px;
-  transition: border-color 0.2s ease;
+  min-height: 100px;
+  transition: all 0.2s ease;
   box-sizing: border-box;
+  color: var(--tb-text-color);
+  background: var(--tb-background-white);
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.textarea::placeholder {
+  color: var(--tb-secondary-text);
+  opacity: 0.8;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: var(--tb-primary-color);
+  border-color: var(--tb-border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* Focus ring */
 }
 
-/* Grid Layouts */
+/* Grid Layouts - Better Spacing */
 .grid {
   display: grid;
-  gap: 12px;
+  gap: 16px; /* More generous spacing */
 }
 
 .grid2 {
@@ -230,10 +298,41 @@
     padding: 16px;
   }
   
+  .header {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 20px; /* Smaller on mobile */
+  }
+  
+  .restaurantName {
+    font-size: 14px; /* Smaller on mobile */
+  }
+  
+  .primaryButton,
+  .secondaryButton,
+  .backButton {
+    font-size: 14px; /* Smaller text on mobile */
+    padding: 14px 20px; /* More padding for touch */
+    min-height: 48px; /* Consistent touch target */
+  }
+  
   .grid2,
   .grid3,
   .grid4 {
     grid-template-columns: 1fr;
+    gap: 8px; /* Smaller gap on mobile */
+  }
+  
+  .input,
+  .textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  /* Better spacing for form elements */
+  .formGroup {
+    margin-bottom: 16px;
   }
 }
 
@@ -257,18 +356,83 @@
   align-items: center;
   justify-content: center;
   min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--tb-border-color);
+  border: 3px solid var(--tb-disabled-color);
   border-top: 3px solid var(--tb-primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
+/* Accessibility: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border: 3px solid var(--tb-primary-color);
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Medium screen optimizations */
+@media (max-width: 768px) and (min-width: 481px) {
+  .container {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Focus indicators for accessibility */
+.primaryButton:focus,
+.secondaryButton:focus,
+.backButton:focus,
+.input:focus,
+.textarea:focus {
+  outline: 2px solid var(--tb-primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .container {
+    border: 2px solid;
+  }
+  
+  .primaryButton:disabled {
+    background: transparent;
+    border: 2px solid;
+  }
+  
+  .spinner {
+    border-width: 4px;
+  }
+}
+
+/* Better error message styling */
+.errorMessage {
+  background: #ffebee;
+  color: var(--tb-error-color);
+  padding: 12px 16px;
+  border-radius: var(--tb-border-radius);
+  margin-bottom: 16px;
+  border-left: 4px solid var(--tb-error-color);
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
 }
