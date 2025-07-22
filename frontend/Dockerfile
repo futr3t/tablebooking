@@ -1,77 +1,56 @@
-# Multi-stage build for faster Railway deployment
-FROM node:18-slim as builder
+# Simple single-stage Dockerfile for Railway
+FROM node:18-slim
 
 WORKDIR /app
 
-# Copy package files first for better layer caching
+# Set build environment variables upfront
+ENV NODE_OPTIONS="--max-old-space-size=6144"
+ENV GENERATE_SOURCEMAP="false" 
+ENV CI="false"
+ENV NPM_CONFIG_TIMEOUT="300000"
+
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies with timeout and retry
-ENV NPM_CONFIG_TIMEOUT=300000
-ENV NPM_CONFIG_RETRY=3
-RUN npm install --legacy-peer-deps
+# Install dependencies quickly
+RUN echo "Installing dependencies..." && \
+    npm install --legacy-peer-deps --no-audit --no-fund && \
+    echo "Dependencies installed successfully"
 
-# Copy source code
+# Copy source and build
 COPY . .
 
-# Build with memory optimization and relaxed TypeScript settings
-ENV NODE_OPTIONS="--max-old-space-size=6144"
-ENV CI=false
-ENV GENERATE_SOURCEMAP=false
-ENV TSC_COMPILE_ON_ERROR=true
-ENV SKIP_PREFLIGHT_CHECK=true
+# Set API URLs
+ENV REACT_APP_API_URL=https://kind-benevolence-production.up.railway.app/api
+ENV REACT_APP_SOCKET_URL=https://kind-benevolence-production.up.railway.app
 
-# Accept build arguments for API URLs
-ARG REACT_APP_API_URL
-ARG REACT_APP_SOCKET_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
+# Build with verbose output
+RUN echo "Building React app..." && \
+    echo "REACT_APP_API_URL=$REACT_APP_API_URL" && \
+    echo "REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL" && \
+    npm run build 2>&1 || true && \
+    echo "=== Checking build output ===" && \
+    if [ -d build ]; then \
+        echo "Build directory exists" && \
+        ls -la build/ && \
+        if [ -f build/index.html ]; then \
+            echo "✓ index.html found"; \
+        else \
+            echo "✗ index.html missing" && \
+            echo "Build directory contains:" && \
+            find build -type f | head -20; \
+        fi; \
+    else \
+        echo "No build directory created"; \
+    fi
 
-# Debug: Check public directory before build
-RUN echo "=== PRE-BUILD DEBUG ===" && \
-    echo "Contents of /app:" && \
-    ls -la && \
-    echo "Contents of /app/public:" && \
-    ls -la public/ || echo "No public directory found"
-
-# Build with enhanced error handling - capture all output
-RUN echo "Starting React build..." && \
-    echo "API URL: $REACT_APP_API_URL" && \
-    echo "Socket URL: $REACT_APP_SOCKET_URL" && \
-    echo "=== RUNNING NPM BUILD ===" && \
-    npm run build || \
-    (echo "=== BUILD FAILED - Showing last 50 lines of output ===" && \
-     echo "=== Directory listing ===" && \
-     ls -la && \
-     echo "=== Checking for partial build output ===" && \
-     ls -la build/ 2>/dev/null || echo "No build directory created" && \
-     exit 1) && \
-    echo "=== BUILD COMPLETED ===" && \
-    echo "Contents of /app/build:" && \
-    ls -la build/ && \
-    echo "Checking for index.html:" && \
-    test -f build/index.html && echo "✓ index.html found" || (echo "✗ index.html MISSING!" && exit 1)
-
-# Production stage
-FROM node:18-slim as production
-
-WORKDIR /app
-
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# Copy package files and install production dependencies (express)
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Copy built app from builder stage
-COPY --from=builder /app/build ./build
-
-# Copy server file
-COPY server.js ./
+# Install serve and cleanup
+RUN npm install -g serve && \
+    npm cache clean --force && \
+    rm -rf node_modules
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "server.js"]
+# Start app
+CMD ["serve", "-s", "build", "-p", "3000"]
