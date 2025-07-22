@@ -1,0 +1,54 @@
+# Debug Dockerfile to diagnose build issues
+FROM node:18-slim
+
+WORKDIR /app
+
+# Install build tools that might be needed
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with verbose logging
+RUN npm install --legacy-peer-deps --verbose
+
+# Copy all source files
+COPY . .
+
+# Set build environment variables
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+ENV TSC_COMPILE_ON_ERROR=true
+ENV SKIP_PREFLIGHT_CHECK=true
+
+# Set API URLs
+ENV REACT_APP_API_URL=https://kind-benevolence-production.up.railway.app/api
+ENV REACT_APP_SOCKET_URL=https://kind-benevolence-production.up.railway.app
+
+# Debug: Show environment and files
+RUN echo "=== ENVIRONMENT ===" && \
+    env | grep -E "(NODE_|REACT_APP_|CI|TSC_|SKIP_)" && \
+    echo "=== DIRECTORY STRUCTURE ===" && \
+    ls -la && \
+    echo "=== SRC DIRECTORY ===" && \
+    ls -la src/ && \
+    echo "=== PUBLIC DIRECTORY ===" && \
+    ls -la public/
+
+# Build with verbose output
+RUN echo "=== STARTING BUILD ===" && \
+    npm run build 2>&1 | tee build.log || true && \
+    echo "=== BUILD LOG ===" && \
+    tail -50 build.log && \
+    echo "=== BUILD DIRECTORY ===" && \
+    ls -la build/ || echo "No build directory created" && \
+    echo "=== CHECKING FOR INDEX.HTML ===" && \
+    find . -name "index.html" -type f
+
+# Even if build fails, try to start the server
+EXPOSE 3000
+CMD ["node", "server.js"]

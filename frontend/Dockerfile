@@ -27,11 +27,24 @@ ARG REACT_APP_SOCKET_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
 
+# Debug: Check public directory before build
+RUN echo "=== PRE-BUILD DEBUG ===" && \
+    echo "Contents of /app:" && \
+    ls -la && \
+    echo "Contents of /app/public:" && \
+    ls -la public/ || echo "No public directory found"
+
+# Build with enhanced error handling
 RUN echo "Starting React build..." && \
     echo "API URL: $REACT_APP_API_URL" && \
     echo "Socket URL: $REACT_APP_SOCKET_URL" && \
-    npm run build && \
-    echo "React build completed successfully"
+    npm run build || (echo "Build failed!" && ls -la && exit 1) && \
+    echo "React build completed successfully" && \
+    echo "=== POST-BUILD DEBUG ===" && \
+    echo "Contents of /app/build:" && \
+    ls -la build/ && \
+    echo "Checking for index.html:" && \
+    if [ -f build/index.html ]; then echo "✓ index.html found"; else echo "✗ index.html MISSING!"; exit 1; fi
 
 # Production stage
 FROM node:18-slim as production

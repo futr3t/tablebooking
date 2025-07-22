@@ -16,8 +16,25 @@ const buildExists = fs.existsSync(buildPath);
 console.log('Build path:', buildPath);
 console.log('Build exists:', buildExists);
 
+// Enhanced diagnostics
 if (buildExists) {
-  console.log('Build directory contents:', fs.readdirSync(buildPath).slice(0, 10));
+  const buildContents = fs.readdirSync(buildPath);
+  console.log('Build directory contents:', buildContents);
+  console.log('Total files in build:', buildContents.length);
+  
+  // Check for critical files
+  const indexExists = fs.existsSync(path.join(buildPath, 'index.html'));
+  const staticExists = fs.existsSync(path.join(buildPath, 'static'));
+  
+  console.log('Critical files check:');
+  console.log('- index.html exists:', indexExists);
+  console.log('- static directory exists:', staticExists);
+  
+  if (!indexExists) {
+    console.error('⚠️  WARNING: index.html is missing from build directory!');
+    console.error('This indicates the React build did not complete successfully.');
+    console.error('Build directory contains only:', buildContents);
+  }
   
   // Add API endpoint for debugging FIRST
   app.get('/api/frontend-health', (req, res) => {
