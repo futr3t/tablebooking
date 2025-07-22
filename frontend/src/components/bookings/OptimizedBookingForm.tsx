@@ -573,7 +573,7 @@ export const OptimizedBookingForm: React.FC<OptimizedBookingFormProps> = ({
     <>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
-          🚀 {editMode ? 'Edit Booking (Enhanced Form)' : 'Enhanced Booking Form'}
+          {editMode ? 'Edit Booking' : 'Booking Form'}
         </Typography>
 
         {error && (
