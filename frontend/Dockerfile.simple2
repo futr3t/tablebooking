@@ -1,0 +1,36 @@
+# Simple single-stage build for Railway
+FROM node:18-slim
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy source code
+COPY . .
+
+# Set build environment variables
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+ENV TSC_COMPILE_ON_ERROR=true
+ENV SKIP_PREFLIGHT_CHECK=true
+
+# Set API URLs with default values if not provided
+ENV REACT_APP_API_URL=${REACT_APP_API_URL:-https://kind-benevolence-production.up.railway.app/api}
+ENV REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL:-https://kind-benevolence-production.up.railway.app}
+
+# Build the app
+RUN npm run build
+
+# Install production dependencies for serving
+RUN npm install express --save
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["node", "server.js"]

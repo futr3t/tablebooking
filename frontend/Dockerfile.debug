@@ -1,4 +1,4 @@
-# Multi-stage build for faster Railway deployment
+# Debug Dockerfile to identify build issues
 FROM node:18-slim as builder
 
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build with memory optimization and relaxed TypeScript settings
+# Build with memory optimization and progress output
 ENV NODE_OPTIONS="--max-old-space-size=6144"
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
@@ -22,15 +22,17 @@ ENV TSC_COMPILE_ON_ERROR=true
 ENV SKIP_PREFLIGHT_CHECK=true
 
 # Accept build arguments for API URLs
-ARG REACT_APP_API_URL
-ARG REACT_APP_SOCKET_URL
+ARG REACT_APP_API_URL=https://kind-benevolence-production.up.railway.app/api
+ARG REACT_APP_SOCKET_URL=https://kind-benevolence-production.up.railway.app
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
 
 RUN echo "Starting React build..." && \
     echo "API URL: $REACT_APP_API_URL" && \
     echo "Socket URL: $REACT_APP_SOCKET_URL" && \
-    npm run build && \
+    echo "Node version: $(node --version)" && \
+    echo "NPM version: $(npm --version)" && \
+    npm run build -- --verbose && \
     echo "React build completed successfully"
 
 # Production stage
