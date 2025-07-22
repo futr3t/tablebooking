@@ -30,6 +30,7 @@ import { useDateFormat } from '../../contexts/DateFormatContext';
 import { QuickBookingDialog } from './QuickBookingDialog';
 import BookingDayView from './BookingDayView';
 import BookingTimelineView from './BookingTimelineView';
+import FloatingNewBookingButton from '../common/FloatingNewBookingButton';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -58,7 +59,7 @@ const BookingDashboard: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { formatDate, restaurantSettings } = useDateFormat();
-  
+
   // State management
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentTab, setCurrentTab] = useState(0);
@@ -84,21 +85,21 @@ const BookingDashboard: React.FC = () => {
 
   const loadBookingsForDate = async (date: Date) => {
     if (!user?.restaurantId) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
       const data = await bookingService.getBookings(user.restaurantId, dateStr);
-      
+
       // Filter bookings to only show those for the selected date
       const dayBookings = data.filter(booking => {
         if (!booking.bookingDate) return false;
         const bookingDate = new Date(booking.bookingDate.split('T')[0]);
         return isSameDay(bookingDate, date);
       });
-      
+
       setBookings(dayBookings);
     } catch (err: any) {
       setError('Failed to load bookings');
@@ -110,7 +111,7 @@ const BookingDashboard: React.FC = () => {
 
   const loadTables = async () => {
     if (!user?.restaurantId) return;
-    
+
     try {
       const data = await tableService.getTables(user.restaurantId);
       setTables(data.tables || []);
@@ -158,17 +159,17 @@ const BookingDashboard: React.FC = () => {
   return (
       <Box>
         {/* Header */}
-        <Box sx={{ 
-          mb: 4, 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <Box sx={{
+          mb: 4,
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: { xs: 'stretch', sm: 'flex-start' },
           flexDirection: { xs: 'column', sm: 'row' },
           gap: 2
         }}>
           <Box>
-            <Typography variant="h4" sx={{ 
-              fontWeight: 700, 
+            <Typography variant="h4" sx={{
+              fontWeight: 700,
               color: 'text.primary',
               mb: 0.5,
               fontSize: { xs: '1.75rem', sm: '2.125rem' }
@@ -179,7 +180,7 @@ const BookingDashboard: React.FC = () => {
               Manage reservations with calendar view and timeline visualization
             </Typography>
           </Box>
-          
+
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -201,20 +202,20 @@ const BookingDashboard: React.FC = () => {
 
         {/* Calendar Navigation */}
         <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: { xs: 'stretch', sm: 'center' }, 
+          <Box sx={{
+            display: 'flex',
+            alignItems: { xs: 'stretch', sm: 'center' },
             gap: 2,
             flexDirection: { xs: 'column', sm: 'row' },
             flexWrap: 'wrap'
           }}>
             {/* Date Picker */}
             <Box sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: '#cbd5e1', 
-                  mb: 0.5, 
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#cbd5e1',
+                  mb: 0.5,
                   fontSize: '0.875rem',
                   fontWeight: 500
                 }}
@@ -228,7 +229,7 @@ const BookingDashboard: React.FC = () => {
                   textField: {
                     size: 'small',
                     placeholder: 'dd/MM/yyyy',
-                    sx: { 
+                    sx: {
                       width: '100%',
                       '& .MuiInputBase-root': {
                         height: '32px',
@@ -256,16 +257,16 @@ const BookingDashboard: React.FC = () => {
             </Box>
 
             {/* Navigation Arrows */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 1,
               justifyContent: { xs: 'center', sm: 'flex-start' }
             }}>
               <IconButton onClick={handlePreviousDay} size="small">
                 <ChevronLeft />
               </IconButton>
-              
+
               <Button
                 variant={isToday ? "contained" : "outlined"}
                 size="small"
@@ -280,29 +281,29 @@ const BookingDashboard: React.FC = () => {
               >
                 Today
               </Button>
-              
+
               <IconButton onClick={handleNextDay} size="small">
                 <ChevronRight />
               </IconButton>
             </Box>
 
             {/* Selected Date Display */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 1,
               ml: { xs: 0, sm: 'auto' },
               flexWrap: 'wrap',
               justifyContent: { xs: 'center', sm: 'flex-end' }
             }}>
-              <Typography variant="h6" sx={{ 
+              <Typography variant="h6" sx={{
                 fontWeight: 600,
                 fontSize: { xs: '1rem', sm: '1.25rem' },
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
                 {formatDate(selectedDate, isMobile ? 'display' : 'long')}
               </Typography>
-              <Chip 
+              <Chip
                 label={`${bookingCount} booking${bookingCount !== 1 ? 's' : ''}`}
                 color={bookingCount > 0 ? 'primary' : 'default'}
                 size="small"
@@ -313,8 +314,8 @@ const BookingDashboard: React.FC = () => {
 
         {/* View Tabs */}
         <Paper elevation={1} sx={{ mb: 3 }}>
-          <Tabs 
-            value={currentTab} 
+          <Tabs
+            value={currentTab}
             onChange={handleTabChange}
             aria-label="booking view tabs"
             sx={{
@@ -327,16 +328,16 @@ const BookingDashboard: React.FC = () => {
               }
             }}
           >
-            <Tab 
-              icon={<FormatListBulleted />} 
-              label="Day View" 
+            <Tab
+              icon={<FormatListBulleted />}
+              label="Day View"
               id="booking-tab-0"
               aria-controls="booking-tabpanel-0"
               iconPosition="start"
             />
-            <Tab 
-              icon={<ViewTimeline />} 
-              label="Timeline View" 
+            <Tab
+              icon={<ViewTimeline />}
+              label="Timeline View"
               id="booking-tab-1"
               aria-controls="booking-tabpanel-1"
               iconPosition="start"
@@ -350,15 +351,15 @@ const BookingDashboard: React.FC = () => {
           ) : (
             <>
               <TabPanel value={currentTab} index={0}>
-                <BookingDayView 
+                <BookingDayView
                   bookings={bookings}
                   selectedDate={selectedDate}
                   onBookingUpdate={() => loadBookingsForDate(selectedDate)}
                 />
               </TabPanel>
-              
+
               <TabPanel value={currentTab} index={1}>
-                <BookingTimelineView 
+                <BookingTimelineView
                   bookings={bookings}
                   tables={tables}
                   selectedDate={selectedDate}
@@ -378,6 +379,9 @@ const BookingDashboard: React.FC = () => {
             onSuccess={handleBookingSuccess}
           />
         )}
+
+        {/* Floating New Booking Button */}
+        <FloatingNewBookingButton onClick={() => setQuickBookingOpen(true)} />
       </Box>
   );
 };

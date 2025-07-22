@@ -20,6 +20,7 @@ import { isBookingToday } from '../../utils/dateHelpers';
 import { useSocket } from '../../hooks/useSocket';
 import TimelineView from './TimelineView';
 import { QuickBookingDialog } from '../bookings/QuickBookingDialog';
+import FloatingNewBookingButton from '../common/FloatingNewBookingButton';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -60,7 +61,7 @@ const Dashboard: React.FC = () => {
 
     const handleBookingCancelled = (bookingId: string) => {
       setBookings(prev => {
-        const updated = prev.map(b => 
+        const updated = prev.map(b =>
           b.id === bookingId ? { ...b, status: 'cancelled' as const } : b
         );
         updateStats(updated);
@@ -81,19 +82,19 @@ const Dashboard: React.FC = () => {
 
   const loadTodaysBookings = async () => {
     if (!user?.restaurantId) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
       // Get all bookings including cancelled to show proper stats
       const data = await bookingService.getBookings(user.restaurantId, today, true);
-      
-      const todaysBookings = data.filter(booking => 
+
+      const todaysBookings = data.filter(booking =>
         isBookingToday(booking)
       );
-      
+
       setBookings(todaysBookings);
       updateStats(todaysBookings);
     } catch (err: any) {
@@ -139,8 +140,8 @@ const Dashboard: React.FC = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700, 
+          <Typography variant="h4" sx={{
+            fontWeight: 700,
             color: 'white',
             mb: 0.5
           }}>
@@ -150,7 +151,7 @@ const Dashboard: React.FC = () => {
             {formatDate(new Date(), 'long')} • Today's bookings and activity
           </Typography>
         </Box>
-        
+
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -167,14 +168,14 @@ const Dashboard: React.FC = () => {
             transition: 'all 0.2s ease-in-out'
           }}
         >
-          Quick Booking
+          New Booking
         </Button>
       </Box>
-      
+
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
+        <Alert
+          severity="error"
+          sx={{
             mb: 3,
             backgroundColor: 'rgba(30, 41, 59, 0.5)',
             borderColor: '#334155',
@@ -188,10 +189,10 @@ const Dashboard: React.FC = () => {
           {error}
         </Alert>
       )}
-      
+
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={6}>
-          <Card sx={{ 
+          <Card sx={{
             background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
             color: 'white',
             border: 'none',
@@ -217,9 +218,9 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={6}>
-          <Card sx={{ 
+          <Card sx={{
             background: 'linear-gradient(to bottom right, #059669, #047857)',
             color: 'white',
             border: 'none',
@@ -245,11 +246,11 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
-        
+
+
         {!restaurantSettings?.bookingSettings?.autoConfirm && (
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
+            <Card sx={{
               background: 'linear-gradient(to bottom right, #ea580c, #c2410c)',
               color: 'white',
               border: 'none',
@@ -277,7 +278,7 @@ const Dashboard: React.FC = () => {
           </Grid>
         )}
       </Grid>
-      
+
 
       {/* Quick Booking Dialog */}
       {user?.restaurantId && (
@@ -289,33 +290,8 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      {/* Floating Action Button for Mobile */}
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 16,
-          right: 16,
-          display: { xs: 'block', md: 'none' }
-        }}
-      >
-        <Fab
-          color="primary"
-          onClick={() => setQuickBookingOpen(true)}
-          sx={{
-            background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
-            borderRadius: 0,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-            '&:hover': {
-              background: 'linear-gradient(to bottom right, #1d4ed8, #1e40af)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            },
-            transition: 'all 0.2s ease-in-out'
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      </Box>
+      {/* Floating New Booking Button */}
+      <FloatingNewBookingButton onClick={() => setQuickBookingOpen(true)} />
     </Box>
   );
 };
