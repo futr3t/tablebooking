@@ -14,6 +14,7 @@ import dietaryRequirementsRoutes from './dietaryRequirements';
 import debugRoutes from './debug';
 import turnTimeRulesRoutes from './turnTimeRules';
 import userRoutes from './user';
+import notificationRoutes from './notification';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/diagnostic', diagnosticRoutes);
 router.use('/dietary-requirements', dietaryRequirementsRoutes);
 router.use('/debug', debugRoutes);
 router.use('/turn-time-rules', turnTimeRulesRoutes);
+router.use('/notifications', notificationRoutes);
 
 router.get('/health', async (req, res) => {
   try {
@@ -56,17 +58,17 @@ router.get('/health', async (req, res) => {
     const requiredColumns = ['max_covers', 'stagger_minutes', 'default_slot_duration'];
     const columnCheck = await db.query(`
       SELECT column_name
-      FROM information_schema.columns 
-      WHERE table_name = 'restaurants' 
+      FROM information_schema.columns
+      WHERE table_name = 'restaurants'
       AND column_name = ANY($1)
     `, [requiredColumns]);
 
     const existingColumns = columnCheck.rows.map(row => row.column_name);
     const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
-    
+
     health.database.schema.missingColumns = missingColumns;
     health.database.schema.valid = missingColumns.length === 0;
-    
+
     // Overall health status
     if (!health.database.connected || !health.database.schema.valid) {
       health.status = 'degraded';
