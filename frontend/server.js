@@ -19,10 +19,7 @@ console.log('Build exists:', buildExists);
 if (buildExists) {
   console.log('Build directory contents:', fs.readdirSync(buildPath).slice(0, 10));
   
-  // Serve static files
-  app.use(express.static(buildPath));
-  
-  // Add API endpoint for debugging
+  // Add API endpoint for debugging FIRST
   app.get('/api/frontend-health', (req, res) => {
     res.json({
       service: 'frontend',
@@ -30,24 +27,33 @@ if (buildExists) {
       buildExists: true,
       buildPath: buildPath,
       port: PORT,
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
+      indexExists: fs.existsSync(path.join(buildPath, 'index.html'))
     });
   });
   
-  // CRITICAL: Handle Railway's healthcheck at root path
-  app.get('/', (req, res) => {
-    console.log('Healthcheck request received at /');
+  // Serve static files from build directory
+  app.use(express.static(buildPath, { 
+    setHeaders: (res, path) => {
+      console.log('Serving static file:', path);
+    }
+  }));
+  
+  // Catch all handler for React Router - handles all non-static routes
+  app.get('*', (req, res) => {
+    console.log('Catch-all handler for:', req.path);
     const indexPath = path.join(buildPath, 'index.html');
     if (fs.existsSync(indexPath)) {
+      console.log('Serving index.html for:', req.path);
       res.sendFile(indexPath);
     } else {
-      res.status(200).send('OK - Server running but index.html not found');
+      console.error('index.html not found at:', indexPath);
+      res.status(404).json({
+        error: 'index.html not found',
+        path: indexPath,
+        buildContents: fs.readdirSync(buildPath)
+      });
     }
-  });
-  
-  // Catch all handler for React Router
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {
   // Add API endpoint for debugging even without build
