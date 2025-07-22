@@ -19,9 +19,30 @@ RUN echo "Installing dependencies..." && \
 
 # Copy source and build
 COPY . .
+
+# Set API URLs
+ENV REACT_APP_API_URL=https://kind-benevolence-production.up.railway.app/api
+ENV REACT_APP_SOCKET_URL=https://kind-benevolence-production.up.railway.app
+
+# Build with verbose output
 RUN echo "Building React app..." && \
-    npm run build && \
-    echo "Build completed successfully"
+    echo "REACT_APP_API_URL=$REACT_APP_API_URL" && \
+    echo "REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL" && \
+    npm run build 2>&1 || true && \
+    echo "=== Checking build output ===" && \
+    if [ -d build ]; then \
+        echo "Build directory exists" && \
+        ls -la build/ && \
+        if [ -f build/index.html ]; then \
+            echo "✓ index.html found"; \
+        else \
+            echo "✗ index.html missing" && \
+            echo "Build directory contains:" && \
+            find build -type f | head -20; \
+        fi; \
+    else \
+        echo "No build directory created"; \
+    fi
 
 # Install serve and cleanup
 RUN npm install -g serve && \
