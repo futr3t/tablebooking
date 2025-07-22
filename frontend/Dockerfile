@@ -34,17 +34,23 @@ RUN echo "=== PRE-BUILD DEBUG ===" && \
     echo "Contents of /app/public:" && \
     ls -la public/ || echo "No public directory found"
 
-# Build with enhanced error handling
+# Build with enhanced error handling - capture all output
 RUN echo "Starting React build..." && \
     echo "API URL: $REACT_APP_API_URL" && \
     echo "Socket URL: $REACT_APP_SOCKET_URL" && \
-    npm run build || (echo "Build failed!" && ls -la && exit 1) && \
-    echo "React build completed successfully" && \
-    echo "=== POST-BUILD DEBUG ===" && \
+    echo "=== RUNNING NPM BUILD ===" && \
+    npm run build || \
+    (echo "=== BUILD FAILED - Showing last 50 lines of output ===" && \
+     echo "=== Directory listing ===" && \
+     ls -la && \
+     echo "=== Checking for partial build output ===" && \
+     ls -la build/ 2>/dev/null || echo "No build directory created" && \
+     exit 1) && \
+    echo "=== BUILD COMPLETED ===" && \
     echo "Contents of /app/build:" && \
     ls -la build/ && \
     echo "Checking for index.html:" && \
-    if [ -f build/index.html ]; then echo "✓ index.html found"; else echo "✗ index.html MISSING!"; exit 1; fi
+    test -f build/index.html && echo "✓ index.html found" || (echo "✗ index.html MISSING!" && exit 1)
 
 # Production stage
 FROM node:18-slim as production
