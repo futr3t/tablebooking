@@ -22,6 +22,18 @@ if (buildExists) {
   // Serve static files
   app.use(express.static(buildPath));
   
+  // Add API endpoint for debugging
+  app.get('/api/frontend-health', (req, res) => {
+    res.json({
+      service: 'frontend',
+      status: 'running',
+      buildExists: true,
+      buildPath: buildPath,
+      port: PORT,
+      nodeEnv: process.env.NODE_ENV
+    });
+  });
+  
   // CRITICAL: Handle Railway's healthcheck at root path
   app.get('/', (req, res) => {
     console.log('Healthcheck request received at /');
@@ -38,10 +50,28 @@ if (buildExists) {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {
+  // Add API endpoint for debugging even without build
+  app.get('/api/frontend-health', (req, res) => {
+    res.json({
+      service: 'frontend',
+      status: 'running-no-build',
+      buildExists: false,
+      buildPath: buildPath,
+      port: PORT,
+      nodeEnv: process.env.NODE_ENV,
+      error: 'Build directory not found'
+    });
+  });
+  
   // If no build directory, still respond to healthchecks
   app.get('*', (req, res) => {
     console.log('Request to:', req.path);
-    res.status(503).send(`Build directory not found. Server running on port ${PORT}`);
+    res.status(503).json({
+      service: 'frontend',
+      error: 'Build directory not found',
+      message: `Frontend server running on port ${PORT} but React build is missing`,
+      buildPath: buildPath
+    });
   });
 }
 
