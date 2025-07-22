@@ -39,7 +39,10 @@
       "WebFetch(domain:kind-benevolence-production.up.railway.app)",
       "Bash(sed:*)",
       "Bash(pkill:*)",
-      "Bash(source .env)"
+      "Bash(source .env)",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__find_file"
     ],
     "deny": []
   }
