@@ -210,6 +210,35 @@ tablebooking/
 - **Responsive Layout**: Mobile-first responsive design
 - **Accessibility**: WCAG compliant color contrasts and interactions
 
+#### UI Consistency Guidelines
+**IMPORTANT: Maintain these UI standards across all components:**
+
+1. **Section Organization**:
+   - Use Accordion components for collapsible sections (not mixed Card/Accordion)
+   - All settings panels should use consistent Accordion styling
+   - Default expand important sections with `defaultExpanded`
+
+2. **Form Layout**:
+   - Use Grid system with consistent spacing (spacing={2})
+   - Align form elements properly using Grid items
+   - Text fields should use consistent sizing (small/medium/large)
+   - Labels and helper text should have consistent typography
+
+3. **Component Spacing**:
+   - Section spacing: `sx={{ mt: 2 }}` between accordions
+   - Internal padding: Use AccordionDetails default padding
+   - Button groups: `gap: 2` for horizontal spacing
+
+4. **Icons and Typography**:
+   - Section headers: `variant="h6"` with icon using `display: 'flex', alignItems: 'center', gap: 1`
+   - Body text: `variant="body1"` for main content, `variant="body2"` for secondary
+   - Consistent icon usage from @mui/icons-material
+
+5. **Responsive Design**:
+   - Use Grid breakpoints consistently: `xs={12} md={6}` for two-column layouts
+   - Stack elements vertically on mobile using Grid system
+   - Maintain proper spacing on all screen sizes
+
 ### 11. Enhanced Booking Features (100% Complete)
 - **Dietary Requirements**: Comprehensive allergy and preference tracking
 - **Customer Templates**: Auto-complete from booking history

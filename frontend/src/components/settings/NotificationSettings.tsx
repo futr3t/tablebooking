@@ -357,28 +357,34 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
       </Accordion>
 
       {/* Reminder Settings */}
-      <Card sx={{ mt: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Accordion sx={{ mt: 2 }} defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ScheduleIcon />
             Reminder Settings
           </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <TextField
-              label="Hours Before Booking"
-              type="number"
-              value={settings.reminderHours}
-              onChange={(e) => handleReminderHoursChange(parseInt(e.target.value) || 24)}
-              inputProps={{ min: 1, max: 168 }}
-              sx={{ width: 200 }}
-              size="small"
-            />
-            <Typography variant="body2" color="text.secondary">
-              Send reminders {settings.reminderHours} hours before the booking
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={4}>
+              <TextField
+                label="Hours Before Booking"
+                type="number"
+                value={settings.reminderHours}
+                onChange={(e) => handleReminderHoursChange(parseInt(e.target.value) || 24)}
+                inputProps={{ min: 1, max: 168 }}
+                fullWidth
+                size="medium"
+              />
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography variant="body1" color="text.secondary">
+                Send reminders {settings.reminderHours} hours before the booking
+              </Typography>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
 
       {/* Test Dialog */}
       <Dialog open={testDialog.open} onClose={() => setTestDialog({ open: false, type: null })}>
