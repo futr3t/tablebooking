@@ -14,7 +14,7 @@ import {
   Restaurant as RestaurantIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { RestaurantSettingsPanel } from './RestaurantSettingsPanel';
+import RestaurantSettingsPanel from './RestaurantSettingsPanel';
 import { NotificationSettings } from './NotificationSettings';
 import { TurnTimeRules } from './TurnTimeRules';
 
