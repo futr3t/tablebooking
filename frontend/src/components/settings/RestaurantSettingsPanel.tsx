@@ -34,7 +34,6 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { restaurantService } from '../../services/api';
 import { useDateFormat } from '../../contexts/DateFormatContext';
-import { TurnTimeRules } from './TurnTimeRules';
 
 interface ServicePeriod {
   name: string;
@@ -1156,11 +1155,6 @@ const RestaurantSettingsPanel: React.FC = () => {
         </Grid>
 
       </Grid>
-
-      {/* Turn Time Rules Section */}
-      <Box sx={{ mt: 4 }}>
-        <TurnTimeRules restaurantId={settings.id || user?.restaurantId || ''} />
-      </Box>
     </Box>
   );
 };
