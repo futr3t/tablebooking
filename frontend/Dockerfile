@@ -18,22 +18,8 @@ ENV GENERATE_SOURCEMAP=false
 ENV REACT_APP_API_URL=https://kind-benevolence-production.up.railway.app/api
 ENV REACT_APP_SOCKET_URL=https://kind-benevolence-production.up.railway.app
 
-# Build the React app with full error output
-RUN echo "=== BUILD ENVIRONMENT ===" && \
-    echo "Node version: $(node --version)" && \
-    echo "NPM version: $(npm --version)" && \
-    echo "Working directory: $(pwd)" && \
-    echo "=== SOURCE FILES ===" && \
-    ls -la && \
-    echo "=== PUBLIC DIRECTORY ===" && \
-    ls -la public/ && \
-    echo "=== STARTING BUILD ===" && \
-    npm run build --verbose && \
-    echo "=== BUILD COMPLETE ===" && \
-    echo "=== BUILD OUTPUT ===" && \
-    ls -la build/ && \
-    echo "=== BUILD INDEX.HTML ===" && \
-    ls -la build/index.html
+# Build the React app
+RUN npm run build
 
 # Production stage
 FROM node:18-slim
