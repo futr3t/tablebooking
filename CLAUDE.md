@@ -8,7 +8,7 @@ A modular restaurant table booking platform similar to OpenTable/ResDiary with c
 - **Database**: PostgreSQL (Redis removed)
 - **Frontend**: React 18 with TypeScript
 - **Real-time**: Socket.io
-- **Email/SMS**: SendGrid/Twilio (configured)
+- **Email/SMS**: Brevo/Twilio (configured)
 - **Testing**: Jest with comprehensive test suite
 
 ## Current Project Structure
@@ -364,7 +364,7 @@ tablebooking/
 - Server configuration (PORT, NODE_ENV)
 - Database URL (PostgreSQL only - Redis removed)
 - JWT secrets and expiration
-- Email/SMS service keys (SendGrid, Twilio)
+- Email/SMS service keys (Brevo, Twilio)
 - Rate limiting settings
 - CORS configuration
 
@@ -399,7 +399,7 @@ tablebooking/
 4. **Menu Integration**: Menu display and special offers
 
 ### Additional Features
-1. **Email/SMS Integration**: Actual notification implementation (SendGrid/Twilio configured)
+1. **Email/SMS Integration**: Actual notification implementation (Brevo/Twilio configured)
 2. **Payment Integration**: Deposit and payment processing (Stripe integration)
 3. **Calendar Integration**: External calendar sync (Google Calendar, Outlook)
 4. **Multi-language**: Internationalization support (i18n)

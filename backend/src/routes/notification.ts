@@ -146,7 +146,7 @@ router.get('/config/:restaurantId',
         },
         reminderHours: settings.reminderHours || 24,
         configured: {
-          sendgrid: !!process.env.SENDGRID_API_KEY,
+          brevo: !!process.env.BREVO_API_KEY,
           twilio: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
         }
       }
@@ -200,15 +200,15 @@ router.put('/config/:restaurantId',
   })
 );
 
-// Configure SendGrid API key for restaurant
-router.post('/config/:restaurantId/sendgrid',
+// Configure Brevo API key for restaurant
+router.post('/config/:restaurantId/brevo',
   authorize(UserRole.SUPER_ADMIN, UserRole.OWNER),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { restaurantId } = req.params;
     const { apiKey } = req.body;
 
     if (!apiKey) {
-      throw createError('SendGrid API key is required', 400);
+      throw createError('Brevo API key is required', 400);
     }
 
     const restaurant = await RestaurantModel.findById(restaurantId);
@@ -216,6 +216,7 @@ router.post('/config/:restaurantId/sendgrid',
       throw createError('Restaurant not found', 404);
     }
 
+    // TODO: Implement secure API credential storage (encryption/secret management)
     // In a production environment, you would store these encrypted in the database
     // For now, we'll store them in environment variables or a secure configuration service
     // This is a simplified example - implement proper secret management
@@ -224,7 +225,7 @@ router.post('/config/:restaurantId/sendgrid',
     const currentSettings = restaurant.notificationConfig || {};
     const updatedConfig = {
       ...currentSettings,
-      sendgrid: {
+      brevo: {
         configured: true,
         configuredAt: new Date().toISOString(),
         configuredBy: req.user?.id
@@ -235,7 +236,7 @@ router.post('/config/:restaurantId/sendgrid',
 
     res.json({
       success: true,
-      message: 'SendGrid configuration saved successfully',
+      message: 'Brevo configuration saved successfully',
       data: {
         configured: true
       }
@@ -259,6 +260,7 @@ router.post('/config/:restaurantId/twilio',
       throw createError('Restaurant not found', 404);
     }
 
+    // TODO: Implement secure API credential storage (encryption/secret management)
     // In a production environment, you would store these encrypted in the database
     // For now, we'll store them in environment variables or a secure configuration service
     // This is a simplified example - implement proper secret management

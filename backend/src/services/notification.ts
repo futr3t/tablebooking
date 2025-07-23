@@ -1,10 +1,12 @@
-import sgMail from '@sendgrid/mail';
+import axios from 'axios';
 import twilio from 'twilio';
 import Handlebars from 'handlebars';
 import { Booking, NotificationType, Restaurant } from '../types';
 
 // Initialize services
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+const brevoApiKey = process.env.BREVO_API_KEY || '';
+const brevoApiUrl = 'https://api.brevo.com/v3';
+
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
@@ -161,22 +163,35 @@ export class NotificationService {
       throw new Error('No customer email provided');
     }
 
-    if (!process.env.SENDGRID_API_KEY) {
-      throw new Error('SendGrid API key not configured');
+    if (!brevoApiKey) {
+      throw new Error('Brevo API key not configured');
     }
 
     // Compile template
     const template = Handlebars.compile(this.emailTemplates[type]);
     const html = template({ booking, restaurant });
 
-    const msg = {
-      to: booking.customerEmail,
-      from: process.env.FROM_EMAIL || 'noreply@restaurant.com',
+    const emailData = {
+      sender: {
+        name: restaurant.name || 'Restaurant',
+        email: process.env.FROM_EMAIL || 'noreply@restaurant.com'
+      },
+      to: [
+        {
+          email: booking.customerEmail,
+          name: booking.customerName || 'Customer'
+        }
+      ],
       subject: this.getEmailSubject(type, restaurant.name),
-      html: html
+      htmlContent: html
     };
 
-    await sgMail.send(msg);
+    await axios.post(`${brevoApiUrl}/smtp/email`, emailData, {
+      headers: {
+        'api-key': brevoApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   private static async sendSMS(data: NotificationData): Promise<void> {
@@ -248,15 +263,23 @@ export class NotificationService {
 
   // Test notification endpoints
   static async sendTestEmail(email: string, restaurantName: string): Promise<void> {
-    if (!process.env.SENDGRID_API_KEY) {
-      throw new Error('SendGrid API key not configured');
+    if (!brevoApiKey) {
+      throw new Error('Brevo API key not configured');
     }
 
-    const msg = {
-      to: email,
-      from: process.env.FROM_EMAIL || 'noreply@restaurant.com',
+    const emailData = {
+      sender: {
+        name: restaurantName || 'Restaurant',
+        email: process.env.FROM_EMAIL || 'noreply@restaurant.com'
+      },
+      to: [
+        {
+          email: email,
+          name: 'Test User'
+        }
+      ],
       subject: `Test Email - ${restaurantName}`,
-      html: `
+      htmlContent: `
         <h2>Test Email from ${restaurantName}</h2>
         <p>This is a test email to verify your email notification configuration.</p>
         <p>If you received this, your email notifications are working correctly!</p>
@@ -264,7 +287,12 @@ export class NotificationService {
       `
     };
 
-    await sgMail.send(msg);
+    await axios.post(`${brevoApiUrl}/smtp/email`, emailData, {
+      headers: {
+        'api-key': brevoApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   static async sendTestSMS(phone: string, restaurantName: string): Promise<void> {

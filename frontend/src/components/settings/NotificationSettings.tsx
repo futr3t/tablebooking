@@ -75,9 +75,9 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
   const [testLoading, setTestLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [configDialog, setConfigDialog] = useState<{ open: boolean; type: 'email' | 'sms' | null }>({ open: false, type: null });
-  const [showApiKey, setShowApiKey] = useState({ sendgrid: false, twilio: false });
+  const [showApiKey, setShowApiKey] = useState({ brevo: false, twilio: false });
   const [serviceConfig, setServiceConfig] = useState({
-    sendgrid: { apiKey: '' },
+    brevo: { apiKey: '' },
     twilio: { accountSid: '', authToken: '', phoneNumber: '' }
   });
 
@@ -195,12 +195,12 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
             <Grid item xs={12} md={6}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box display="flex" alignItems="center" gap={2}>
-                  <EmailIcon color={settings.configured.sendgrid ? 'success' : 'error'} />
+                  <EmailIcon color={settings.configured.brevo ? 'success' : 'error'} />
                   <Box>
-                    <Typography variant="subtitle2">Email Service (SendGrid)</Typography>
+                    <Typography variant="subtitle2">Email Service (Brevo)</Typography>
                     <Chip
-                      label={settings.configured.sendgrid ? 'Configured' : 'Not Configured'}
-                      color={settings.configured.sendgrid ? 'success' : 'error'}
+                      label={settings.configured.brevo ? 'Configured' : 'Not Configured'}
+                      color={settings.configured.brevo ? 'success' : 'error'}
                       size="small"
                     />
                   </Box>
@@ -457,28 +457,28 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
         fullWidth
       >
         <DialogTitle>
-          Configure {configDialog.type === 'email' ? 'Email (SendGrid)' : 'SMS (Twilio)'} Service
+          Configure {configDialog.type === 'email' ? 'Email (Brevo)' : 'SMS (Twilio)'} Service
         </DialogTitle>
         <DialogContent>
           {configDialog.type === 'email' ? (
             <Box sx={{ mt: 2 }}>
               <TextField
                 fullWidth
-                label="SendGrid API Key"
-                type={showApiKey.sendgrid ? 'text' : 'password'}
-                value={serviceConfig.sendgrid.apiKey}
+                label="Brevo API Key"
+                type={showApiKey.brevo ? 'text' : 'password'}
+                value={serviceConfig.brevo.apiKey}
                 onChange={(e) => setServiceConfig({
                   ...serviceConfig,
-                  sendgrid: { ...serviceConfig.sendgrid, apiKey: e.target.value }
+                  brevo: { ...serviceConfig.brevo, apiKey: e.target.value }
                 })}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        onClick={() => setShowApiKey({ ...showApiKey, sendgrid: !showApiKey.sendgrid })}
+                        onClick={() => setShowApiKey({ ...showApiKey, brevo: !showApiKey.brevo })}
                         edge="end"
                       >
-                        {showApiKey.sendgrid ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        {showApiKey.brevo ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -486,8 +486,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
                 helperText={
                   <Box>
                     Get your API key from{' '}
-                    <Link href="https://app.sendgrid.com/settings/api_keys" target="_blank" rel="noopener">
-                      SendGrid Dashboard
+                    <Link href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noopener">
+                      Brevo Dashboard
                     </Link>
                   </Box>
                 }
@@ -557,8 +557,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
             onClick={async () => {
               try {
                 setSaving(true);
-                const endpoint = configDialog.type === 'email' ? 'sendgrid' : 'twilio';
-                const config = configDialog.type === 'email' ? serviceConfig.sendgrid : serviceConfig.twilio;
+                const endpoint = configDialog.type === 'email' ? 'brevo' : 'twilio';
+                const config = configDialog.type === 'email' ? serviceConfig.brevo : serviceConfig.twilio;
                 
                 await api.post(`/notifications/config/${restaurantId}/${endpoint}`, config);
                 
@@ -580,7 +580,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
             variant="contained"
             disabled={
               configDialog.type === 'email' 
-                ? !serviceConfig.sendgrid.apiKey
+                ? !serviceConfig.brevo.apiKey
                 : !serviceConfig.twilio.accountSid || !serviceConfig.twilio.authToken || !serviceConfig.twilio.phoneNumber
             }
           >
