@@ -54,7 +54,7 @@ interface NotificationSettings {
   };
   reminderHours: number;
   configured: {
-    sendgrid: boolean;
+    brevo: boolean;
     twilio: boolean;
   };
 }
