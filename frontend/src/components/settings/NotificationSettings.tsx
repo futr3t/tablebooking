@@ -256,7 +256,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
                   <Switch
                     checked={settings.email.confirmation}
                     onChange={(e) => handleEmailSettingChange('confirmation', e.target.checked)}
-                    disabled={saving || !settings.configured.sendgrid}
+                    disabled={saving || !settings.configured.brevo}
                   />
                 }
                 label="Booking Confirmation"
@@ -268,7 +268,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
                   <Switch
                     checked={settings.email.reminder}
                     onChange={(e) => handleEmailSettingChange('reminder', e.target.checked)}
-                    disabled={saving || !settings.configured.sendgrid}
+                    disabled={saving || !settings.configured.brevo}
                   />
                 }
                 label="Booking Reminder"
@@ -280,7 +280,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
                   <Switch
                     checked={settings.email.cancellation}
                     onChange={(e) => handleEmailSettingChange('cancellation', e.target.checked)}
-                    disabled={saving || !settings.configured.sendgrid}
+                    disabled={saving || !settings.configured.brevo}
                   />
                 }
                 label="Booking Cancellation"
@@ -292,7 +292,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
                   <Switch
                     checked={settings.email.waitlist}
                     onChange={(e) => handleEmailSettingChange('waitlist', e.target.checked)}
-                    disabled={saving || !settings.configured.sendgrid}
+                    disabled={saving || !settings.configured.brevo}
                   />
                 }
                 label="Waitlist Notifications"
@@ -305,7 +305,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ rest
               variant="outlined"
               startIcon={<TestIcon />}
               onClick={() => setTestDialog({ open: true, type: 'email' })}
-              disabled={!settings.configured.sendgrid}
+              disabled={!settings.configured.brevo}
             >
               Test Email
             </Button>
