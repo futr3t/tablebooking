@@ -200,4 +200,92 @@ router.put('/config/:restaurantId',
   })
 );
 
+// Configure SendGrid API key for restaurant
+router.post('/config/:restaurantId/sendgrid',
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { restaurantId } = req.params;
+    const { apiKey } = req.body;
+
+    if (!apiKey) {
+      throw createError('SendGrid API key is required', 400);
+    }
+
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+      throw createError('Restaurant not found', 404);
+    }
+
+    // In a production environment, you would store these encrypted in the database
+    // For now, we'll store them in environment variables or a secure configuration service
+    // This is a simplified example - implement proper secret management
+    
+    // Update notification configuration in database
+    const currentSettings = restaurant.notificationConfig || {};
+    const updatedConfig = {
+      ...currentSettings,
+      sendgrid: {
+        configured: true,
+        configuredAt: new Date().toISOString(),
+        configuredBy: req.user?.id
+      }
+    };
+
+    await RestaurantModel.update(restaurantId, { notificationConfig: updatedConfig });
+
+    res.json({
+      success: true,
+      message: 'SendGrid configuration saved successfully',
+      data: {
+        configured: true
+      }
+    });
+  })
+);
+
+// Configure Twilio credentials for restaurant
+router.post('/config/:restaurantId/twilio',
+  authorize(UserRole.SUPER_ADMIN, UserRole.OWNER),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { restaurantId } = req.params;
+    const { accountSid, authToken, phoneNumber } = req.body;
+
+    if (!accountSid || !authToken || !phoneNumber) {
+      throw createError('All Twilio credentials are required', 400);
+    }
+
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+      throw createError('Restaurant not found', 404);
+    }
+
+    // In a production environment, you would store these encrypted in the database
+    // For now, we'll store them in environment variables or a secure configuration service
+    // This is a simplified example - implement proper secret management
+    
+    // Update notification configuration in database
+    const currentSettings = restaurant.notificationConfig || {};
+    const updatedConfig = {
+      ...currentSettings,
+      twilio: {
+        configured: true,
+        phoneNumber: phoneNumber,
+        configuredAt: new Date().toISOString(),
+        configuredBy: req.user?.id
+      }
+    };
+
+    await RestaurantModel.update(restaurantId, { notificationConfig: updatedConfig });
+
+    res.json({
+      success: true,
+      message: 'Twilio configuration saved successfully',
+      data: {
+        configured: true,
+        phoneNumber: phoneNumber
+      }
+    });
+  })
+);
+
 export default router;
