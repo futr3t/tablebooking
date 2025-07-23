@@ -31,7 +31,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
-import { api } from '../../services/api';
+import api from '../../services/api';
 
 interface NotificationSettings {
   email: {
