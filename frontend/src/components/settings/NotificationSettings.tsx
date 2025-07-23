@@ -26,7 +26,7 @@ import {
   Sms as SmsIcon,
   Schedule as ScheduleIcon,
   Settings as SettingsIcon,
-  TestTube as TestIcon,
+  Science as TestIcon,
   ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon
